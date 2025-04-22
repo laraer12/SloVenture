@@ -122,11 +122,15 @@ module.exports = {
     // pridobim vreme in napoved glede na lat in lon
     getWeatherByCoordinates: async function (req, res) {
         try {
-            const { lat, lon, cnt, attractionId } = req.query;
+            // preverim, če so vhodni podatki validni
+            const lat = parseFloat(req.query.lat);
+            const lon = parseFloat(req.query.lon);
+            const cnt = parseInt(req.query.cnt);
+            const attractionId = req.query.attractionId;
 
-            if (!lat || !lon || !cnt || !attractionId) {
+            if (isNaN(lat) || lat < -90 || lat > 90 || isNaN(lon) || lon < -180 || lon > 180 || isNaN(cnt) || cnt <= 0 || !attractionId || typeof attractionId !== 'string') {
                 return res.status(400).json({
-                    message: 'Latitude, longitude,number of days and attraction ID are required'
+                    message: 'Invalid input. Make sure lat/lon are numbers in correct range, cnt is a positive integer, and attractionId is a string'
                 });
             }
             const apiKey = process.env.OPENWEATHER_API_KEY;
