@@ -2,6 +2,8 @@ var mongoose = require('mongoose');
 var Schema   = mongoose.Schema;
 
 var weatherDataSchema = new Schema({
+	'lat': Number,
+	'lon': Number,
 	'attractionId' : {
 	 	type: Schema.Types.ObjectId,
 	 	ref: 'attraction'

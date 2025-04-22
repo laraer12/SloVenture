@@ -2,6 +2,10 @@ var express = require('express');
 var router = express.Router();
 var weatherDataController = require('../controllers/weatherDataController.js');
 
+
+// za lat, lon in cnt
+router.get('/', weatherDataController.getWeatherByCoordinates);
+
 /*
  * GET
  */
