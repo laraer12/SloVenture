@@ -122,11 +122,11 @@ module.exports = {
     // pridobim vreme in napoved glede na lat in lon
     getWeatherByCoordinates: async function (req, res) {
         try {
-            const { lat, lon, cnt } = req.query;
+            const { lat, lon, cnt, attractionId } = req.query;
 
-            if (!lat || !lon || !cnt) {
+            if (!lat || !lon || !cnt || !attractionId) {
                 return res.status(400).json({
-                    message: 'Latitude, longitude and number of days are required'
+                    message: 'Latitude, longitude,number of days and attraction ID are required'
                 });
             }
             const apiKey = process.env.OPENWEATHER_API_KEY;
@@ -147,6 +147,7 @@ module.exports = {
             return res.status(200).json({
                 lat: lat,
                 lon: lon,
+                attractionId: attractionId,
                 currentWeather: currentWeather,
                 forecast: forecastList,
                 lastUpdated: new Date()
