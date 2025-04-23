@@ -1,3 +1,4 @@
+const axios = require('axios');
 var AttractionModel = require('../models/attractionModel.js');
 
 /**
@@ -156,5 +157,57 @@ module.exports = {
 
             return res.status(204).json();
         });
-    }
+    },
+
+    /**
+     * Iskanje znamenitosti po imenu / lokaciji z uporabo LocationIQ
+    */
+    search: async function (req, res) {
+        const { attractionName, lat, lon } = req.query;
+        const apiKey = process.env.LOCATIONIQ_API_KEY;
+    
+        try {
+            // iščemo po lat in lon
+            if (lat && lon) {
+                const reverseResponse = await axios.get('https://us1.locationiq.com/v1/reverse.php', {
+                    params: {
+                        key: apiKey,
+                        lat: lat,
+                        lon: lon,
+                        format: 'json'
+                    }
+                });
+    
+                return res.json({
+                    data: reverseResponse.data
+                });
+            }
+    
+            // iščemo po imenu znamenitosti
+            if (attractionName) {
+                const forwardResponse = await axios.get('https://us1.locationiq.com/v1/search.php', {
+                    params: {
+                        key: apiKey,
+                        q: attractionName,
+                        countrycodes: 'si', // samo slovenija
+                        format: 'json'
+                    }
+                });
+    
+                return res.json({
+                    data: forwardResponse.data
+                });
+            }
+            return res.status(400).json({ message: 'Missing parameters: please provide either search or lat/lon' });
+    
+        }
+        catch (error) {
+            console.error(error);
+    
+            return res.status(500).json({
+                message: 'Error fetching data from LocationIQ',
+                error: error.message
+            });
+        }
+    }      
 };
