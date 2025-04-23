@@ -163,7 +163,7 @@ module.exports = {
      * Iskanje znamenitosti po imenu / lokaciji z uporabo LocationIQ
     */
     search: async function (req, res) {
-        const { attractionName, lat, lon } = req.query;
+        const { attractionName, lat, lon, autocomplete } = req.query;
         const apiKey = process.env.LOCATIONIQ_API_KEY;
     
         // validiram vhodne parametre
@@ -216,7 +216,9 @@ module.exports = {
     
             // iskanje po imenu znamenitosti
             if (attractionName) {
-                const forwardResponse = await axios.get('https://us1.locationiq.com/v1/search.php', {
+                const endpoint = autocomplete === 'true' ? 'https://us1.locationiq.com/v1/autocomplete.php' : 'https://us1.locationiq.com/v1/search.php';
+
+                const forwardResponse = await axios.get(endpoint, {
                     params: {
                         key: apiKey,
                         q: attractionName,
