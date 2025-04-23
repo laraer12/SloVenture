@@ -166,14 +166,45 @@ module.exports = {
         const { attractionName, lat, lon } = req.query;
         const apiKey = process.env.LOCATIONIQ_API_KEY;
     
+        // validiram vhodne parametre
+        if (lat || lon) {
+            const parsedLat = parseFloat(lat);
+            const parsedLon = parseFloat(lon);
+            
+            if (isNaN(parsedLat) || isNaN(parsedLon)) {
+                return res.status(400).json({
+                    message: 'Invalid latitude or longitude. Please provide valid numeric values'
+                });
+            }
+    
+            // preverim, ali sta lat in lon v razponu
+            if (parsedLat < -90 || parsedLat > 90) {
+                return res.status(400).json({
+                    message: 'Latitude must be between -90 and 90 degrees'
+                });
+            }
+            if (parsedLon < -180 || parsedLon > 180) {
+                return res.status(400).json({
+                    message: 'Longitude must be between -180 and 180 degrees'
+                });
+            }
+        }
+        if (attractionName) {
+            // preverim, če je attractionName tipa string
+            if (typeof attractionName !== 'string' || attractionName.trim().length === 0) {
+                return res.status(400).json({
+                    message: 'Invalid attraction name. Please provide a valid non-empty string.'
+                });
+            }
+        }
         try {
-            // iščemo po lat in lon
+            // iskanje po lat in lon
             if (lat && lon) {
                 const reverseResponse = await axios.get('https://us1.locationiq.com/v1/reverse.php', {
                     params: {
                         key: apiKey,
-                        lat: lat,
-                        lon: lon,
+                        lat: parseFloat(lat),
+                        lon: parseFloat(lon),
                         format: 'json'
                     }
                 });
@@ -183,7 +214,7 @@ module.exports = {
                 });
             }
     
-            // iščemo po imenu znamenitosti
+            // iskanje po imenu znamenitosti
             if (attractionName) {
                 const forwardResponse = await axios.get('https://us1.locationiq.com/v1/search.php', {
                     params: {
@@ -198,7 +229,7 @@ module.exports = {
                     data: forwardResponse.data
                 });
             }
-            return res.status(400).json({ message: 'Missing parameters: please provide either search or lat/lon' });
+            return res.status(400).json({ message: 'Missing parameters: please provide either attractionName or lat/lon' });
     
         }
         catch (error) {
@@ -209,5 +240,5 @@ module.exports = {
                 error: error.message
             });
         }
-    }      
+    }        
 };
