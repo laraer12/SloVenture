@@ -125,12 +125,33 @@ module.exports = {
             // preverim, če so vhodni podatki validni
             const lat = parseFloat(req.query.lat);
             const lon = parseFloat(req.query.lon);
-            const cnt = parseInt(req.query.cnt);
+            const cntRaw = req.query.cnt;
             const attractionId = req.query.attractionId;
 
-            if (isNaN(lat) || lat < -90 || lat > 90 || isNaN(lon) || lon < -180 || lon > 180 || isNaN(cnt) || cnt <= 0 || !attractionId || typeof attractionId !== 'string') {
+            // validiram lat in lon
+            if (isNaN(lat) || lat < -90 || lat > 90 || isNaN(lon) || lon < -180 || lon > 180) {
                 return res.status(400).json({
-                    message: 'Invalid input. Make sure lat/lon are numbers in correct range, cnt is a positive integer, and attractionId is a string'
+                    message: 'Invalid latitude or longitude. Please provide valid values'
+                });
+            }
+
+            // validiram cnt
+            let cnt;
+
+            if (cntRaw) {
+                cnt = parseInt(cntRaw);
+
+                if (isNaN(cnt) || cnt <= 0) {
+                    return res.status(400).json({
+                        message: 'Invalid cnt value. Please provide a positive integer'
+                    });
+                }
+            }
+
+            // validiram attractionId
+            if (attractionId && typeof attractionId !== 'string') {
+                return res.status(400).json({
+                    message: 'Invalid attractionId. It must be a string.'
                 });
             }
             const apiKey = process.env.OPENWEATHER_API_KEY;
@@ -144,18 +165,22 @@ module.exports = {
             const currentResponse  = await axios.get(currentWeatherUrl);
             const currentWeather = currentResponse.data.weather[0].description;
             
-            const forecastUrl  = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&cnt=${cnt}&appid=${apiKey}`;
-            const forecastResponse  = await axios.get(forecastUrl);
-            const forecastList = forecastResponse.data.list.slice(0, cnt || 5);
-            
-            return res.status(200).json({
-                lat: lat,
-                lon: lon,
-                attractionId: attractionId,
-                currentWeather: currentWeather,
-                forecast: forecastList,
+            // vrnem podatke za trenutno vreme
+            const responsePayload = {
+                lat,
+                lon,
+                ...(attractionId && { attractionId }), // če je podan ga dodam
+                currentWeather,
                 lastUpdated: new Date()
-            });
+            };
+
+            // vrnem podatke za vremensko napoved
+            if (cnt) {
+                const forecastUrl  = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&cnt=${cnt}&appid=${apiKey}`;
+                const forecastResponse  = await axios.get(forecastUrl);
+                responsePayload.forecast = forecastResponse.data.list;
+            }
+            return res.status(200).json(responsePayload);
         }
         catch (error) {
             return res.status(500).json({
