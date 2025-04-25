@@ -242,5 +242,34 @@ module.exports = {
                 error: error.message
             });
         }
-    }        
+    },
+    
+    retrieve: async function (req, res) {
+        const { num, page } = req.query;
+
+        try {
+            const endpoint = "https://api.kamzavikend.si/public/search"
+
+            const forwardResponse = await axios.get(endpoint, {
+                headers: {
+                    Accept: 'application/json',
+                },
+                params: {
+                    'page[size]': num,
+                    'page[number]': page 
+                }
+            });
+
+            return res.json({
+                data: forwardResponse.data
+            });
+        }catch (error) {
+            console.error(error);
+
+            return res.status(500).json({
+                message: 'Error fetching data from kamzavikend.si',
+                error: error.message
+            });
+        }
+    }
 };

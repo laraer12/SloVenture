@@ -5,6 +5,9 @@ var attractionController = require('../controllers/attractionController.js');
 // Iskanje znamenitosti preko LocationIQ API-ja
 router.get('/search', attractionController.search);
 
+//iskanje znamenitosti preko kamzavikend.si API-ja
+router.get('/retrieve', attractionController.retrieve);
+
 /*
  * GET
  */
