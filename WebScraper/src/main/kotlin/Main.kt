@@ -2,12 +2,13 @@ package org.example
 
 import it.skrape.fetcher.*
 import it.skrape.core.*
-import it.skrape.selects.attribute
-import it.skrape.selects.html5.a
 import it.skrape.selects.html5.div
-import it.skrape.selects.html5.h1
 import it.skrape.selects.html5.section
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.encodeToJsonElement
 
+@Serializable
 data class AttractionDetails(
     val imageLinks: MutableList<String>,
     val descriptionParagraphs: MutableList<String>
@@ -62,12 +63,8 @@ fun main() {
         }
     }
 
-    for (link in attractionDetails.imageLinks){
-        println("$link\n")
-    }
+    val detailsJson = Json.encodeToJsonElement(attractionDetails)
 
-    for (p in attractionDetails.descriptionParagraphs){
-        println("$p\n")
-    }
+    println(detailsJson)
 
 }
