@@ -243,13 +243,56 @@ module.exports = {
             });
         }
     },
-    
+
+    //http://localhost:3000/attractions/retrieve?category=_&type=_&num=24&page=1
     retrieve: async function (req, res) {
         const { category, type, num, page } = req.query;
 
-        try {
-            const endpoint = "https://api.kamzavikend.si/public/search"
+        //validiramo num in page
+        if(!num || !page) {
+            return res.status(400).json({
+                message: 'Missing parameters: please provide num and page'
+            });
+        }
 
+        if (isNaN(num) || isNaN(page)) {
+            return res.status(400).json({
+                message: 'Invalid parameters: num and page should be numbers'
+            });
+        }
+
+        if (num < 1 || page < 1) {
+            return res.status(400).json({
+                message: 'Invalid parameters: num and page should be greater than 0'
+            });
+        }
+
+        if (num * page > 2696 + num) {
+            return res.status(400).json({
+                message: 'Invalid parameters: num * page should be less than 2696'
+            });
+        }
+
+        const validCategories = ['pohodnistvo', 'kultura', 'naravne-lepote', 'poletna-osvezitev', 'raziskovanje', 'feretanje', 'supanje'];
+
+        //validiramo category
+        if(category && !validCategories.includes(category)) {
+            return res.status(400).json({
+                message: 'Invalid category: please provide a valid category'
+            });
+        }
+
+        const validTypes = ['hrib', 'koca', 'cerkev', 'planina', 'drugo', 'jezero', 'grad', 'slap', 'park', 'kopalisce', 'dvorec', 'muzej-na-prostem', 'izvir', 'jama', 'razgledni-stolp', 'sup-tocka', 'bivak', 'soteska', 'ferata', 'pravljicna-pot'];
+        
+        //validiramo type
+        if(type && !validTypes.includes(type)) {
+            return res.status(400).json({
+                message: 'Invalid type: please provide a valid type'
+            });
+        }
+
+        const endpoint = "https://api.kamzavikend.si/public/search"
+        try {
             const forwardResponse = await axios.get(endpoint, {
                 headers: {
                     Accept: 'application/json',
