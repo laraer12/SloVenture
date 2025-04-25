@@ -245,7 +245,7 @@ module.exports = {
     },
     
     retrieve: async function (req, res) {
-        const { num, page } = req.query;
+        const { category, type, num, page } = req.query;
 
         try {
             const endpoint = "https://api.kamzavikend.si/public/search"
@@ -256,10 +256,12 @@ module.exports = {
                 },
                 params: {
                     'page[size]': num,
-                    'page[number]': page 
+                    'page[number]': page,
+                    'filter[type.slug]': type,
+                    'filter[categories.slug]': category,
                 }
+                
             });
-
             return res.json({
                 data: forwardResponse.data
             });
