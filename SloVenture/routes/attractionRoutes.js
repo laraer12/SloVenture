@@ -2,6 +2,9 @@ var express = require('express');
 var router = express.Router();
 var attractionController = require('../controllers/attractionController.js');
 
+// Iskanje znamenitosti preko LocationIQ API-ja
+router.get('/search', attractionController.search);
+
 /*
  * GET
  */
