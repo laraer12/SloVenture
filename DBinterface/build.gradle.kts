@@ -28,6 +28,8 @@ dependencies {
     implementation("org.mongodb:mongodb-driver-kotlin-coroutine:4.10.1")
 
     implementation("org.mongodb:mongodb-driver-sync:4.11.0")
+
+    implementation("org.slf4j:slf4j-simple:2.0.13")
 }
 
 compose.desktop {
