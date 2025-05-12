@@ -1,7 +1,7 @@
 var mongoose = require('mongoose');
 var Schema   = mongoose.Schema;
 
-var nearbyAccomodationSchema = new Schema({
+var nearbyAccommodationSchema = new Schema({
 	'name' : String,
 	'linkToBooking' : String,
 	'attractionId' : {
@@ -11,4 +11,4 @@ var nearbyAccomodationSchema = new Schema({
 	'distance' : Number
 });
 
-module.exports = mongoose.model('nearbyAccomodation', nearbyAccomodationSchema);
+module.exports = mongoose.model('nearbyAccommodation', nearbyAccommodationSchema);
