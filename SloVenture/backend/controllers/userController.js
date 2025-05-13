@@ -18,7 +18,6 @@ module.exports = {
                     error: err
                 });
             }
-
             return res.json(users);
         });
     },
@@ -27,22 +26,16 @@ module.exports = {
      * userController.show()
      */
     show: function (req, res) {
-        var id = req.params.id;
-
-        UserModel.findOne({_id: id}, function (err, user) {
+        UserModel.findOne({ _id: req.params.id }, function (err, user) {
             if (err) {
                 return res.status(500).json({
                     message: 'Error when getting user.',
                     error: err
                 });
             }
-
             if (!user) {
-                return res.status(404).json({
-                    message: 'No such user'
-                });
+                return res.status(404).json({ message: 'No such user' });
             }
-
             return res.json(user);
         });
     },
@@ -51,24 +44,26 @@ module.exports = {
      * userController.create()
      */
     create: function (req, res) {
-        var user = new UserModel({
-			username : req.body.username,
-			email : req.body.email,
-			password : req.body.password,
-			profilePicture : req.body.profilePicture,
-			role : req.body.role,
-			createdAt : req.body.createdAt
-        });
-
-        user.save(function (err, user) {
+        UserModel.findOne({ $or: [{ username: req.body.username }, { email: req.body.email }] }, function (err, existingUser) {
             if (err) {
-                return res.status(500).json({
-                    message: 'Error when creating user',
-                    error: err
-                });
+                return res.status(500).json({ message: 'Error when checking user existence', error: err });
+            }
+            if (existingUser) {
+                return res.status(400).json({ message: 'Username or email already exists' });
             }
 
-            return res.status(201).json(user);
+            var user = new UserModel({
+                username: req.body.username,
+                email: req.body.email,
+                password: req.body.password
+            });
+
+            user.save(function (err, savedUser) {
+                if (err) {
+                    return res.status(500).json({ message: 'Error when creating user', error: err });
+                }
+                return res.status(201).json(savedUser);
+            });
         });
     },
 
@@ -76,38 +71,23 @@ module.exports = {
      * userController.update()
      */
     update: function (req, res) {
-        var id = req.params.id;
-
-        UserModel.findOne({_id: id}, function (err, user) {
+        UserModel.findOne({ _id: req.params.id }, function (err, user) {
             if (err) {
-                return res.status(500).json({
-                    message: 'Error when getting user',
-                    error: err
-                });
+                return res.status(500).json({ message: 'Error when getting user', error: err });
             }
-
             if (!user) {
-                return res.status(404).json({
-                    message: 'No such user'
-                });
+                return res.status(404).json({ message: 'No such user' });
             }
 
-            user.username = req.body.username ? req.body.username : user.username;
-			user.email = req.body.email ? req.body.email : user.email;
-			user.password = req.body.password ? req.body.password : user.password;
-			user.profilePicture = req.body.profilePicture ? req.body.profilePicture : user.profilePicture;
-			user.role = req.body.role ? req.body.role : user.role;
-			user.createdAt = req.body.createdAt ? req.body.createdAt : user.createdAt;
-			
-            user.save(function (err, user) {
-                if (err) {
-                    return res.status(500).json({
-                        message: 'Error when updating user.',
-                        error: err
-                    });
-                }
+            user.username = req.body.username || user.username;
+            user.email = req.body.email || user.email;
+            user.password = req.body.password || user.password;
 
-                return res.json(user);
+            user.save(function (err, updatedUser) {
+                if (err) {
+                    return res.status(500).json({ message: 'Error when updating user', error: err });
+                }
+                return res.json(updatedUser);
             });
         });
     },
@@ -116,16 +96,10 @@ module.exports = {
      * userController.remove()
      */
     remove: function (req, res) {
-        var id = req.params.id;
-
-        UserModel.findByIdAndRemove(id, function (err, user) {
+        UserModel.findByIdAndRemove(req.params.id, function (err) {
             if (err) {
-                return res.status(500).json({
-                    message: 'Error when deleting the user.',
-                    error: err
-                });
+                return res.status(500).json({ message: 'Error when deleting the user.', error: err });
             }
-
             return res.status(204).json();
         });
     }
