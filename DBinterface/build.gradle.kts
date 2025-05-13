@@ -4,6 +4,8 @@ plugins {
     kotlin("jvm")
     id("org.jetbrains.compose")
     id("org.jetbrains.kotlin.plugin.compose")
+
+    kotlin("plugin.serialization") version "2.1.20"
 }
 
 group = "com.example"
@@ -30,6 +32,8 @@ dependencies {
     implementation("org.mongodb:mongodb-driver-sync:4.11.0")
 
     implementation("org.slf4j:slf4j-simple:2.0.13")
+
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
 }
 
 compose.desktop {

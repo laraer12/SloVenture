@@ -5,13 +5,24 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
-var mongoose = require('mongoose');
-var mongoDB='mongodb://127.0.0.1:27017/SloVentureDB';
-mongoose.set('strictQuery', true);
-mongoose.connect(mongoDB);
-mongoose.Promise = global.Promise;
-var db = mongoose.connection;
-db.on('error', console.error.bind(console, 'MongoDB connection error:'));
+
+
+const mongoose = require('mongoose');
+const uri = "mongodb+srv://:@sloventure.4djf5rv.mongodb.net/?retryWrites=true&w=majority&appName=SloVenture";
+
+const clientOptions = { serverApi: { version: '1', strict: true, deprecationErrors: true } };
+
+async function run() {
+  try {
+    await mongoose.connect(uri, clientOptions);
+    await mongoose.connection.db.admin().command({ ping: 1 });
+    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+  } finally {
+    await mongoose.disconnect();
+  }
+}
+run().catch(console.dir);
+
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/userRoutes');
