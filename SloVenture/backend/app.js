@@ -15,18 +15,18 @@ db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/userRoutes');
-var attractionImageRouter = require('./routes/attractionImageRoutes');
+// var attractionImageRouter = require('./routes/attractionImageRoutes');
 var attractionRouter = require('./routes/attractionRoutes');
 var commentRouter = require('./routes/commentRoutes');
 var nearbyAccommodationRouter = require('./routes/nearbyAccommodationRoutes');
 var nearbyAttractionRouter = require('./routes/nearbyAttractionRoutes');
 var regionRouter = require('./routes/regionRoutes');
 var reviewRouter = require('./routes/reviewRoutes');
-var tripAttractionRouter = require('./routes/tripAttractionRoutes');
+// var tripAttractionRouter = require('./routes/tripAttractionRoutes');
 var tripRouter = require('./routes/tripRoutes');
-var userSavedRouter = require('./routes/userSavedRoutes');
-var userViewHistoryRouter = require('./routes/userViewHistoryRoutes');
-var userVisitRouter=require('./routes/userVisitRoutes');
+// var userSavedRouter = require('./routes/userSavedRoutes');
+// var userViewHistoryRouter = require('./routes/userViewHistoryRoutes');
+// var userVisitRouter=require('./routes/userVisitRoutes');
 var weatherDataRouter = require('./routes/weatherDataRoutes');
 
 var app = express();
@@ -56,20 +56,30 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// test za session
+var session = require('express-session');
+var MongoStore = require('connect-mongo');
+app.use(session({
+  secret: 'work hard',
+  resave: true,
+  saveUninitialized: false,
+  store: MongoStore.create({mongoUrl: mongoDB})
+}));
+
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
-app.use('/attraction-images', attractionImageRouter);
+// app.use('/attraction-images', attractionImageRouter);
 app.use('/attractions', attractionRouter);
 app.use('/comments', commentRouter);
 app.use('/nearby-accommodation', nearbyAccommodationRouter);
 app.use('/nearby-attractions', nearbyAttractionRouter);
 app.use('/regions', regionRouter);
 app.use('/reviews', reviewRouter);
-app.use('/trip-attractions', tripAttractionRouter);
+// app.use('/trip-attractions', tripAttractionRouter);
 app.use('/trips', tripRouter);
-app.use('/user-saved', userSavedRouter);
-app.use('/user-view-history', userViewHistoryRouter);
-app.use('/user-visit', userVisitRouter);
+// app.use('/user-saved', userSavedRouter);
+// app.use('/user-view-history', userViewHistoryRouter);
+// app.use('/user-visit', userVisitRouter);
 app.use('/weather', weatherDataRouter);
 
 // catch 404 and forward to error handler

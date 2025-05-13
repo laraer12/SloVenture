@@ -5,8 +5,10 @@ import Header from "./components/Header";
 import Login from "./components/Login";
 import Register from "./components/Register";
 import Profile from "./components/Profile";
-import Logout from "./components/Logout";
-import Map from "./components/Map";
+import Homepage from './components/Homepage'; // domača stran
+import Map from "./components/Map"; // zemljevid
+import Attractions from './components/Attractions'; // znamenitosti prikazane po karticah
+import Attraction from './components/Attraction'; // prikaz posamične znamenitosti
 
 function App() {
   /**
@@ -46,12 +48,13 @@ function App() {
         <div className="App">
           <Header title="My application"></Header>
           <Routes>
-            <Route path="/" exact element={<Header />}></Route>
+            <Route path="/" exact element={<Homepage />}></Route>
             <Route path="/login" exact element={<Login />}></Route>
             <Route path="/register" element={<Register />}></Route>
             <Route path="/profile" element={<Profile />}></Route>
-            <Route path="/logout" element={<Logout />}></Route>
-            {/* <Route path="/" element={<Map />}></Route> */} {/* tu bo potem /map al nekaj */}
+            <Route path="/map" element={<Map />}></Route>
+            <Route path="/attractions" element={<Attractions />}></Route>
+            <Route path="/attractions/:id" element={<Attraction />}></Route>
           </Routes>
         </div>
       </UserContext.Provider>

@@ -1,1 +1,7 @@
-<p>to je mapa</p>
+function Map() {
+  return (
+      <p>Tu bo prikazan zemljevid</p>
+  );
+}
+
+export default Map;
