@@ -1,5 +1,9 @@
 const axios = require('axios');
 var AttractionModel = require('../models/attractionModel.js');
+var AttractionImageModel = require('../models/attractionImageModel.js');
+var ReviewModel = require('../models/reviewModel.js');
+var WeatherDataModel = require('../models/weatherDataModel.js');
+var nearbyAttractionModel = require('../models/nearbyAttractionModel.js');
 
 /**
  * attractionController.js
@@ -19,6 +23,148 @@ module.exports = {
                     error: err
                 });
             }
+
+            if (attractions.length === 0) {
+                return res.json([]);
+            }
+
+            var result = [];
+
+            attractions.forEach(function (attraction) {
+                AttractionImageModel.find({ attractionId: attraction._id }, function (err, images) {
+                    if (err) {
+                        return res.status(500).json({
+                            message: 'Error when getting attraction images.',
+                            error: err
+                        });
+                    }
+
+                    result.push({
+                        attraction: attraction,
+                        images: images
+                    });
+                });
+            });
+
+            return res.json(attractions);
+        });
+    },
+
+    /**
+     * attractionController.listByRegion()
+     */
+    listByRegion: function (req, res) {
+        var regionId = req.params.regionId;
+
+        AttractionModel.find({regionId: regionId}, function (err, attractions) {
+            if (err) {
+                return res.status(500).json({
+                    message: 'Error when getting attraction.',
+                    error: err
+                });
+            }
+
+            if (attractions.length === 0) {
+                return res.json([]);
+            }
+
+            var result = [];
+
+            attractions.forEach(function (attraction) {
+                AttractionImageModel.find({ attractionId: attraction._id }, function (err, images) {
+                    if (err) {
+                        return res.status(500).json({
+                            message: 'Error when getting attraction images.',
+                            error: err
+                        });
+                    }
+
+                    result.push({
+                        attraction: attraction,
+                        images: images
+                    });
+                });
+            });
+
+            return res.json(attractions);
+        });
+    },
+
+    /**
+     * attractionController.listByClassification()
+     */
+    listByClassification: function (req, res) {
+        var classification = req.params.classification;
+
+        AttractionModel.find({classification: classification}, function (err, attractions) {
+            if (err) {
+                return res.status(500).json({
+                    message: 'Error when getting attraction.',
+                    error: err
+                });
+            }
+
+            if (attractions.length === 0) {
+                return res.json([]);
+            }
+
+            var result = [];
+
+            attractions.forEach(function (attraction) {
+                AttractionImageModel.find({ attractionId: attraction._id }, function (err, images) {
+                    if (err) {
+                        return res.status(500).json({
+                            message: 'Error when getting attraction images.',
+                            error: err
+                        });
+                    }
+
+                    result.push({
+                        attraction: attraction,
+                        images: images
+                    });
+                });
+            });
+
+            return res.json(attractions);
+        });
+    },
+
+    /**
+     * attractionController.listByLocationType()
+     */
+    listByLocationType: function (req, res) {
+        var locationType = req.params.locationType;
+
+        AttractionModel.find({locationType: locationType}, function (err, attractions) {
+            if (err) {
+                return res.status(500).json({
+                    message: 'Error when getting attraction.',
+                    error: err
+                });
+            }
+
+            if (attractions.length === 0) {
+                return res.json([]);
+            }
+
+            var result = [];
+
+            attractions.forEach(function (attraction) {
+                AttractionImageModel.find({ attractionId: attraction._id }, function (err, images) {
+                    if (err) {
+                        return res.status(500).json({
+                            message: 'Error when getting attraction images.',
+                            error: err
+                        });
+                    }
+
+                    result.push({
+                        attraction: attraction,
+                        images: images
+                    });
+                });
+            });
 
             return res.json(attractions);
         });
@@ -44,9 +190,66 @@ module.exports = {
                 });
             }
 
-            return res.json(attraction);
+            AttractionImageModel.find( {attractionId: id} )
+            .populate({
+                path: 'uploadedBy',	
+                model: 'user'
+            })
+            .exec(function (err, images) {
+                if (err) {
+                    return res.status(500).json({
+                        message: 'Error when getting attraction images.',
+                        error: err
+                    });
+                }
+                ReviewModel.find( {attractionId: id} )
+                .populate({
+                    path: 'userId',
+                    model: 'user'
+                })
+                .exec(function (err, reviews) {
+                    if (err) {
+                        return res.status(500).json({
+                            message: 'Error when getting reviews.',
+                            error: err
+                        });
+                    }
+                    WeatherDataModel.find( {attractionId: id} ).exec(function (err, weatherData) {
+                        if (err) {
+                            return res.status(500).json({
+                                message: 'Error when getting weather data.',
+                                error: err
+                            });
+                        }
+                        nearbyAttractionModel.find( {attractionId: id} )
+                        .populate({
+                            path: 'nearbyAttractionId',
+                            model: 'attraction'
+                        })
+                        .exec(function (err, nearbyAttractions) {
+                            if (err) {
+                                return res.status(500).json({
+                                    message: 'Error when getting nearby attractions.',
+                                    error: err
+                                });
+                            }
+
+                            // vrnemo attraction z vsemi podatki
+                            return res.json({
+                                attraction: attraction,
+                                images: images,
+                                reviews: reviews,
+                                weatherData: weatherData,
+                                nearbyAttractions: nearbyAttractions
+                            });
+                        }
+                        );
+                    });
+                });
+            });
         });
     },
+    
 
     /**
      * attractionController.create()
@@ -58,6 +261,7 @@ module.exports = {
 			location : req.body.location,
 			address : req.body.address,
 			description : req.body.description,
+            classification : req.body.classification,
 			locationType : req.body.locationType,
 			elevation : req.body.elevation,
 			accessibilityOptions : req.body.accessibilityOptions,
@@ -71,7 +275,7 @@ module.exports = {
 			entryFee : req.body.entryFee,
 			hikingInfo : req.body.hikingInfo,
 			googleMapsLink : req.body.googleMapsLink,
-			createdAt : req.body.createdAt,
+			createdAt : Date.now(),
 			verified : req.body.verified
         });
 
@@ -112,6 +316,7 @@ module.exports = {
 			attraction.location = req.body.location ? req.body.location : attraction.location;
 			attraction.address = req.body.address ? req.body.address : attraction.address;
 			attraction.description = req.body.description ? req.body.description : attraction.description;
+            attraction.classification = req.body.classification ? req.body.classification : attraction.classification;
 			attraction.locationType = req.body.locationType ? req.body.locationType : attraction.locationType;
 			attraction.elevation = req.body.elevation ? req.body.elevation : attraction.elevation;
 			attraction.accessibilityOptions = req.body.accessibilityOptions ? req.body.accessibilityOptions : attraction.accessibilityOptions;
@@ -155,6 +360,38 @@ module.exports = {
                 });
             }
 
+            AttractionImageModel.deleteMany({ attractionId: id }, function (err) {
+                if (err) {
+                    return res.status(500).json({
+                        message: 'Error when deleting attraction images.',
+                        error: err
+                    });
+                }
+                ReviewModel.deleteMany({ attractionId: id }, function (err) {
+                    if (err) {
+                        return res.status(500).json({
+                            message: 'Error when deleting reviews.',
+                            error: err
+                        });
+                    }
+                    WeatherDataModel.deleteMany({ attractionId: id }, function (err) {
+                        if (err) {
+                            return res.status(500).json({
+                                message: 'Error when deleting weather data.',
+                                error: err
+                            });
+                        }
+                        nearbyAttractionModel.deleteMany({ attractionId: id }, function (err) {
+                            if (err) {
+                                return res.status(500).json({
+                                    message: 'Error when deleting nearby attractions.',
+                                    error: err
+                                });
+                            }
+                        });
+                    });
+                });
+            });
             return res.status(204).json();
         });
     },
@@ -245,4 +482,3 @@ module.exports = {
     }        
 };
 
-// attraction Image

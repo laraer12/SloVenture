@@ -55,7 +55,7 @@ module.exports = {
 			userId : req.body.userId,
 			attractionId : req.body.attractionId,
 			text : req.body.text,
-			createdAt : req.body.createdAt
+			createdAt : Date.now()
         });
 
         comment.save(function (err, comment) {
