@@ -46,7 +46,7 @@ module.exports = {
                 });
             });
 
-            return res.json(attractions);
+            return res.json(result);
         });
     },
 

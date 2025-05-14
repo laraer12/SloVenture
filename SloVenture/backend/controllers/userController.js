@@ -1,4 +1,6 @@
 var UserModel = require('../models/userModel.js');
+var TripModel = require('../models/tripModel.js');
+var TripAttractionModel = require('../models/tripAttractionModel.js');
 
 /**
  * userController.js
@@ -126,10 +128,43 @@ module.exports = {
                 });
             }
 
+            TripModel.find({userId: id}, function (err, trips) {
+                if (err) {
+                    return res.status(500).json({
+                        message: 'Error when getting the user\'s trips.',
+                        error: err
+                    });
+                }
+
+                trips.forEach(function (trip) {
+                    TripAttractionModel.deleteMany({tripId: trip._id}, function (err) {
+                        if (err) {
+                            return res.status(500).json({
+                                message: 'Error when deleting the trip attractions.',
+                                error: err
+                            });
+                        }
+                    });
+                   
+                });
+
+            });
+
+            TripModel.deleteMany({userId: id}, function (err) {
+                if (err) {
+                    return res.status(500).json({
+                        message: 'Error when deleting the user\'s trips.',
+                        error: err
+                    });
+                }
+            });
+
             return res.status(204).json();
         });
-    }
+    },
+
 };
+
 
 // user saved
 // user view history
