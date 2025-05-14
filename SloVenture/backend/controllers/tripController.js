@@ -1,4 +1,8 @@
 var TripModel = require('../models/tripModel.js');
+var TripAttractionModel = require('../models/tripAttractionModel.js');
+var AttractionModel = require('../models/attractionModel.js');
+var RegionModel = require('../models/regionModel.js');
+var AttractionImageModel = require('../models/attractionImageModel.js');
 
 /**
  * tripController.js
@@ -11,7 +15,9 @@ module.exports = {
      * tripController.list()
      */
     list: function (req, res) {
-        TripModel.find(function (err, trips) {
+        var userId = req.params.userId; //verjetno bo treba spremenit v session
+
+        TripModel.find({userId: userId},function (err, trips) {
             if (err) {
                 return res.status(500).json({
                     message: 'Error when getting trip.',
@@ -43,9 +49,47 @@ module.exports = {
                 });
             }
 
-            return res.json(trip);
+            TripAttractionModel.find({tripId: id})
+            .populate({
+                path: 'attractionId',
+                model: AttractionModel,
+            })
+            .exec( function (err, tripAttractions) {
+                if (err) {
+                    return res.status(500).json({
+                        message: 'Error when getting trip attractions.',
+                        error: err
+                    });
+                }
+
+                var result = [];
+
+                tripAttractions.forEach(function(tripAttraction) {
+                    AttractionImageModel.find({attractionId: tripAttraction._id}, function (err, images) {
+                        if (err) {
+                            return res.status(500).json({
+                                message: 'Error when getting attraction images.',
+                                error: err
+                            });
+                        }
+    
+                        result.push({
+                            tripAttraction: tripAttraction,
+                            images: images
+                        });
+                    });
+                
+                    return res.json({
+                        trip: trip,
+                        result: result
+                    });
+                }
+            );
+        
         });
+    });
     },
+    
 
     /**
      * tripController.create()
@@ -127,6 +171,15 @@ module.exports = {
                     error: err
                 });
             }
+
+            TripAttractionModel.deleteMany({tripId: id}, function (err) {
+                if (err) {
+                    return res.status(500).json({
+                        message: 'Error when deleting trip attractions.',
+                        error: err
+                    });
+                }
+            });
 
             return res.status(204).json();
         });

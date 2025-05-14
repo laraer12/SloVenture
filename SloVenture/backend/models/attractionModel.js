@@ -10,6 +10,7 @@ var attractionSchema = new Schema({
 	'location' : String,
 	'address' : String,
 	'description' : String,
+	'classification' : String,
 	'locationType' : String,
 	'elevation' : Number,
 	'accessibilityOptions' : String,
