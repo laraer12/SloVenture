@@ -5,6 +5,8 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
+/*
+// lokalna povezava z bazo
 var mongoose = require('mongoose');
 var mongoDB='mongodb://127.0.0.1:27017/SloVentureDB';
 mongoose.set('strictQuery', true);
@@ -12,21 +14,22 @@ mongoose.connect(mongoDB);
 mongoose.Promise = global.Promise;
 var db = mongoose.connection;
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
+*/
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/userRoutes');
-// var attractionImageRouter = require('./routes/attractionImageRoutes');
+var attractionImageRouter = require('./routes/attractionImageRoutes');
 var attractionRouter = require('./routes/attractionRoutes');
 var commentRouter = require('./routes/commentRoutes');
 var nearbyAccommodationRouter = require('./routes/nearbyAccommodationRoutes');
 var nearbyAttractionRouter = require('./routes/nearbyAttractionRoutes');
 var regionRouter = require('./routes/regionRoutes');
 var reviewRouter = require('./routes/reviewRoutes');
-// var tripAttractionRouter = require('./routes/tripAttractionRoutes');
+var tripAttractionRouter = require('./routes/tripAttractionRoutes');
 var tripRouter = require('./routes/tripRoutes');
-// var userSavedRouter = require('./routes/userSavedRoutes');
-// var userViewHistoryRouter = require('./routes/userViewHistoryRoutes');
-// var userVisitRouter=require('./routes/userVisitRoutes');
+var userSavedRouter = require('./routes/userSavedRoutes');
+var userViewHistoryRouter = require('./routes/userViewHistoryRoutes');
+var userVisitRouter=require('./routes/userVisitRoutes');
 var weatherDataRouter = require('./routes/weatherDataRoutes');
 
 var app = express();
@@ -34,15 +37,18 @@ var app = express();
 var cors = require('cors');
 
 var allowedOrigins = ['http://localhost:3000', 'http://localhost:3001'];
+
 app.use(cors({
   credentials: true,
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
+    if (!origin)
       return callback(null, true);
-    } else {
+
+    if (allowedOrigins.includes(origin))
+      return callback(null, true);
+    
+    else
       return callback(new Error('Not allowed by CORS'), false);
-    }
   }
 }));
 
@@ -56,6 +62,23 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+const mongoose = require('mongoose');
+const uri = "mongodb+srv://ime:geslo@sloventure.4djf5rv.mongodb.net/SloVentureDB?retryWrites=true&w=majority&appName=SloVenture";
+
+const clientOptions = { serverApi: { version: '1', strict: true, deprecationErrors: true } };
+
+async function run() {
+  try {
+    await mongoose.connect(uri, clientOptions);
+    await mongoose.connection.db.admin().command({ ping: 1 });
+    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+  }
+  catch (error) {
+    console.error("Database connection error:", error);
+  }
+}
+run().catch(console.dir);
+
 // test za session
 var session = require('express-session');
 var MongoStore = require('connect-mongo');
@@ -63,23 +86,23 @@ app.use(session({
   secret: 'work hard',
   resave: true,
   saveUninitialized: false,
-  store: MongoStore.create({mongoUrl: mongoDB})
+  store: MongoStore.create({mongoUrl: uri})
 }));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
-// app.use('/attraction-images', attractionImageRouter);
+app.use('/attraction-images', attractionImageRouter);
 app.use('/attractions', attractionRouter);
 app.use('/comments', commentRouter);
 app.use('/nearby-accommodation', nearbyAccommodationRouter);
 app.use('/nearby-attractions', nearbyAttractionRouter);
 app.use('/regions', regionRouter);
 app.use('/reviews', reviewRouter);
-// app.use('/trip-attractions', tripAttractionRouter);
+app.use('/trip-attractions', tripAttractionRouter);
 app.use('/trips', tripRouter);
-// app.use('/user-saved', userSavedRouter);
-// app.use('/user-view-history', userViewHistoryRouter);
-// app.use('/user-visit', userVisitRouter);
+app.use('/user-saved', userSavedRouter);
+app.use('/user-view-history', userViewHistoryRouter);
+app.use('/user-visit', userVisitRouter);
 app.use('/weather', weatherDataRouter);
 
 // catch 404 and forward to error handler

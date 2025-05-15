@@ -6,7 +6,7 @@ function Attraction() {
   // testni podatki
   const attractionData = [
     {
-      _id: '1',
+      _id: '6825026b5fd5eb530a5b82b4',
       name: 'Triglav',
       url: 'http://localhost:3001/images/triglav_test.webp',
       location: 'Julijske Alpe',

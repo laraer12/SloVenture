@@ -1,45 +1,70 @@
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
 
 function Attractions() {
-    // testni podatki da vidim, kak bi zgledalo to v karticah
-  const attractions = [
-    {
-        _id: '1',
-        name: 'Triglav',
-        url: 'http://localhost:3001/images/triglav_test.webp',
-        location: 'Julijske Alpe',
-        description: 'Najvišja gora v Sloveniji, priljubljena destinacija za planinarjenje.',
-    },
-    {
-        _id: '2',
-        name: 'Bled',
-        url: 'http://localhost:3001/images/bled_test.jpg',
-        location: 'Bled',
-        description: 'Znamenito jezero s čudovitim otočkom in gradom.',
-    },
-    {
-        _id: '3',
-        name: 'Postojnska jama',
-        url: 'http://localhost:3001/images/postojnska-jama_test.webp',
-        location: 'Postojna',
-        description: 'Ena največjih kraških jam v Evropi.',
-    },
-  ];
+    const [attractions, setAttractions] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-  return (
-    <div className="attractions-container">
-        {attractions.map((attraction) => (
-            <Link to={`/attractions/${attraction._id}`} key={attraction._id} className="attraction-card-link">
-                <div className="attraction-card">
-                    <img src={attraction.url} alt={attraction.name} className="attraction-image" />
-                    <h3 className="attraction-name">{attraction.name}</h3>
-                    <p className="attraction-location">{attraction.location}</p>
-                    <p className="attraction-description">{attraction.description}</p>
-                </div>
-            </Link>
-        ))}
-    </div>
-  );
+    useEffect(() => {
+        const fetchAttractions = async () => {
+            try {
+                const response = await axios.get('http://localhost:3001/attractions');
+
+                if (response.data.message)
+                    setError(response.data.message);
+                
+                else
+                    setAttractions(response.data);
+
+                setLoading(false);
+            }
+            catch (error) {
+                setError('Failed to fetch attractions');
+                setLoading(false);
+            }
+        };
+        fetchAttractions();
+    }, []);
+
+    if (loading)
+        return <div>Loading...</div>;
+
+    if (error)
+        return <div>{error}</div>;
+
+    return (
+        <div className="attractions-container">
+            {attractions.length === 0 ? (
+                <div>No attractions available</div>
+            ) : (
+                attractions.map((item) => {
+                    const attraction = item.attraction;
+                    const imageUrl = item.images && item.images[0] && item.images[0].url
+                        ? item.images[0].url
+                        : "/path/to/default-image.jpg";
+
+                    return (
+                        <Link 
+                            to={`/attractions/${attraction._id}`} 
+                            key={attraction._id}
+                            className="attraction-card-link"
+                        >
+                            <div className="attraction-card">
+                                <img src={imageUrl} alt={attraction.name} className="attraction-image"/>
+                                <div className="attraction-details">
+                                    <h3 className="attraction-name">{attraction.name}</h3>
+                                    <p className="attraction-locationType">{attraction.locationType}</p>
+                                    <p className="attraction-description">{attraction.description}</p>
+                                </div>
+                            </div>
+                        </Link>
+                    );
+                })
+            )}
+        </div>
+    );
 }
 
 export default Attractions;
