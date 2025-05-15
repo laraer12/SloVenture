@@ -9,10 +9,11 @@ data class Attraction(
     val regionId: String,
     val location: Coordinates,
     val address: Address,
-    val description: String,
+    val description: String?,
+    val classification: String,
     val locationType: String,
     val elevation: Double,
-    val accessibilityOptions: AccessibilityOptions,
+    val accessibilityOptions: String?,
     val ratingFamilyFriendly: Double,
     val ratingElderlyFriendly: Double,
     val ratingAccessible: Double,
@@ -39,12 +40,6 @@ data class Address(
     val city: String,
     val postalCode: String,
     val country: String
-)
-
-@Serializable
-//se bo se spremenilo TODO
-data class AccessibilityOptions(
-    val wheelchairAccessible: Boolean,
 )
 
 @Serializable

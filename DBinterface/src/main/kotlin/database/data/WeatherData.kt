@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 data class WeatherData(
     val id: String? = null,
     val location: Coordinates,
-    val attractionId: String,
+    val attractionId: String? = null,
     val currentWeather: Weather,
     val forecast: WeatherForecast,
     val lastUpdated: String? = null
@@ -14,10 +14,12 @@ data class WeatherData(
 
 @Serializable
 data class Weather(
-    val temperature: Double,
+    val date: String,
+    val temperature: Double?,
     val condition: String,
-    val windSpeed: Double,
-    val humidity: Int
+    val maxTemperature: Double,
+    val minTemperature: Double,
+    val precipitationProbability: Int
 )
 
 @Serializable
