@@ -17,52 +17,56 @@ function Attractions() {
                 
                 else
                     setAttractions(response.data);
-
-                setLoading(false);
             }
-            catch (error) {
-                setError('Failed to fetch attractions');
+            catch (err) {
+                setError('Napaka pri pridobivanju znamenitosti.');
+            }
+            finally {
                 setLoading(false);
             }
         };
         fetchAttractions();
     }, []);
 
+    const getImageUrl = (item) => {
+        const image = item?.images?.[0]?.url;
+        return image ? image : '/images/default-image.jpg';
+    };
+
     if (loading)
-        return <div>Loading...</div>;
+        return <div>Nalaganje...</div>;
 
     if (error)
-        return <div>{error}</div>;
+        return <div style={{ color: 'red' }}>{error}</div>;
+
+    if (!Array.isArray(attractions) || attractions.length === 0)
+        return <div>Ni razpoložljivih znamenitosti.</div>;
 
     return (
         <div className="attractions-container">
-            {attractions.length === 0 ? (
-                <div>No attractions available</div>
-            ) : (
-                attractions.map((item) => {
-                    const attraction = item.attraction;
-                    const imageUrl = item.images && item.images[0] && item.images[0].url
-                        ? item.images[0].url
-                        : "/path/to/default-image.jpg";
+            {attractions.map((item) => {
+                const attraction = item.attraction;
 
-                    return (
-                        <Link 
-                            to={`/attractions/${attraction._id}`} 
-                            key={attraction._id}
-                            className="attraction-card-link"
-                        >
-                            <div className="attraction-card">
-                                <img src={imageUrl} alt={attraction.name} className="attraction-image"/>
-                                <div className="attraction-details">
-                                    <h3 className="attraction-name">{attraction.name}</h3>
-                                    <p className="attraction-locationType">{attraction.locationType}</p>
-                                    <p className="attraction-description">{attraction.description}</p>
-                                </div>
-                            </div>
-                        </Link>
-                    );
-                })
-            )}
+                if (!attraction)
+                    return null;
+
+                return (
+                <Link
+                    to={`/attractions/${attraction._id}`}
+                    key={attraction._id}
+                    className="attraction-card-link"
+                >
+                    <div className="attraction-card">
+                        <img src={getImageUrl(item)} alt={attraction.name || 'Znamenitost'} className="attraction-image" />
+                        <div className="attraction-details">
+                            <h3 className="attraction-name">{attraction.name || 'Neznano ime'}</h3>
+                            <p className="attraction-locationType">{attraction.locationType || 'Neznan tip lokacije'}</p>
+                            <p className="attraction-description">{attraction.description || 'Opis ni na voljo.'}</p>
+                        </div>
+                    </div>
+                </Link>
+                );
+            })}
         </div>
     );
 }

@@ -1,43 +1,64 @@
 import { useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 
 function Attraction() {
   const { id } = useParams();
+  const [attraction, setAttraction] = useState(null);
+  const [imageUrl, setImageUrl] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // testni podatki
-  const attractionData = [
-    {
-      _id: '6825026b5fd5eb530a5b82b4',
-      name: 'Triglav',
-      url: 'http://localhost:3001/images/triglav_test.webp',
-      location: 'Julijske Alpe',
-      description: 'Najvišja gora v Sloveniji, priljubljena destinacija za planinarjenje.',
-    },
-    {
-      _id: '2',
-      name: 'Bled',
-      url: 'http://localhost:3001/images/bled_test.jpg',
-      location: 'Bled',
-      description: 'Znamenito jezero s čudovitim otočkom in gradom.',
-    },
-    {
-      _id: '3',
-      name: 'Postojnska jama',
-      url: 'http://localhost:3001/images/postojnska-jama_test.webp',
-      location: 'Postojna',
-      description: 'Ena največjih kraških jam v Evropi.',
-    },
-  ];
+  useEffect(() => {
+    const fetchAttraction = async () => {
+      try {
+        const response = await axios.get(`http://localhost:3001/attractions/${id}`);
 
-  const attraction = attractionData.find(a => a._id === id);
+        const data = response.data;
+        const fullAttraction = data.attraction || data;
+        const images = data.images || fullAttraction.images || [];
 
-  if (!attraction) return <p>Znamenitost ni bila najdena.</p>;
+        setAttraction(fullAttraction);
+
+        const mainImage = images.length > 0 && images[0].url
+          ? images[0].url
+          : '/images/default-image.jpg';
+
+        setImageUrl(mainImage);
+        setLoading(false);
+      }
+      catch (err) {
+        setError('Napaka pri nalaganju znamenitosti.');
+        setLoading(false);
+      }
+    };
+
+    fetchAttraction();
+  }, [id]);
+
+  if (loading)
+    return <p>Nalaganje...</p>;
+
+  if (error)
+    return <p>{error}</p>;
+
+  if (!attraction)
+    return <p>Znamenitost ni bila najdena.</p>;
 
   return (
-    <div>
+    <div className="attraction-details-container">
       <h1>{attraction.name}</h1>
-      <img src={attraction.url} alt={attraction.name} style={{ width: '400px' }} />
-      <p><strong>Lokacija:</strong> {attraction.location}</p>
-      <p>{attraction.description}</p>
+      <img src={imageUrl} alt={attraction.name} style={{ width: '400px', borderRadius: '10px', marginBottom: '1rem' }} onError={() => console.error(`Slika se ni naložila: ${imageUrl}`)} />
+      <p><strong>Opis:</strong> {attraction.description}</p>
+      <p><strong>Naslov:</strong> {attraction.address}</p>
+      <p><strong>Tip lokacije:</strong> {attraction.locationType}</p>
+      <p><strong>Višina:</strong> {attraction.elevation} m</p>
+      <p><strong>Vstopnina:</strong> {attraction.entryFee} €</p>
+      <p><strong>Potrebna rezervacija:</strong> {attraction.requiresReservation ? 'Da' : 'Ne'}</p>
+      <p><strong>Ocena:</strong> {attraction.rating}/5</p>
+      <p><strong>Dostopnost:</strong> {attraction.ratingAccessible}/5</p>
+      <p><strong>Primerno za družine:</strong> {attraction.ratingFamilyFriendly}/5</p>
+      <p><strong>Primerno za starejše:</strong> {attraction.ratingElderlyFriendly}/5</p>
     </div>
   );
 }
