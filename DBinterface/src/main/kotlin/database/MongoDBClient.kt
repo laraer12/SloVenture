@@ -24,7 +24,7 @@ object MongoDBClient {
         loadConfig()
         connectionString = buildConnectionString()
         client = MongoClients.create(connectionString)
-        database = client.getDatabase("sample_mflix")
+        database = client.getDatabase("SloVentureDB")
     }
 
     private fun loadConfig() {
