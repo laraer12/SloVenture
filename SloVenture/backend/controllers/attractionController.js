@@ -23,30 +23,35 @@ module.exports = {
                     error: err
                 });
             }
-
-            if (attractions.length === 0) {
+            if (attractions.length === 0)
                 return res.json([]);
-            }
 
-            var result = [];
-
-            attractions.forEach(function (attraction) {
-                AttractionImageModel.find({ attractionId: attraction._id }, function (err, images) {
-                    if (err) {
+            var promises = attractions.map(function (attraction) {
+                return AttractionImageModel.find({ attractionId: attraction._id })
+                    .then(function (images) {
+                        return {
+                            attraction: attraction,
+                            images: images
+                        };
+                    })
+                    .catch(function (err) {
                         return res.status(500).json({
                             message: 'Error when getting attraction images.',
                             error: err
                         });
-                    }
-
-                    result.push({
-                        attraction: attraction,
-                        images: images
+                    });
+            });
+            
+            Promise.all(promises)
+                .then(function (result) {
+                    return res.json(result);
+                })
+                .catch(function (err) {
+                    return res.status(500).json({
+                        message: 'Error when processing attractions.',
+                        error: err
                     });
                 });
-            });
-
-            return res.json(result);
         });
     },
 
