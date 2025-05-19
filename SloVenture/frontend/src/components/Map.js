@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import sloveniaGeoJson from '../slovenija.json';
 import { useNavigate } from 'react-router-dom';
@@ -6,6 +6,9 @@ import { useNavigate } from 'react-router-dom';
 function Map() {
   const mapRef = useRef(); // za izris zemljevida
   const navigate = useNavigate(); // da lahko kliknem na piko in se mi odpre stran z znamenitostjo
+  const [attractions, setAttractions] = useState([]);
+  const [hoveredAttraction, setHoveredAttraction] = useState(null);
+  const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     // slika zemljevida v ozadju
@@ -13,7 +16,7 @@ function Map() {
     document.body.style.backgroundSize = 'cover';
     document.body.style.backgroundPosition = 'center';
     document.body.style.backgroundRepeat = 'no-repeat';
-
+    
     // velikost zemljevida
     const width = 650;
     const height = 450;
@@ -57,27 +60,48 @@ function Map() {
       });
     svg.call(zoom);
 
-    // kličem api za znamenitosti, da ko kliknem na piko se mi prikaže stran za tisto znamenitost
-    fetch('http://localhost:3001/attractions')
-      .then(response => response.json())
-      .then(data => {
-        const parsedData = data.map(item => {
-          let coordinates = [0, 0];
+    const fetchData = async () => {
+      try {
+        const [attractionsRes, imagesRes] = await Promise.all([
+          fetch('http://localhost:3001/attractions'),
+          fetch('http://localhost:3001/attraction-images')
+        ]);
 
-          try {
-            const locObj = JSON.parse(item.attraction.location);
-            const [lat, lon] = locObj.location.coordinates; // vrstni red koordinat je trebalo spremenit, ker so v slovenija.json shranjene drugače kot pa imajo znamenitosti v bazi to shranjeno
-            coordinates = [lon, lat];
-          } 
-          catch (err) {
-            console.error('Napaka pri JSON.parse(location):', err);
-          }
-          return {
-            id: item.attraction._id,
-            name: item.attraction.name,
-            coordinates
-          };
+        const attractionsData = await attractionsRes.json();
+        const imagesData = await imagesRes.json();
+        const imageMap = {};
+
+        imagesData.forEach(img => {
+          const id = img.attractionId?.$oid || img.attractionId;
+
+          if (id)
+            imageMap[id] = img.url;
         });
+
+        const parsedData = attractionsData.map((item, index) => {
+          const attraction = item.attraction ?? item;
+          const location = item.location ?? attraction.location;
+
+          if (!location)
+            return null;
+
+          const lat = parseFloat(location.lat?.$numberDecimal ?? location.lat);
+          const lon = parseFloat(location.lon?.$numberDecimal ?? location.lon);
+
+          if (isNaN(lat) || isNaN(lon))
+            return null;
+
+          const id = attraction._id?.$oid || attraction._id;
+
+          return {
+            id,
+            name: attraction.name,
+            coordinates: [lon, lat],
+            image: imageMap[id] || null
+          };
+        }).filter(Boolean);
+
+        setAttractions(parsedData);
 
         // na zemljevidu izrišem tudi piko, ki predstavlja znamenitost glede na njene koordinate
         g.selectAll('circle.znamenitost')
@@ -90,15 +114,24 @@ function Map() {
           .attr('r', 4)
           .attr('fill', 'green')
           .style('cursor', 'pointer')
+          .on('mouseover', (event, d) => {
+            const [x, y] = d3.pointer(event);
+            setHoverPosition({ x, y });
+            setHoveredAttraction(d);
+          })
+          .on('mouseout', () => {
+            setHoveredAttraction(null);
+          })
           .on('click', (event, d) => {
             navigate(`/attractions/${d.id}`); // uporabnika preusmerim na stran, kjer si lahko ogleda podrobnosti znamenitosti
-          })
-          .append('title') // to se prikaže ko z miško "hover-aš" prek pike, kasneje lahko naredim tak, da bo prikazano kot neka kartica ali okvirček, da se prikažeta slika in ime
-          .text(d => d.name);
-      })
-      .catch(error => {
-        console.error('Napaka pri pridobivanju znamenitosti:', error);
-      });
+          });
+      }
+      catch (err) {
+        console.error("Napaka pri fetchanju podatkov:", err);
+      }
+    };
+
+    fetchData();
 
     // ker trenutno želim imeti sliko zemljevida v ozadju samo tu, returnam za ostale strani null, da tega več ne bo
     return () => {
@@ -106,15 +139,47 @@ function Map() {
       document.body.style.backgroundSize = null;
       document.body.style.backgroundPosition = null;
       document.body.style.backgroundRepeat = null;
-
       d3.select(mapRef.current).selectAll('*').remove();
     };
   }, []);
 
   return (
-    <div style={{textAlign: 'center'}}>
+    <div style={{ textAlign: 'center', position: 'relative' }}>
       <h3 id="map-title">Kam gremo pa danes? :-)</h3>
-      <div id="map" ref={mapRef}></div> {/* tu se dejansko prikaže zemljevid */}
+      <div id="map" ref={mapRef}></div>
+
+      {/* S tem prikažem ob piki ime ter sliko znamenitosti */}
+      {hoveredAttraction && (
+        <div
+          style={{
+            position: 'absolute',
+            left: hoverPosition.x + 350,
+            top: hoverPosition.y - 20,
+            backgroundColor: 'white',
+            border: '1px solid gray',
+            padding: '10px',
+            borderRadius: '8px',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+            width: '200px',
+            zIndex: 999
+          }}
+        >
+          <strong>{hoveredAttraction.name}</strong>
+          {hoveredAttraction.image && (
+            <img
+              src={hoveredAttraction.image}
+              alt={hoveredAttraction.name}
+              style={{
+                width: '100%',
+                marginTop: '10px',
+                borderRadius: '6px',
+                maxHeight: '120px',
+                objectFit: 'cover'
+              }}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 }
