@@ -58,6 +58,7 @@ module.exports = {
     /**
      * attractionController.listByRegion()
      */
+    //TODO CHANGE
     listByRegion: function (req, res) {
         var regionId = req.params.regionId;
 
@@ -98,6 +99,7 @@ module.exports = {
     /**
      * attractionController.listByClassification()
      */
+    //TODO CHANGE
     listByClassification: function (req, res) {
         var classification = req.params.classification;
 
@@ -138,6 +140,7 @@ module.exports = {
     /**
      * attractionController.listByLocationType()
      */
+    //TODO CHANGE
     listByLocationType: function (req, res) {
         var locationType = req.params.locationType;
 
@@ -260,96 +263,115 @@ module.exports = {
      * attractionController.create()
      */
     create: function (req, res) {
-        var attraction = new AttractionModel({
-			name : req.body.name,
-			regionId : req.body.regionId,
-			location : req.body.location,
-			address : req.body.address,
-			description : req.body.description,
-            classification : req.body.classification,
-			locationType : req.body.locationType,
-			elevation : req.body.elevation,
-			accessibilityOptions : req.body.accessibilityOptions,
-			ratingFamilyFriendly : req.body.ratingFamilyFriendly,
-			ratingElderlyFriendly : req.body.ratingElderlyFriendly,
-			ratingAccessible : req.body.ratingAccessible,
-			rating : req.body.rating,
-			parkingInfo : req.body.parkingInfo,
-			requiresReservation : req.body.requiresReservation,
-			openingHours : req.body.openingHours,
-			entryFee : req.body.entryFee,
-			hikingInfo : req.body.hikingInfo,
-			googleMapsLink : req.body.googleMapsLink,
-			createdAt : Date.now(),
-			verified : req.body.verified
-        });
 
-        attraction.save(function (err, attraction) {
-            if (err) {
-                return res.status(500).json({
-                    message: 'Error when creating attraction',
-                    error: err
-                });
-            }
+    //test TODO
+    console.log("Incoming request body:", req.body);
 
-            return res.status(201).json(attraction);
-        });
-    },
+
+
+
+    const attraction = new AttractionModel({
+        name: req.body.name,
+        regionId: req.body.regionId,
+        location: {
+            lat: req.body.location.lat,
+            lon: req.body.location.lon
+        },
+        address: {
+            street: req.body.address.street,
+            city: req.body.address.city,
+            postalCode: req.body.address.postalCode,
+            country: req.body.address.country
+        },
+        description: req.body.description,
+        classification: req.body.classification,
+        locationType: req.body.locationType,
+        elevation: req.body.elevation,
+        accessibilityOptions: req.body.accessibilityOptions,
+        ratingFamilyFriendly: req.body.ratingFamilyFriendly,
+        ratingElderlyFriendly: req.body.ratingElderlyFriendly,
+        ratingAccessible: req.body.ratingAccessible,
+        rating: req.body.rating,
+        requiresReservation: req.body.requiresReservation,
+        openingHours: {
+            monday: req.body.openingHours?.monday,
+            tuesday: req.body.openingHours?.tuesday,
+            wednesday: req.body.openingHours?.wednesday,
+            thursday: req.body.openingHours?.thursday,
+            friday: req.body.openingHours?.friday,
+            saturday: req.body.openingHours?.saturday,
+            sunday: req.body.openingHours?.sunday
+        },
+        entryFee: req.body.entryFee,
+        googleMapsLink: req.body.googleMapsLink,
+        createdAt: Date.now(),
+        verified: req.body.verified
+    });
+
+    attraction.save(function (err, saved) {
+        if (err) {
+            return res.status(500).json({
+                message: 'Error when creating attraction',
+                error: err
+            });
+        }
+        return res.status(201).json(saved);
+    });
+},
+
 
     /**
      * attractionController.update()
      */
-    update: function (req, res) {
-        var id = req.params.id;
+update: function (req, res) {
+    const id = req.params.id;
 
-        AttractionModel.findOne({_id: id}, function (err, attraction) {
-            if (err) {
-                return res.status(500).json({
-                    message: 'Error when getting attraction',
-                    error: err
-                });
-            }
+    AttractionModel.findById(id, function (err, attraction) {
+        if (err) return res.status(500).json({ message: 'Error when getting attraction', error: err });
+        if (!attraction) return res.status(404).json({ message: 'No such attraction' });
 
-            if (!attraction) {
-                return res.status(404).json({
-                    message: 'No such attraction'
-                });
-            }
+        attraction.name = req.body.name || attraction.name;
+        attraction.regionId = req.body.regionId || attraction.regionId;
+        attraction.description = req.body.description || attraction.description;
+        attraction.classification = req.body.classification || attraction.classification;
+        attraction.locationType = req.body.locationType || attraction.locationType;
+        attraction.elevation = req.body.elevation || attraction.elevation;
+        attraction.accessibilityOptions = req.body.accessibilityOptions || attraction.accessibilityOptions;
+        attraction.ratingFamilyFriendly = req.body.ratingFamilyFriendly || attraction.ratingFamilyFriendly;
+        attraction.ratingElderlyFriendly = req.body.ratingElderlyFriendly || attraction.ratingElderlyFriendly;
+        attraction.ratingAccessible = req.body.ratingAccessible || attraction.ratingAccessible;
+        attraction.rating = req.body.rating || attraction.rating;
+        attraction.requiresReservation = req.body.requiresReservation ?? attraction.requiresReservation;
+        attraction.entryFee = req.body.entryFee ?? attraction.entryFee;
+        attraction.googleMapsLink = req.body.googleMapsLink || attraction.googleMapsLink;
+        attraction.verified = req.body.verified ?? attraction.verified;
 
-            attraction.name = req.body.name ? req.body.name : attraction.name;
-			attraction.regionId = req.body.regionId ? req.body.regionId : attraction.regionId;
-			attraction.location = req.body.location ? req.body.location : attraction.location;
-			attraction.address = req.body.address ? req.body.address : attraction.address;
-			attraction.description = req.body.description ? req.body.description : attraction.description;
-            attraction.classification = req.body.classification ? req.body.classification : attraction.classification;
-			attraction.locationType = req.body.locationType ? req.body.locationType : attraction.locationType;
-			attraction.elevation = req.body.elevation ? req.body.elevation : attraction.elevation;
-			attraction.accessibilityOptions = req.body.accessibilityOptions ? req.body.accessibilityOptions : attraction.accessibilityOptions;
-			attraction.ratingFamilyFriendly = req.body.ratingFamilyFriendly ? req.body.ratingFamilyFriendly : attraction.ratingFamilyFriendly;
-			attraction.ratingElderlyFriendly = req.body.ratingElderlyFriendly ? req.body.ratingElderlyFriendly : attraction.ratingElderlyFriendly;
-			attraction.ratingAccessible = req.body.ratingAccessible ? req.body.ratingAccessible : attraction.ratingAccessible;
-			attraction.rating = req.body.rating ? req.body.rating : attraction.rating;
-			attraction.parkingInfo = req.body.parkingInfo ? req.body.parkingInfo : attraction.parkingInfo;
-			attraction.requiresReservation = req.body.requiresReservation ? req.body.requiresReservation : attraction.requiresReservation;
-			attraction.openingHours = req.body.openingHours ? req.body.openingHours : attraction.openingHours;
-			attraction.entryFee = req.body.entryFee ? req.body.entryFee : attraction.entryFee;
-			attraction.hikingInfo = req.body.hikingInfo ? req.body.hikingInfo : attraction.hikingInfo;
-			attraction.googleMapsLink = req.body.googleMapsLink ? req.body.googleMapsLink : attraction.googleMapsLink;
-			attraction.createdAt = req.body.createdAt ? req.body.createdAt : attraction.createdAt;
-			attraction.verified = req.body.verified ? req.body.verified : attraction.verified;
-			
-            attraction.save(function (err, attraction) {
-                if (err) {
-                    return res.status(500).json({
-                        message: 'Error when updating attraction.',
-                        error: err
-                    });
-                }
+        if (req.body.location) {
+            attraction.location.lat = req.body.location.lat ?? attraction.location.lat;
+            attraction.location.lon = req.body.location.lon ?? attraction.location.lon;
+        }
 
-                return res.json(attraction);
+        if (req.body.address) {
+            attraction.address.street = req.body.address.street ?? attraction.address.street;
+            attraction.address.city = req.body.address.city ?? attraction.address.city;
+            attraction.address.postalCode = req.body.address.postalCode ?? attraction.address.postalCode;
+            attraction.address.country = req.body.address.country ?? attraction.address.country;
+        }
+
+        if (req.body.openingHours) {
+            const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+            days.forEach(day => {
+                attraction.openingHours[day] = req.body.openingHours[day] ?? attraction.openingHours[day];
             });
+        }
+
+        attraction.save(function (err, updated) {
+            if (err) return res.status(500).json({ message: 'Error when updating attraction', error: err });
+            return res.json(updated);
         });
-    },
+    });
+},
+
 
     /**
      * attractionController.remove()

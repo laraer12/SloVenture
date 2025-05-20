@@ -38,36 +38,26 @@ val validTypes = setOf(
     "pravljicna-pot"
 )
 
-sealed class RetrieveResult {
-    data class Success(val data: List<EnrichedAttraction>) : RetrieveResult()
-    data class Error(val message: String) : RetrieveResult()
-}
-data class EnrichedAttraction(
-    val attraction: Attraction,
-    val images: List<AttractionImage>
-)
-
 suspend fun retrieveAttractions(
     category: String?,
     type: String?,
     num: Int?,
     page: Int?
-): RetrieveResult {
-    // vaidacija
+): List<Attraction> {
     if (num == null || page == null) {
-        return RetrieveResult.Error("Missing parameters: please provide num and page")
+        error("Missing parameters: please provide num and page")
     }
     if (num < 1 || page < 1) {
-        return RetrieveResult.Error("Invalid parameters: num and page should be greater than 0")
+        error("Invalid parameters: num and page should be greater than 0")
     }
     if (num * page > 2696 + num) {
-        return RetrieveResult.Error("Invalid parameters: num * page should be less than 2696")
+        error("Invalid parameters: num * page should be less than 2696")
     }
     if (category != null && category !in validCategories) {
-        return RetrieveResult.Error("Invalid category: please provide a valid category")
+        error("Invalid category: please provide a valid category")
     }
     if (type != null && type !in validTypes) {
-        return RetrieveResult.Error("Invalid type: please provide a valid type")
+        error("Invalid type: please provide a valid type")
     }
 
     val endpoint = "https://api.kamzavikend.si/public/search"
@@ -84,27 +74,117 @@ suspend fun retrieveAttractions(
         }
 
         val jsonText = response.bodyAsText()
-
-        //test
-        println("response: ")
-        println(jsonText)
-
         val json = Json.parseToJsonElement(jsonText).jsonObject
-        val dataArray = json["data"]?.jsonArray ?: return RetrieveResult.Error("No data in response")
+        val dataArray = json["data"]?.jsonArray ?: return emptyList()
 
-        val attractions = dataArray.map { attractionJsonElement ->
+        dataArray.map { attractionJsonElement ->
             val obj = attractionJsonElement.jsonObject
-            val attraction = parseAttraction(obj)
-            val images = parseAttractionImages(obj)
-            EnrichedAttraction(attraction, images)
-        }
+            val baseAttraction = parseAttraction(obj)
+            val kamzavikendImages = parseAttractionImages(obj)
 
-        RetrieveResult.Success(attractions)
+            val slug = obj["slug"]?.jsonPrimitive?.content ?: ""
+            val scraped = webScraper.fetchAttractionDetails(slug)
+
+            val address = reverseGeocode(baseAttraction.location)
+            val enrichedAttraction = baseAttraction.copy(
+                address = address,
+                description = scraped.descriptionParagraphs.joinToString("\n\n"),
+                images = kamzavikendImages + scraped.imageLinks.map { url ->
+                    AttractionImage(
+                        id = null,
+                        attractionId = baseAttraction.id,
+                        url = url,
+                        source = "webScraper",
+                        uploadedBy = "admin",
+                        createdAt = baseAttraction.createdAt
+                    )
+                }
+            )
+            enrichedAttraction
+        }
     } catch (e: Exception) {
-        RetrieveResult.Error("Error fetching data from kamzavikend.si: ${e.localizedMessage}")
+        println("Error fetching or enriching attractions: ${e.localizedMessage}")
+        emptyList()
     }
 }
 
+suspend fun retrieveAllAttractions(): List<Attraction> {
+    val endpoint = "https://api.kamzavikend.si/public/search"
+    val totalAttractions = 120 //TODO 2696
+    val pageSize = 30
+    val totalPages = (totalAttractions + pageSize - 1) / pageSize
+
+    val allAttractions = mutableListOf<Attraction>()
+    var globalIndex = 1
+
+    try {
+        for (page in 1..totalPages) {
+            val response: HttpResponse = client.get(endpoint) {
+                headers {
+                    append(HttpHeaders.Accept, "application/json")
+                }
+                parameter("page[number]", page)
+            }
+
+            val jsonText = response.bodyAsText()
+            val json = Json.parseToJsonElement(jsonText).jsonObject
+            val dataArray = json["data"]?.jsonArray ?: continue
+
+            val attractions = dataArray.mapNotNull { attractionJsonElement ->
+                if (attractionJsonElement !is JsonObject) {
+                    println("Warning: Skipping non-object element in data array: $attractionJsonElement")
+                    return@mapNotNull null
+                }
+
+                println("Processing attraction $globalIndex of $totalAttractions")
+                globalIndex++
+
+                try {
+                    val baseAttraction = parseAttraction(attractionJsonElement)
+                    val kamzavikendImages = parseAttractionImages(attractionJsonElement)
+
+                    val enrichedAttraction = try {
+                        val slug = attractionJsonElement["slug"]?.jsonPrimitive?.content ?: ""
+                        val scraped = webScraper.fetchAttractionDetails(slug)
+
+                        baseAttraction.copy(
+                            address = reverseGeocode(baseAttraction.location),
+                            description = scraped.descriptionParagraphs.joinToString("\n\n"),
+                            images = kamzavikendImages + scraped.imageLinks.map { url ->
+                                AttractionImage(
+                                    id = null,
+                                    attractionId = baseAttraction.id,
+                                    url = url,
+                                    source = "webScraper",
+                                    uploadedBy = "admin",
+                                    createdAt = baseAttraction.createdAt
+                                )
+                            }
+                        )
+                    } catch (e: Exception) {
+                        println("Warning: Failed to enrich attraction ${baseAttraction.id}: ${e.localizedMessage}")
+                        baseAttraction.copy(
+                            address = reverseGeocode(baseAttraction.location),
+                            description = "",
+                            images = kamzavikendImages
+                        )
+                    }
+
+                    enrichedAttraction
+                } catch (e: Exception) {
+                    println("Warning: Skipping invalid attraction due to exception: ${e.localizedMessage}")
+                    null
+                }
+            }
+
+            allAttractions.addAll(attractions)
+        }
+    } catch (e: Exception) {
+        println("Fatal error during bulk fetch: ${e.localizedMessage}")
+    }
+
+    return allAttractions
+}
 
 fun parseAttraction(json: JsonObject): Attraction {
     val id = json["id"]?.jsonPrimitive?.content ?: "" //zaenkrat puscam njihov id
@@ -146,12 +226,6 @@ fun parseAttraction(json: JsonObject): Attraction {
 
     val locationType = json["type"]?.jsonObject?.get("name")?.jsonPrimitive?.content ?: ""
 
-
-    val parkingInfo = ParkingInfo(
-        hasParking = false,
-        distanceToParkingMeters = null,
-        notes = null
-    ) // TODO: No parking info in API response
     val requiresReservation = false // TODO: no info
     val openingHours = OpeningHours(
         monday = "",
@@ -163,11 +237,6 @@ fun parseAttraction(json: JsonObject): Attraction {
         sunday = ""
     ) // TODO: no info
     val entryFee = 0.0 // TODO: no info
-    val hikingInfo = HikingInfo(
-        difficulty = "",
-        estimatedDurationMinutes = 0,
-        trailType = ""
-    ) // TODO: no info
 
 
     val googleMapsLink = "https://maps.google.com/?q=$lat,$lon"
@@ -189,16 +258,15 @@ fun parseAttraction(json: JsonObject): Attraction {
         ratingElderlyFriendly = 0.0,
         ratingAccessible = 0.0,
         rating = 0.0,
-        parkingInfo = parkingInfo,
         requiresReservation = requiresReservation,
         openingHours = openingHours,
         entryFee = entryFee,
-        hikingInfo = hikingInfo,
         googleMapsLink = googleMapsLink,
         createdAt = createdAt,
         verified = verified
     )
 }
+
 
 fun parseAttractionImages(json: JsonObject): List<AttractionImage> {
     val attractionId = json["id"]?.jsonPrimitive?.content ?: return emptyList()
@@ -215,7 +283,7 @@ fun parseAttractionImages(json: JsonObject): List<AttractionImage> {
             attractionId = attractionId,
             url = url,
             source = "kamzavikend",
-            uploadedBy = "admin",
+            uploadedBy = "admin", //TODO spremeni
             createdAt = DateTimeFormatter.ISO_INSTANT.format(Instant.now())
         )
     }

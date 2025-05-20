@@ -26,16 +26,16 @@ dependencies {
 
     implementation("org.slf4j:slf4j-simple:2.0.13")
 
-    implementation("io.ktor:ktor-client-core:2.0.0")
-    implementation("io.ktor:ktor-client-cio:2.0.0")
-    implementation("io.ktor:ktor-client-plugins:2.0.0")
-    implementation("io.ktor:ktor-client-content-negotiation:2.0.0")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:2.0.0")
-    implementation("io.ktor:ktor-client-logging:2.0.0")
 
-    implementation("it.skrape:skrapeit:1.2.1")
-    //implementation("it.skrape:skrapeit-core:1.2.1")
-    //implementation("it.skrape:skrapeit-ktor:1.2.1")
+    implementation("io.ktor:ktor-client-core:2.3.8")
+    implementation("io.ktor:ktor-client-cio:2.3.8")
+    implementation("io.ktor:ktor-client-content-negotiation:2.3.8")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.8")
+    implementation("io.ktor:ktor-client-logging:2.3.8")
+
+    implementation("it.skrape:skrapeit:1.3.0-alpha.1")
+
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 }
 
 compose.desktop {

@@ -94,7 +94,7 @@ app.use('/users', usersRouter);
 app.use('/attraction-images', attractionImageRouter);
 app.use('/attractions', attractionRouter);
 app.use('/comments', commentRouter);
-app.use('/nearby-accommodation', nearbyAccommodationRouter);
+app.use('/nearby-accommodations', nearbyAccommodationRouter);
 app.use('/nearby-attractions', nearbyAttractionRouter);
 app.use('/regions', regionRouter);
 app.use('/reviews', reviewRouter);
@@ -103,7 +103,7 @@ app.use('/trips', tripRouter);
 app.use('/user-saved', userSavedRouter);
 app.use('/user-view-history', userViewHistoryRouter);
 app.use('/user-visit', userVisitRouter);
-app.use('/weather', weatherDataRouter);
+app.use('/weather-data', weatherDataRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

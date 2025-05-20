@@ -1,20 +1,44 @@
 package api
 
-import io.ktor.client.call.*
+import database.data.Address
+import database.data.Coordinates
 import io.ktor.client.request.*
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.decodeFromString
+import java.io.File
+import io.ktor.client.call.body
 
 @Serializable
-data class LocationResult(
-    val display_name: String,
-    val lat: String,
-    val lon: String
+private data class LocationIQResponse(
+    val address: Map<String, String>
 )
 
-suspend fun searchLocation(attractionName: String): List<LocationResult> {
-    val apiKey = System.getenv("LOCATIONIQ_API_KEY") ?: error("LOCATIONIQ_API_KEY missing")
-    val url =
-        "https://us1.locationiq.com/v1/search.php?key=$apiKey&q=${attractionName}&countrycodes=si&format=json"
+suspend fun reverseGeocode(coordinates: Coordinates): Address {
+    val json = File("src/main/kotlin/api/api_keys.json").readText()
+    val apiKey = Json.decodeFromString<Map<String, String>>(json)["location"]
+        ?: error("API key 'location' not found in JSON")
 
-    return HttpClientProvider.client.get(url).body()
+    val url =
+        "https://us1.locationiq.com/v1/reverse.php?key=$apiKey&lat=${coordinates.lat}&lon=${coordinates.lon}&format=json"
+
+
+    val response: LocationIQResponse = HttpClientProvider.client.get(url).body()
+
+    val street = listOfNotNull(
+        response.address["house_number"],
+        response.address["road"]
+    ).joinToString(" ")
+
+    val city = response.address["city"] ?: response.address["town"] ?: response.address["village"] ?: ""
+    val postalCode = response.address["postcode"] ?: ""
+    val country = response.address["country"] ?: ""
+
+    return Address(
+        street = street,
+        city = city,
+        postalCode = postalCode,
+        country = country
+    )
 }
+

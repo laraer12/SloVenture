@@ -1,11 +1,11 @@
 package api
 
-import api.HttpClientProvider.client
 import database.data.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import kotlinx.serialization.json.*
 import java.time.Instant
+import io.ktor.client.call.body
 
 suspend fun fetchWeatherData(lat: Double, lon: Double): WeatherData {
     val url =
@@ -15,7 +15,7 @@ suspend fun fetchWeatherData(lat: Double, lon: Double): WeatherData {
                 ",precipitation_probability_max&current=temperature_2m" +
                 ",weather_code,precipitation&timezone=Europe%2FBerlin"
 
-    val response: String = client.get(url).body()
+    val response: String= HttpClientProvider.client.get(url).body()
     val json = Json.parseToJsonElement(response).jsonObject
 
     val current = json["current"]!!.jsonObject
