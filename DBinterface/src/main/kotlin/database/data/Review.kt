@@ -1,5 +1,7 @@
 package database.data
 
+import database.DatabaseClass
+import database.postToDatabase
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -12,4 +14,8 @@ data class Review(
     val ratingElderlyFriendly: Int,
     val ratingAccessible: Int,
     val createdAt: String? = null
-)
+) : DatabaseClass
+
+suspend fun postReview(review: Review): Boolean =
+    postToDatabase(review, "reviews", Review.serializer())
+

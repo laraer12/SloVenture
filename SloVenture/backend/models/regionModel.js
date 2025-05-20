@@ -4,7 +4,7 @@ var CoordinatesSchema = require('./attractionModel.js').schema;
 
 var regionSchema = new Schema({
 	'name' : String,
-	'location': CoordinatesSchema,
+	'location': [CoordinatesSchema],
 });
 
 module.exports = mongoose.model('region', regionSchema);
