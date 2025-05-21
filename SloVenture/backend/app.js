@@ -1,4 +1,4 @@
-require('dotenv').config(); // s tem lahko uporabim API ključ kjerkoli
+require('dotenv').config(); 
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
@@ -63,21 +63,16 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 const mongoose = require('mongoose');
-const uri = "mongodb+srv://ime:geslo@sloventure.4djf5rv.mongodb.net/SloVentureDB?retryWrites=true&w=majority&appName=SloVenture";
+const uri = process.env.MONGODB_URI;
 
 const clientOptions = { serverApi: { version: '1', strict: true, deprecationErrors: true } };
 
-async function run() {
-  try {
-    await mongoose.connect(uri, clientOptions);
-    await mongoose.connection.db.admin().command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
-  }
-  catch (error) {
-    console.error("Database connection error:", error);
-  }
-}
-run().catch(console.dir);
+mongoose.connect(uri, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log('Connected to MongoDB Atlas'))
+.catch((err) => console.error('Connection error:', err));
 
 // test za session
 var session = require('express-session');
