@@ -2,29 +2,23 @@ var express = require('express');
 var router = express.Router();
 var commentController = require('../controllers/commentController.js');
 
-/*
- * GET
- */
-router.get('/', commentController.list);
+function requiresLogin(req, res, next) {
+    if (req.session && req.session.userId)
+        return next();
+    
+    else {
+        var err = new Error("Za komentiranje moraš biti prijavljen");
+        err.status = 401;
+        return next(err);
+    }
+}
 
-/*
- * GET
- */
-router.get('/:id', commentController.show);
+router.get('/attraction/:attractionId', commentController.listByAttraction); // komentarji pri določeni znamenitosti
+router.post('/attraction/:attractionId', requiresLogin, commentController.create); // dodajanje komentarja
 
-/*
- * POST
- */
-router.post('/', commentController.create);
-
-/*
- * PUT
- */
-router.put('/:id', commentController.update);
-
-/*
- * DELETE
- */
-router.delete('/:id', commentController.remove);
+router.get('/', commentController.list); // vsi komentarji
+router.get('/:id', commentController.show); // določen komentar
+router.put('/:id', commentController.update); // posodobitev komentarja
+router.delete('/:id', commentController.remove); // brisanje komentarja
 
 module.exports = router;

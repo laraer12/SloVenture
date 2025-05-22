@@ -127,6 +127,12 @@ code {
   object-fit: cover;
 }
 
+.attraction-image-one {
+  width: 400px;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+}
+
 .attraction-details-container {
   background-color: #e6f0ff;
   padding: 2rem;

@@ -1,6 +1,7 @@
 import { useParams } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import axios from 'axios';
+import { UserContext } from '../userContext';
 
 function Attraction() {
   const { id } = useParams();
@@ -9,8 +10,13 @@ function Attraction() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
+  // za komentarje
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState('');
+  const { user } = useContext(UserContext);
 
+  // za pridobivanje znamenitosti
+  useEffect(() => {
     document.title = "Nalaganje znamenitosti..."; // naslov zavihka, dokler se znamenitost ne naloži
 
     const fetchAttraction = async () => {
@@ -30,7 +36,7 @@ function Attraction() {
           document.title = fullAttraction.name;
         
         else
-        document.title = "Znamenitost";
+          document.title = "Znamenitost";
       }
       catch (err) {
         setError('Napaka pri nalaganju znamenitosti.');
@@ -43,6 +49,22 @@ function Attraction() {
     fetchAttraction();
   }, [id]);
 
+  // za pridobivanje komentarjev
+  useEffect(() => {
+    const fetchComments = async () => {
+      try {
+        const res = await axios.get(`http://localhost:3001/comments/attraction/${id}`);
+        setComments(res.data);
+      }
+      catch (err) {
+        console.error("Napaka pri nalaganju komentarjev:", err);
+      }
+    };
+
+    fetchComments();
+  }, [id]);
+
+  // za pravilen izpis naslova
   function formatAddress(address) {
     if (!address)
       return '';
@@ -52,6 +74,7 @@ function Attraction() {
     return parts.join(', ');
   }
 
+  // za pravilen izpis odpiralnega časa
   function renderOpeningHours(hours) {
     if (!hours)
       return null;
@@ -74,6 +97,47 @@ function Attraction() {
       </div>
     );
   }
+
+  // objava komentarja
+  function handleCommentSubmit(e) {
+    e.preventDefault();
+
+    axios.post(
+      `http://localhost:3001/comments/attraction/${id}`,
+      { text: newComment },
+      { withCredentials: true }
+    )
+    .then(() => {
+      return axios.get(`http://localhost:3001/comments/attraction/${id}`);
+    })
+    .then((res) => {
+      setComments(res.data);
+      setNewComment('');
+    })
+    .catch((err) => {
+      console.error("Napaka pri pošiljanju komentarja:", err);
+      alert("Napaka pri pošiljanju komentarja.");
+    });
+  }
+
+  // brisanje komentarja
+  function handleDeleteComment(commentId) {
+    if (!window.confirm("Ali ste prepričani, da želite izbrisati ta komentar?")) // če si uporabnik premisli lahko komentar obdrži
+      return;
+
+    axios.delete(`http://localhost:3001/comments/${commentId}`, { withCredentials: true })
+      .then(() => {
+        return axios.get(`http://localhost:3001/comments/attraction/${id}`);
+      })
+      .then(res => {
+        setComments(res.data);
+      })
+      .catch(err => {
+        console.error("Napaka pri brisanju komentarja:", err);
+        alert("Napaka pri brisanju komentarja.");
+      });
+  }
+
   if (loading)
     return <p>Nalaganje...</p>;
 
@@ -84,109 +148,163 @@ function Attraction() {
     return <p>Znamenitost ni bila najdena.</p>;
 
   return (
-    <div className="attraction-details-container">
-      {/* Ime znamenitosti */}
-      <h1>{attraction.name}</h1>
+    <div>
+      <div className="attraction-details-container">
+        {/* Ime znamenitosti */}
+        <h1>{attraction.name}</h1>
 
-      {/* Slika */}
-      {imageUrl && (
-        <img src={imageUrl} alt={attraction.name || ''} style={{ width: '400px', borderRadius: '10px', marginBottom: '1rem' }} onError={(e) => { e.target.style.display = 'none'; }} />
-      )}
-
-      {/* Podatki o znamenitosti */}
-      <div className="attraction-info">
-
-        {/* Regija */}
-        {attraction.regionId && (
-          <p><strong>Regija:</strong> {attraction.regionId.name}</p>
+        {/* Slika */}
+        {imageUrl && (
+          <img src={imageUrl} alt={attraction.name || ''} class="attraction-image-one" onError={(e) => { e.target.style.display = 'none'; }} />
         )}
 
-        {/* Opis */}
-        {attraction.description && (
-          <p><strong>Opis:</strong> {attraction.description}</p>
-        )}
+        {/* Podatki o znamenitosti */}
+        <div className="attraction-info">
 
-        {/* Naslov */}
-        {attraction.address && (
-          <p><strong>Naslov:</strong> {formatAddress(attraction.address)}</p>
-        )}
+          {/* Regija */}
+          {attraction.regionId && (
+            <p><strong>Regija:</strong> {attraction.regionId.name}</p>
+          )}
 
-        {/* Klasifikacija */}
-        {attraction.classification && (
-          <p><strong>Klasifikacija:</strong> {attraction.classification}</p>
-        )}
+          {/* Opis */}
+          {attraction.description && (
+            <p><strong>Opis:</strong> {attraction.description}</p>
+          )}
 
-        {/* Tip lokacije */}
-        {attraction.locationType && (
-          <p><strong>Tip lokacije:</strong> {attraction.locationType}</p>
-        )}
+          {/* Naslov */}
+          {attraction.address && (
+            <p><strong>Naslov:</strong> {formatAddress(attraction.address)}</p>
+          )}
 
-        {/* Višina */}
-        {attraction.elevation > 0 && (
-          <p><strong>Višina:</strong> {attraction.elevation} m</p>
-        )}
+          {/* Klasifikacija */}
+          {attraction.classification && (
+            <p><strong>Klasifikacija:</strong> {attraction.classification}</p>
+          )}
 
-        {/* Možnosti dostopa */}
-        {attraction.accessibilityOptions && (
-          <div>
-            <strong>Možnosti dostopa:</strong>
-            <ul>
-              {attraction.accessibilityOptions
-                .split(',')
-                .map((option, index) => (
-                  <li key={index}>{option.trim()}</li>
-                ))}
-            </ul>
-          </div>
-        )}
+          {/* Tip lokacije */}
+          {attraction.locationType && (
+            <p><strong>Tip lokacije:</strong> {attraction.locationType}</p>
+          )}
 
-        {/* Dostopnost */}
-        {attraction.ratingAccessible > 0 && (
-          <p><strong>Dostopnost:</strong> {attraction.ratingAccessible}/5</p>
-        )}
+          {/* Višina */}
+          {attraction.elevation > 0 && (
+            <p><strong>Višina:</strong> {attraction.elevation} m</p>
+          )}
 
-        {/* Primerno za družine */}
-        {attraction.ratingFamilyFriendly > 0 && (
-          <p><strong>Primerno za družine:</strong> {attraction.ratingFamilyFriendly}/5</p>
-        )}
+          {/* Možnosti dostopa */}
+          {attraction.accessibilityOptions && (
+            <div>
+              <strong>Možnosti dostopa:</strong>
+              <ul>
+                {attraction.accessibilityOptions
+                  .split(',')
+                  .map((option, index) => (
+                    <li key={index}>{option.trim()}</li>
+                  ))}
+              </ul>
+            </div>
+          )}
 
-        {/* Primerno za starejše */}
-        {attraction.ratingElderlyFriendly > 0 && (
-          <p><strong>Primerno za starejše:</strong> {attraction.ratingElderlyFriendly}/5</p>
-        )}
-        
-        {/* Ocena */}
-        {attraction.rating > 0 && (
-          <p><strong>Ocena:</strong> {attraction.rating}/5</p>
-        )}
+          {/* Dostopnost */}
+          {attraction.ratingAccessible > 0 && (
+            <p><strong>Dostopnost:</strong> {attraction.ratingAccessible}/5</p>
+          )}
 
-        {/* Potrebna rezervacija */}
-        {typeof attraction.requiresReservation === 'boolean' && (
-          <p><strong>Potrebna rezervacija:</strong> {attraction.requiresReservation ? 'Da' : 'Ne'}</p>
-        )}
+          {/* Primerno za družine */}
+          {attraction.ratingFamilyFriendly > 0 && (
+            <p><strong>Primerno za družine:</strong> {attraction.ratingFamilyFriendly}/5</p>
+          )}
 
-        {/* Odpiralni časi */}
-        {renderOpeningHours(attraction.openingHours)}
+          {/* Primerno za starejše */}
+          {attraction.ratingElderlyFriendly > 0 && (
+            <p><strong>Primerno za starejše:</strong> {attraction.ratingElderlyFriendly}/5</p>
+          )}
+          
+          {/* Ocena */}
+          {attraction.rating > 0 && (
+            <p><strong>Ocena:</strong> {attraction.rating}/5</p>
+          )}
 
-        {/* Vstopnina */}
-        {attraction.entryFee > 0 && (
-          <p><strong>Vstopnina:</strong> {attraction.entryFee} €</p>
-        )}
+          {/* Potrebna rezervacija */}
+          {typeof attraction.requiresReservation === 'boolean' && (
+            <p><strong>Potrebna rezervacija:</strong> {attraction.requiresReservation ? 'Da' : 'Ne'}</p>
+          )}
 
-        {/* Ustvarjeno */}
-        {attraction.createdAt && (
-          <p><strong>Ustvarjeno:</strong> {new Date(attraction.createdAt).toLocaleDateString()}</p>
-        )}
+          {/* Odpiralni časi */}
+          {renderOpeningHours(attraction.openingHours)}
 
-        {/* Preverjeno */}
-        {typeof attraction.verified === 'boolean' && (
-          <p><strong>Preverjeno:</strong> {attraction.verified ? 'Da' : 'Ne'}</p>
-        )}
+          {/* Vstopnina */}
+          {attraction.entryFee > 0 && (
+            <p><strong>Vstopnina:</strong> {attraction.entryFee} €</p>
+          )}
 
-        {/* Google maps */}
-        {attraction.googleMapsLink && (
-          <button type="button" className="btn btn-primary" onClick={() => window.open(attraction.googleMapsLink, '_blank', 'noopener,noreferrer')}>Odpri v Google Maps</button>
-        )}
+          {/* Ustvarjeno */}
+          {attraction.createdAt && (
+            <p><strong>Ustvarjeno:</strong> {new Date(attraction.createdAt).toLocaleDateString()}</p>
+          )}
+
+          {/* Preverjeno */}
+          {typeof attraction.verified === 'boolean' && (
+            <p><strong>Preverjeno:</strong> {attraction.verified ? 'Da' : 'Ne'}</p>
+          )}
+
+          {/* Google maps */}
+          {attraction.googleMapsLink && (
+            <button type="button" className="btn btn-primary" onClick={() => window.open(attraction.googleMapsLink, '_blank', 'noopener,noreferrer')}>
+              Odpri v Google Maps
+            </button>
+          )}
+        </div>
+      </div>
+      <div>
+        <hr />
+        {/* del za komentarje */}
+        <div>
+          <h3>Komentarji</h3>
+
+          <br />
+          
+          {/* ni še komentarjev */}
+          {comments.length === 0 && <p>Ni še komentarjev.</p>}
+
+          {/* če uporabnik ni prijavljen, pokažem obvestilo */}
+          {!user && (
+            <p style={{ fontStyle: 'italic', color: 'gray' }}>Za komentiranje morate biti prijavljeni.</p>
+          )}
+
+          {/* obrazec za objavo komentarja, če je uporabnik prijavljen */}
+          {user && (
+            <form onSubmit={handleCommentSubmit}>
+              <div className="mb-3">
+                <textarea className="form-control" rows="3" placeholder="Dodaj komentar..." value={newComment} onChange={(e) => setNewComment(e.target.value)} required />
+              </div>
+              <button type="submit" className="btn btn-primary">Objavi komentar</button>
+            </form>
+          )}
+
+          <br /><br />
+
+          {/* seznam komentarjev */}
+          <ul className="list-group mb-3">
+            {comments.map((comment) => (
+              <li key={comment._id} className="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                  <strong>{comment.userId?.username || 'Neznan uporabnik'}:</strong> {comment.text}
+                  <div className="text-muted" style={{ fontSize: '0.8rem' }}>
+                    {new Date(comment.createdAt).toLocaleString()}
+                  </div>
+                </div>
+
+                {/* brisanje komentarja, gumb se prikaže samo lastniku komentarja */}
+                {user && comment.userId?._id === user._id && (
+                  <button onClick={() => handleDeleteComment(comment._id)} className="btn btn-sm btn-outline-danger">
+                    Izbriši
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </div>
   );
