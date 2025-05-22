@@ -11,6 +11,8 @@ function Map() {
   const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
+    document.title = "Zemljevid"; // naslov zavihka
+
     // slika zemljevida v ozadju
     document.body.style.backgroundImage = "url('http://localhost:3001/images/world_map.jpg')";
     document.body.style.backgroundSize = 'cover';

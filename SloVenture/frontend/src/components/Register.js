@@ -16,6 +16,8 @@ function Register() {
     };
 
     useEffect(() => {
+        document.title = "Registracija"; // naslov zavihka
+
         fetch('http://localhost:3001/csrf-token', { // pridobim csrf token
             credentials: 'include'
         })

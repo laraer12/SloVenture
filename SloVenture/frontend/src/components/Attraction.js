@@ -10,6 +10,9 @@ function Attraction() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+
+    document.title = "Nalaganje znamenitosti..."; // naslov zavihka, dokler se znamenitost ne naloži
+
     const fetchAttraction = async () => {
       try {
         const response = await axios.get(`http://localhost:3001/attractions/${id}`);
@@ -21,9 +24,17 @@ function Attraction() {
 
         const mainImage = images.length > 0 && images[0].url;
         setImageUrl(mainImage);
+
+        // ko se naloži za naslov uporabim ime znamenitosti
+        if (fullAttraction.name)
+          document.title = fullAttraction.name;
+        
+        else
+        document.title = "Znamenitost";
       }
       catch (err) {
         setError('Napaka pri nalaganju znamenitosti.');
+        document.title = "Napaka"; // če se kaj zalomi izpišem napako
       }
       finally {
         setLoading(false);

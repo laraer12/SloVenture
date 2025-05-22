@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import { UserContext } from '../userContext';
 import { Navigate } from 'react-router-dom';
 
@@ -7,6 +7,10 @@ function Login(){
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const userContext = useContext(UserContext); 
+
+    useEffect(() => {
+      document.title = "Prijava"; // naslov zavihka
+    }, []);
 
     async function Login(e){
         e.preventDefault();

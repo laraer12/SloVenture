@@ -10,6 +10,8 @@ function Attractions() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    document.title = "Znamenitosti"; // naslov zavihka
+
     const fetchAttractions = async () => {
       try {
         const response = await axios.get('http://localhost:3001/attractions');

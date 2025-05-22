@@ -11,6 +11,8 @@ function Profile() {
     const isOwnProfile = user && (!id || user._id === id);
 
     useEffect(() => {
+        document.title = "Profil"; // naslov zavihka
+
         const fetchProfile = async () => {
             const url = 'http://localhost:3001/users/profile';
 
