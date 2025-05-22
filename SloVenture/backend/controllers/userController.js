@@ -2,6 +2,8 @@ var UserModel = require('../models/userModel.js');
 var TripModel = require('../models/tripModel.js');
 var TripAttractionModel = require('../models/tripAttractionModel.js');
 
+var axios = require('axios');
+
 /**
  * userController.js
  *
@@ -46,25 +48,42 @@ module.exports = {
      * userController.create()
      */
     create: function (req, res) {
-        UserModel.findOne({ $or: [{ username: req.body.username }, { email: req.body.email }] }, function (err, existingUser) {
-            if (err)
-                return res.status(500).json({ message: 'Error when checking user existence', error: err });
+        var { username, email, password, captchaToken } = req.body;
+
+        if (!username || !email || !password || !captchaToken)
+            return res.status(400).json({ message: 'Vsa polja morajo biti izpolnjena!' });
+
+        const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+        const verifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${captchaToken}`;
+
+        axios.post(verifyUrl)
+            .then(function (captchaRes) {
+                if (!captchaRes.data.success)
+                    return res.status(400).json({ message: 'Error verifying reCAPTCHA' });
             
-            if (existingUser)
-                return res.status(400).json({ message: 'Username or email already exists' });
-
-            var user = new UserModel({
-                username: req.body.username,
-                email: req.body.email,
-                password: req.body.password
-            });
-
-            user.save(function (err, savedUser) {
+            UserModel.findOne({ $or: [{ username: req.body.username }, { email: req.body.email }] }, function (err, existingUser) {
                 if (err)
-                    return res.status(500).json({ message: 'Error when creating user', error: err });
+                    return res.status(500).json({ message: 'Error when checking user existence', error: err });
                 
-                return res.status(201).json(savedUser);
+                if (existingUser)
+                    return res.status(400).json({ message: 'Username or email already exists' });
+
+                var user = new UserModel({
+                    username: req.body.username,
+                    email: req.body.email,
+                    password: req.body.password
+                });
+
+                user.save(function (err, savedUser) {
+                    if (err)
+                        return res.status(500).json({ message: 'Error when creating user', error: err });
+                    
+                    return res.status(201).json(savedUser);
+                });
             });
+        })
+        .catch(function (error) {
+            return res.status(500).json({ message: 'Error communicating with reCAPTCHA server', error: error });
         });
     },
 

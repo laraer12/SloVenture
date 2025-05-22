@@ -2,8 +2,12 @@ var express = require('express');
 var router = express.Router();
 var userController = require('../controllers/userController.js');
 
+// CSRF zaščita
+const csrf = require('csurf');
+const csrfProtection = csrf({ cookie: true });
+
 router.get('/', userController.list);
-router.post('/', userController.create); // registracija
+router.post('/', csrfProtection, userController.create); // registracija, sedaj dodana csrf zaščita
 router.post('/login', userController.login); // prijava
 router.get('/profile', userController.profile); // prikaz profila
 router.get('/logout', userController.logout); // odjava
