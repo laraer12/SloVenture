@@ -276,7 +276,7 @@ function Attraction() {
           {user && (
             <form onSubmit={handleCommentSubmit}>
               <div className="mb-3">
-                <textarea className="form-control" rows="3" placeholder="Dodaj komentar..." value={newComment} onChange={(e) => setNewComment(e.target.value)} required />
+                <textarea className="form-control" rows="3" placeholder={`Komentiraš kot ${user.username}`} value={newComment} onChange={(e) => setNewComment(e.target.value)} required />
               </div>
               <button type="submit" className="btn btn-primary">Objavi komentar</button>
             </form>
@@ -287,19 +287,23 @@ function Attraction() {
           {/* seznam komentarjev */}
           <ul className="list-group mb-3">
             {comments.map((comment) => (
-              <li key={comment._id} className="list-group-item d-flex justify-content-between align-items-center">
-                <div>
-                  <strong>{comment.userId?.username || 'Neznan uporabnik'}:</strong> {comment.text}
-                  <div className="text-muted" style={{ fontSize: '0.8rem' }}>
-                    {new Date(comment.createdAt).toLocaleString()}
+              <li key={comment._id} className="list-group-item d-flex justify-content-between align-items-start">
+
+                {/* profilna slika in vsebina komentarja */}
+                <div className="d-flex" style={{ gap: '10px', flex: 1 }}>
+                  <img src={`http://localhost:3001/images/${comment.userId?.profilePicture}`} alt="Profilna slika" width="40" height="40" className="profile-picture-comment" onError={(e) => { e.target.onerror = null; e.target.src = 'http://localhost:3001/images/default-profile-picture.jpg'; }} />
+
+                  <div>
+                    <strong>{comment.userId?.username || 'Neznan uporabnik'}:</strong> {comment.text}
+                    <div className="text-muted" style={{ fontSize: '0.8rem' }}>
+                      {new Date(comment.createdAt).toLocaleString()}
+                    </div>
                   </div>
                 </div>
 
                 {/* brisanje komentarja, gumb se prikaže samo lastniku komentarja */}
                 {user && comment.userId?._id === user._id && (
-                  <button onClick={() => handleDeleteComment(comment._id)} className="btn btn-sm btn-outline-danger">
-                    Izbriši
-                  </button>
+                  <button onClick={() => handleDeleteComment(comment._id)} className="btn btn-sm btn-outline-danger">Izbriši</button>
                 )}
               </li>
             ))}

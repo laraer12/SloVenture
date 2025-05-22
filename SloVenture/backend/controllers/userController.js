@@ -4,6 +4,19 @@ var TripAttractionModel = require('../models/tripAttractionModel.js');
 
 var axios = require('axios');
 
+var multer = require('multer'); // za objavo datotek
+
+var storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'public/images/'); // sem shranim slike
+    },
+    filename: function (req, file, cb) {
+        cb(null, Date.now() + '-' + file.originalname); // ime slike vsebuje časovni žig in originalno ime
+    }
+});
+
+var upload = multer({ storage: storage }); // inicializacija multer-ja
+
 /**
  * userController.js
  *
@@ -209,12 +222,42 @@ module.exports = {
             return res.json({
                 username: user.username,
                 email: user.email,
+                profilePicture: user.profilePicture
+            });
+        });
+    },
+
+    /**
+     * userController.uploadAvatar()
+     * posodobi profilno sliko
+     */
+    uploadProfilePicture: function (req, res) {
+        var userId = req.session.userId;
+        
+        UserModel.findById(userId, function (err, user) {
+            if (err) {
+                return res.status(500).json({
+                    message: 'Error getting user',
+                    error: err
+                });
+            }
+            if (!user) {
+                return res.status(404).json({
+                    message: 'User not found'
+                });
+            }
+            if (req.file)
+                user.profilePicture = req.file.filename;
+    
+            user.save(function (err, updatedUser) {
+                if (err) {
+                    return res.status(500).json({
+                        message: 'Error while updating user',
+                        error: err
+                    });
+                }
+                return res.json(updatedUser);
             });
         });
     }
 };
-
-
-// user saved
-// user view history
-// user visit

@@ -23,6 +23,7 @@
     "lucide-react": "^0.511.0",
     "mongoose": "^6.9.0",
     "morgan": "~1.9.1",
+    "multer": "^2.0.0",
     "react-router-dom": "^7.6.0"
   }
 }

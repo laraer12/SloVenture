@@ -176,3 +176,17 @@ code {
 .nav-button.right {
   right: 10px;
 }
+
+/* profilna slika */
+
+.profile-picture-profile {
+  border-radius: 50%;
+  border: 2px solid #CCC;
+}
+
+.profile-picture-comment {
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #CCC;
+  flex-shrink: 0;
+}

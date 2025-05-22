@@ -31,7 +31,7 @@ module.exports = {
         const attractionId = req.params.attractionId;
 
         CommentModel.find({ attractionId })
-            .populate('userId', 'username') // da bo vidno tudi kdo je komentar objavil
+            .populate('userId', 'username profilePicture') // da bo vidno tudi kdo je komentar objavil, sedaj še s profilno sliko
             .sort({ createdAt: -1 }) // sortiram po datumu padajoče
             .exec((err, comments) => {
                 if (err) {
