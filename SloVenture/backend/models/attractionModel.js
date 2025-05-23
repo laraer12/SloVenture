@@ -13,16 +13,6 @@ const AddressSchema = new Schema({
   country: String
 }, { _id: false });
 
-const OpeningHoursSchema = new Schema({
-  monday: String,
-  tuesday: String,
-  wednesday: String,
-  thursday: String,
-  friday: String,
-  saturday: String,
-  sunday: String
-}, { _id: false });
-
 const attractionSchema = new Schema({
   name: String,
   regionId: {
@@ -40,9 +30,6 @@ const attractionSchema = new Schema({
   ratingElderlyFriendly: Number,
   ratingAccessible: Number,
   rating: Number,
-  requiresReservation: Boolean,
-  openingHours: OpeningHoursSchema,
-  entryFee: Number,
   googleMapsLink: String,
   createdAt: Date,
   verified: Boolean

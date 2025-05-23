@@ -21,12 +21,13 @@ import kotlinx.coroutines.runBlocking
 
 //@Preview
 
-/*
+
 fun main() = application {
     Window(onCloseRequest = ::exitApplication) {
         MainScreen()
     }
-}*/
+}
+/*
 fun main() = runBlocking {
 
 
@@ -116,7 +117,7 @@ fun main() = runBlocking {
     } catch (e: Exception) {
         println("Failed to get address: ${e.message}")
     }
-
+*/
 
 
 
@@ -233,5 +234,3 @@ fun main() = runBlocking {
     )
     postWeatherData(weatherData)
     */
-
-}

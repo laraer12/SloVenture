@@ -21,14 +21,12 @@ var usersRouter = require('./routes/userRoutes');
 var attractionImageRouter = require('./routes/attractionImageRoutes');
 var attractionRouter = require('./routes/attractionRoutes');
 var commentRouter = require('./routes/commentRoutes');
-var nearbyAccommodationRouter = require('./routes/nearbyAccommodationRoutes');
 var nearbyAttractionRouter = require('./routes/nearbyAttractionRoutes');
 var regionRouter = require('./routes/regionRoutes');
 var reviewRouter = require('./routes/reviewRoutes');
 var tripAttractionRouter = require('./routes/tripAttractionRoutes');
 var tripRouter = require('./routes/tripRoutes');
 var userSavedRouter = require('./routes/userSavedRoutes');
-var userViewHistoryRouter = require('./routes/userViewHistoryRoutes');
 var userVisitRouter=require('./routes/userVisitRoutes');
 var weatherDataRouter = require('./routes/weatherDataRoutes');
 
@@ -63,7 +61,7 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 const mongoose = require('mongoose');
-const uri = "mongodb+srv://ime:geslo@sloventure.4djf5rv.mongodb.net/SloVentureDB?retryWrites=true&w=majority&appName=SloVenture";
+const uri = "mongodb+srv://laraerzar:4899raimzi*so12@sloventure.4djf5rv.mongodb.net/SloVentureDB?retryWrites=true&w=majority&appName=SloVenture";
 
 const clientOptions = { serverApi: { version: '1', strict: true, deprecationErrors: true } };
 
@@ -94,14 +92,12 @@ app.use('/users', usersRouter);
 app.use('/attraction-images', attractionImageRouter);
 app.use('/attractions', attractionRouter);
 app.use('/comments', commentRouter);
-app.use('/nearby-accommodations', nearbyAccommodationRouter);
 app.use('/nearby-attractions', nearbyAttractionRouter);
 app.use('/regions', regionRouter);
 app.use('/reviews', reviewRouter);
 app.use('/trip-attractions', tripAttractionRouter);
 app.use('/trips', tripRouter);
 app.use('/user-saved', userSavedRouter);
-app.use('/user-view-history', userViewHistoryRouter);
 app.use('/user-visit', userVisitRouter);
 app.use('/weather-data', weatherDataRouter);
 
