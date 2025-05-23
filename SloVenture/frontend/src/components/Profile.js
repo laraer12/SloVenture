@@ -1,10 +1,8 @@
-import { useContext, useEffect, useRef, useState } from 'react';
-import { UserContext } from '../userContext';
-import { Navigate, useParams } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useParams } from 'react-router-dom';
 
 function Profile() {
     const { id } = useParams(); // pridobim id iz URL-ja, če obstaja
-    const { user } = useContext(UserContext);
     const [profile, setProfile] = useState(null);
     const fileInputRef = useRef();
     const [loading, setLoading] = useState(true);
@@ -83,7 +81,7 @@ function Profile() {
                     <p>Spremeni profilno sliko:</p>
                     
                     <form onSubmit={handleProfilePictureUpload}>
-                        <input type="file" name="profilePicture" ref={fileInputRef} accept="image/*" />
+                        <input type="file" name="profilePicture" ref={fileInputRef} accept="image/*" style={{ marginRight: '15px'}}/>
 
                         <button type="submit" className="btn btn-primary">Shrani sliko</button>
                     </form>
