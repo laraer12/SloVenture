@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom';
-import { useEffect, useState, useContext } from 'react';
+import { useEffect, useState, useContext, useRef } from 'react';
 import axios from 'axios';
 import { UserContext } from '../userContext';
 
@@ -7,10 +7,16 @@ import { UserContext } from '../userContext';
 import Rating from '@mui/material/Rating';
 import Box from '@mui/material/Box';
 
+// podobno kot pri Attractions.js da imam navigacijske puščice da vidim vse slike
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+
 function Attraction() {
   const { id } = useParams();
   const [attraction, setAttraction] = useState(null);
-  const [imageUrl, setImageUrl] = useState('');
+
+  // da lahko prikažem vse slike imam sedaj polje in indexe slik
+  const [images, setImages] = useState([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -25,6 +31,11 @@ function Attraction() {
   const [ratingElderlyFriendly, setRatingElderlyFriendly] = useState(0);
   const [ratingAccessible, setRatingAccessible] = useState(0);
   const [ratingAverages, setRatingAverages] = useState(null);
+  
+  // da uporabnik lahko doda svojo sliko znamenitosti
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef();
 
   // za pridobivanje znamenitosti
   useEffect(() => {
@@ -38,9 +49,8 @@ function Attraction() {
         const images = data.images || fullAttraction.images || [];
 
         setAttraction(fullAttraction);
-
-        const mainImage = images.length > 0 && images[0].url;
-        setImageUrl(mainImage);
+        setImages(images);  // shranim vse slike
+        setCurrentImageIndex(0); // nastavim prvo sliko kot trenutno
 
         // ko se naloži za naslov uporabim ime znamenitosti
         if (fullAttraction.name)
@@ -59,6 +69,35 @@ function Attraction() {
     };
     fetchAttraction();
   }, [id]);
+
+  // puščice za navigacijo med slikami znamenitosti
+  const handlePrev = () => {
+    setCurrentImageIndex((prev) =>
+      (prev - 1 + images.length) % images.length
+    );
+  };
+
+  const handleNext = () => {
+    setCurrentImageIndex((prev) =>
+      (prev + 1) % images.length
+    );
+  };
+
+  // pridobim slike iz baze
+  const getImageUrl = () => {
+    if (images.length === 0)
+      return 'http://localhost:3001/images/ni_slike.jpg';
+
+    const url = images[currentImageIndex]?.url;
+
+    if (!url)
+      return 'http://localhost:3001/images/ni_slike.jpg';
+
+    if (url.startsWith('http://') || url.startsWith('https://'))
+      return url; // že popoln URL
+
+    return `http://localhost:3001${url}`;
+  };
 
   // za pridobivanje komentarjev
   useEffect(() => {
@@ -256,6 +295,52 @@ function Attraction() {
     );
   };
 
+  // da uporabnik doda svojo sliko znamenitosti
+  const handleAttractionImageUpload = async (e) => {
+    e.preventDefault();
+
+    // če ni dodal nobene slike
+    if (!fileInputRef.current || !fileInputRef.current.files[0])
+      return;
+
+    const file = fileInputRef.current.files[0];
+
+    const formData = new FormData();
+    formData.append('source', file);
+    formData.append('attractionId', id); // dodam id znamenitosti, da se bo vedelo, kam je dodal sliko
+    formData.append('uploadedBy', user._id); // in pridobim id uporabnika, da se ve, kdo je objavil sliko
+
+    setUploading(true);
+    setError(null);
+
+    try {
+      const res = await fetch('http://localhost:3001/attraction-images/upload-attraction-image', { // api za dodajanje slike
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+
+      if (!res.ok)
+        throw new Error('Napaka pri nalaganju slike');
+
+      const data = await res.json();
+
+      // doda se nova slika v images, da ni potreben refresh za njen prikaz
+      setImages(prevImages => [...prevImages, data]);
+
+      // resetiram input, da uporabnik ne bo spammal te slike
+      fileInputRef.current.value = '';
+
+      setSelectedFile(null);
+    }
+    catch (err) {
+      setError(err.message);
+    }
+    finally {
+      setUploading(false);
+    }
+  };
+
   if (loading)
     return <p>Nalaganje...</p>;
 
@@ -271,10 +356,22 @@ function Attraction() {
         {/* Ime znamenitosti */}
         <h1>{attraction.name}</h1>
 
-        {/* Slika */}
-        {imageUrl && (
-          <img src={imageUrl} alt={attraction.name || ''} class="attraction-image-one" onError={(e) => { e.target.style.display = 'none'; }} />
-        )}
+        {/* Slike */}
+        <div className="image-wrapper relative">
+          <img key={getImageUrl()} src={getImageUrl()} alt={attraction.name || 'Znamenitost'} className="attraction-images fade-image" />
+
+          {/* Puščici */}
+          {images.length > 1 && (
+            <>
+              <button className="nav-button left" onClick={handlePrev}>
+                <ChevronLeft />
+              </button>
+              <button className="nav-button right" onClick={handleNext}>
+                <ChevronRight />
+              </button>
+            </>
+          )}
+        </div>
 
         {/* Podatki o znamenitosti */}
         <div className="attraction-info">
@@ -376,6 +473,26 @@ function Attraction() {
       </div>
       <div>
         <hr />
+        
+        {/* obrazec, kamor uporabnika lahko doda svojo sliko znamenitosti, prikaz samo prijavljenemu uporabniku */}
+        {user && (
+          <div className="image-upload-form">
+            <h3>Dodaj svojo sliko znamenitosti</h3>
+
+            <br />
+
+            <input type="file" accept="image/*" ref={fileInputRef} onChange={(e) => setSelectedFile(e.target.files[0])} style={{ marginRight: '15px'}}/>
+
+            <button className="btn btn-primary" onClick={handleAttractionImageUpload} disabled={uploading}>
+              {uploading ? 'Nalaganje...' : 'Dodaj sliko'}
+            </button>
+
+            {error && <p style={{ color: 'red' }}>{error}</p>}
+          </div>
+        )}
+
+        <hr />
+
         {/* del za komentarje */}
         <div>
           <h3>Komentarji</h3>
@@ -459,7 +576,7 @@ function Attraction() {
               <div className="review-stars">
                 <label>Primerno za starejše:</label>
                 <Box>
-                  <Rating  žname="elderly-rating" value={ratingElderlyFriendly} precision={1} onChange={(event, newValue) => setRatingElderlyFriendly(newValue)} required />
+                  <Rating name="elderly-rating" value={ratingElderlyFriendly} precision={1} onChange={(event, newValue) => setRatingElderlyFriendly(newValue)} required />
                 </Box>
               </div>
               <div className="review-stars">

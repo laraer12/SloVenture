@@ -48,6 +48,4 @@ const attractionSchema = new Schema({
   verified: Boolean
 });
 
-
-
 module.exports = mongoose.model('attraction', attractionSchema);
