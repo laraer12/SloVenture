@@ -1,0 +1,11 @@
+Region "Gorenjska" { 
+
+pvar X =  point ( 1.0+ 5.0 / 3.0 * 7.3, 2.0)
+var y = 3.0
+  poliline(point(0.0,0.0), point( 10.0,10.0))
+
+  Mountain "Triglav" point(4.0,5.0) poliline(point(4.0,4.0), point(4.0,5.0), point(4.0,6.0))
+
+  Lake "BlejskoJezero" point(4.0,5.0) circle( point(4.0,5.0), 1.0)
+
+} 
