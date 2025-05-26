@@ -11,6 +11,8 @@ function Map() {
   const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
+    document.title = "Zemljevid"; // naslov zavihka
+
     // slika zemljevida v ozadju
     document.body.style.backgroundImage = "url('http://localhost:3001/images/world_map.jpg')";
     document.body.style.backgroundSize = 'cover';
@@ -74,8 +76,14 @@ function Map() {
         imagesData.forEach(img => {
           const id = img.attractionId?.$oid || img.attractionId;
 
-          if (id)
-            imageMap[id] = img.url;
+          if (!id)
+            return;
+
+          if (!imageMap[id])
+            imageMap[id] = [];
+          
+
+          imageMap[id].push(img.url);
         });
 
         const parsedData = attractionsData.map((item, index) => {
@@ -92,12 +100,13 @@ function Map() {
             return null;
 
           const id = attraction._id?.$oid || attraction._id;
+          const firstImage = imageMap[id]?.[0] || null;
 
           return {
             id,
             name: attraction.name,
             coordinates: [lon, lat],
-            image: imageMap[id] || null
+            image: firstImage
           };
         }).filter(Boolean);
 

@@ -6,7 +6,7 @@ var userSchema = new Schema({
 	'username' : String,
 	'email' : String,
 	'password' : String,
-	'profilePicture' : String,
+	'profilePicture' : { type: String, default: 'default-profile-picture.jpg' }, // če uporabnik še ni dodal svoje profilne slike se prikaže privzeta
 	'role' : String,
 	'createdAt' : Date
 });

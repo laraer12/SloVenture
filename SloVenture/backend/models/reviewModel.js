@@ -13,7 +13,7 @@ var reviewSchema = new Schema({
 	'rating' : Number,
 	'ratingFamilyFriendly' : Number,
 	'ratingElderlyFriendly' : Number,
-	'ratingAccesible' : Number,
+	'ratingAccessible' : Number,
 	'createdAt' : Date
 });
 

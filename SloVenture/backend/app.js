@@ -1,9 +1,13 @@
-require('dotenv').config(); // s tem lahko uporabim API ključ kjerkoli
+require('dotenv').config(); // s tem lahko uporabim ključe iz .env kjerkoli
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+
+// CSRF zaščita
+const csrf = require('csurf');
+const csrfProtection = csrf({ cookie: true });
 
 /*
 // lokalna povezava z bazo
@@ -86,6 +90,16 @@ app.use(session({
   saveUninitialized: false,
   store: MongoStore.create({mongoUrl: uri})
 }));
+
+// pridobim csrf token
+app.get('/csrf-token', csrfProtection, (req, res) => {
+  res.json({ csrfToken: req.csrfToken() });
+});
+
+app.use(function (req, res, next) {
+  res.locals.session = req.session;
+  next();
+});
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);

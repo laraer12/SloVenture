@@ -1,5 +1,20 @@
 var AttractionImageModel = require('../models/attractionImageModel.js');
 
+var axios = require('axios');
+
+var multer = require('multer'); // za objavo datotek
+
+var storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'public/images/'); // sem shranim slike
+    },
+    filename: function (req, file, cb) {
+        cb(null, Date.now() + '-' + file.originalname); // ime slike vsebuje časovni žig in originalno ime
+    }
+});
+
+var upload = multer({ storage: storage }); // inicializacija multer-ja
+
 /**
  * attractionImageController.js
  *
@@ -126,6 +141,37 @@ module.exports = {
             }
 
             return res.status(204).json();
+        });
+    },
+
+    /**
+     * attractionImageController.uploadAttractionImage()
+     * uporabnik lahko doda svojo sliko znamenitosti
+     */
+    uploadAttractionImage: function(req, res) {
+        if (!req.file)
+            return res.status(400).json({ message: "File was not uploaded" });
+
+        const imageUrl = `/images/${req.file.filename}`; // takšen bo url slike
+        
+        // potrebni podatki
+        const attractionImage = new AttractionImageModel({
+            attractionId: req.body.attractionId,
+            url: imageUrl,
+            source: req.file.originalname,
+            uploadedBy: req.body.uploadedBy,
+            createdAt: new Date()
+        });
+        
+        // shranim
+        attractionImage.save(function(err, savedImage) {
+            if (err) {
+                return res.status(500).json({
+                message: 'Napaka pri shranjevanju slike',
+                error: err
+                });
+            }
+            return res.status(201).json(savedImage);
         });
     }
 };

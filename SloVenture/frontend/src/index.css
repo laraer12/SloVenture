@@ -102,6 +102,16 @@ code {
   text-overflow: ellipsis;
 }
 
+.attraction-images {
+  max-height: 400px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+  border-radius: 5%;
+  transition: transform 0.3s ease-in-out;
+}
+
 .image-wrapper {
   position: relative;
   width: 100%;
@@ -125,6 +135,12 @@ code {
   border-radius: 15px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.15);
   object-fit: cover;
+}
+
+.attraction-image-one {
+  width: 400px;
+  border-radius: 10px;
+  margin-bottom: 1rem;
 }
 
 .attraction-details-container {
@@ -169,4 +185,43 @@ code {
 
 .nav-button.right {
   right: 10px;
+}
+
+/* profilna slika */
+
+.profile-picture-profile {
+  border-radius: 50%;
+  border: 2px solid #CCC;
+}
+
+.profile-picture-comment {
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #CCC;
+  flex-shrink: 0;
+}
+
+/* prikaz zvezdic za ocene */
+
+.review-container {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.review-stars {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 150px;
+}
+
+/* grafi za attraction */
+
+.rating-bars-container {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: space-between;
 }

@@ -10,6 +10,8 @@ function Attractions() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    document.title = "Znamenitosti"; // naslov zavihka
+
     const fetchAttractions = async () => {
       try {
         const response = await axios.get('http://localhost:3001/attractions');
@@ -56,14 +58,24 @@ function Attractions() {
     }));
   };
 
+  // prilagojena funkcija prikazu slik, da se prikažejo tudi slike, dodane od uporabnikov
   const getImageUrl = (item) => {
     const attractionId = item.attraction?._id;
     const images = item?.images || [];
     const index = imageIndexes[attractionId] || 0;
 
-    return images.length > 0 && images[index]?.url
-      ? images[index].url
-      : 'http://localhost:3001/images/ni_slike.jpg';
+    if (images.length === 0)
+      return 'http://localhost:3001/images/ni_slike.jpg';
+
+    const url = images[index]?.url;
+
+    if (!url)
+      return 'http://localhost:3001/images/ni_slike.jpg';
+
+    if (url.startsWith('http://') || url.startsWith('https://'))
+      return url;
+    
+    return `http://localhost:3001${url}`;
   };
 
   if (loading)
