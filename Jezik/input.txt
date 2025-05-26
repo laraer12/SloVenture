@@ -1,11 +1,28 @@
-Region "Gorenjska" { 
 
-pvar X =  point ( 1.0+ 5.0 / 3.0 * 7.3, 2.0)
-var y = 3.0
-  poliline(point(0.0,0.0), point( 10.0,10.0))
+pvar A = point(1.0, 1.0)
+pvar B = point(2.0, 2.0)
+var r = firstC(B)
 
-  Mountain "Triglav" point(4.0,5.0) poliline(point(4.0,4.0), point(4.0,5.0), point(4.0,6.0))
+Region "Gorenjska" {
+    poliline(point(1.0, 1.0), point(2.0, 2.0), point(3.0, 3.0))
 
-  Lake "BlejskoJezero" point(4.0,5.0) circle( point(4.0,5.0), 1.0)
+    Hill "Triglav" point(4.0, 5.0) poliline(point(3.0, 4.0), point(4.0, 4.5))
+    Cabin "Planinska koca" point(3.5, 4.5) box(point(3.0, 4.0), point(4.0, 5.0))
+    Other "Vinska klet" point(2.5, 3.0)
+    Castle "Blejski grad" point(2.2, 2.5) box(point(2.0, 2.0), point(2.5, 3.0))
+}
 
-} 
+Region "Primorska" {
+    poliline(point(5.0, 5.0), point(6.0, 6.0), point(7.0, 5.5))
+
+    Lake "Jezero" point(6.0, 6.0) circle(point(6.0, 6.0), 2.5)
+    Church "Cerkev svetega Marka" point(5.5, 5.5) box(point(5.4, 5.4), point(5.6, 5.6))
+    Mountain "Nanos" point(6.5, 5.5) poliline(point(6.0, 5.0), point(6.5, 6.0))
+    nearby(point(6.0, 6.0), 3.0)
+}
+
+Path {
+    poliline(A, B, point(3.0, 3.0))
+    bend(point(3.0, 3.0), point(4.0, 4.0), 1.5)
+    polispline(bend(point(4.0, 4.0), point(5.0, 5.0), 2.0))
+}

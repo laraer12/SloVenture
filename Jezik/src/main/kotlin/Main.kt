@@ -2,6 +2,7 @@ package org.example
 
 import java.io.File
 import java.io.InputStream
+import kotlin.math.exp
 
 const val ERROR_STATE = 0
 const val EOF_SYMBOL = -1
@@ -229,7 +230,7 @@ fun reservedWord(lexeme: String): Int{
         "Castle" -> CASTLE_SYMBOL
         "pvar" -> PVAR_DEC_SYMBOL
         "var" -> NVAR_DEC_SYMBOL
-        "box(" -> BOX_SYMBOL
+        "box" -> BOX_SYMBOL
         "firstC" -> FIRSTC_SYMBOL
         "secondC" -> SECONDC_SYMBOL
         "bend" -> BEND_SYMBOL
@@ -287,6 +288,256 @@ fun name(symbol: Int) =
         else -> throw Error("Invalid symbol")
     }
 
+class Parser(private val scanner: Scanner){
+    private var token: Token  = scanner.getToken()
+
+    private fun accept(symbol: Int): Boolean {
+        if(token.symbol == symbol){
+            token = scanner.getToken()
+            return true
+        }
+        return false
+    }
+
+    private fun expect(symbol: Int): Boolean {
+        if(!accept(symbol)){
+            println("Syntax error at ${token.startRow}:${token.startColumn}, expected ${name(symbol)}, got ${name(token.symbol)}")
+            return false
+        }
+        return true
+    }
+
+    fun parse(): Boolean {
+        val success = program()
+        if(token.symbol != EOF_SYMBOL){
+            println("Unexpected token after: ${token.lexeme}")
+            return false
+        }
+        return true
+    }
+
+    private fun program(): Boolean {
+        return statements()
+    }
+
+    private fun statements(): Boolean {
+        while (true) {
+            val result = statement()
+            if (!result) {
+                return false
+            }
+            if (token.symbol == RBRACE_SYMBOL || token.symbol == EOF_SYMBOL) {
+                break
+            }
+        }
+        return true
+    }
+
+    private fun statement(): Boolean {
+        return region() || declaration() || path()
+    }
+
+    private fun region(): Boolean {
+        if(!accept(REGION_SYMBOL)) return false
+        if(!expect(STRING_LITERAL_SYMBOL)) return false
+        if (!expect(LBRACE_SYMBOL)) return false
+        if (!regionArea()) return false
+        if (!attractions()) return false
+        return expect(RBRACE_SYMBOL)
+    }
+
+    private fun regionArea(): Boolean{
+        return poliline()
+    }
+
+    private fun attractions(): Boolean{
+        while (true) {
+            if (token.symbol in listOf(RBRACE_SYMBOL, EOF_SYMBOL)) break
+            if (!attraction()) return false
+        }
+        return true
+    }
+
+    private fun attraction(): Boolean {
+        return hill() || cabin() || church() || mountain() || other() || castle() || lake() || nearby() || declaration()
+    }
+
+    private fun hill(): Boolean {
+        if (!simpleAttraction(HILL_SYMBOL)) return false
+        return poliline()
+    }
+
+    private fun cabin(): Boolean {
+        if(!simpleAttraction(CABIN_SYMBOL)) return false
+        return box()
+    }
+
+    private fun church(): Boolean {
+        if(!simpleAttraction(CHURCH_SYMBOL)) return false
+        return box()
+    }
+
+
+    private fun mountain(): Boolean{
+        if(! simpleAttraction(MOUNTAIN_SYMBOL)) return false
+        return poliline()
+    }
+
+
+    private fun other(): Boolean {
+        return simpleAttraction(OTHER_SYMBOL)
+    }
+
+    private fun castle(): Boolean{
+        if(!simpleAttraction(CASTLE_SYMBOL)) return false
+        return box()
+    }
+
+    private fun lake(): Boolean{
+        if(!simpleAttraction(LAKE_SYMBOL)) return false
+        return circle()
+    }
+
+    private fun nearby(): Boolean{
+        if(!accept(NEARBY_SYMBOL)) return false
+        if(!expect(LPAREN_SYMBOL)) return false
+        if(!point()) return false
+        if(!expect(COMMA_SYMBOL)) return false
+        if(!expr()) return false
+        return expect(RPAREN_SYMBOL)
+    }
+
+    private fun declaration(): Boolean{
+        return pvarDeclaration() || varDeclaration()
+    }
+
+    private fun pvarDeclaration(): Boolean{
+        if(!accept(PVAR_DEC_SYMBOL)) return false
+        if(!expect(PVAR_SYMBOL)) return false
+        if(!expect(ASSIGN_SYMBOL)) return false
+        return point()
+    }
+
+    private fun varDeclaration(): Boolean {
+        if(!accept(NVAR_DEC_SYMBOL)) return false
+        if(!expect(VAR_SYMBOL)) return false
+        if(!expect(ASSIGN_SYMBOL)) return false
+        return expr()
+    }
+
+    private fun expr(): Boolean{
+        if(!term()) return false
+        while(token.symbol in listOf(PLUS_SYMBOL, MINUS_SYMBOL, TIMES_SYMBOL, DIVIDE_SYMBOL)){
+            token = scanner.getToken()
+            if(!term())return false
+        }
+        return true
+    }
+
+    private fun term(): Boolean{
+        return when (token.symbol) {
+            FIRSTC_SYMBOL -> {
+                token = scanner.getToken()
+                expect(LPAREN_SYMBOL) && expect(PVAR_SYMBOL) && expect(RPAREN_SYMBOL)
+            }
+            SECONDC_SYMBOL -> {
+                token = scanner.getToken()
+                expect(LPAREN_SYMBOL) && expect(PVAR_SYMBOL) && expect(RPAREN_SYMBOL)
+            }
+            NUM_SYMBOL, VAR_SYMBOL -> {
+                token = scanner.getToken(); true
+            }
+            else -> false
+        }
+    }
+
+    private fun point(): Boolean{
+        return if (accept(POINT_SYMBOL)) {
+            expect(LPAREN_SYMBOL) && expr() && expect(COMMA_SYMBOL) && expr() && expect(RPAREN_SYMBOL)
+        } else if (accept(PVAR_SYMBOL)) {
+            true
+        } else {
+            false
+        }
+    }
+
+    private fun box(): Boolean{
+        return expect(BOX_SYMBOL) && expect(LPAREN_SYMBOL) && point() && expect(COMMA_SYMBOL) && point() && expect(
+            RPAREN_SYMBOL)
+    }
+
+    private fun circle(): Boolean{
+        return expect(CIRCLE_SYMBOL) && expect(LPAREN_SYMBOL) && point() && expect(COMMA_SYMBOL) && expr() && expect(
+            RPAREN_SYMBOL)
+    }
+
+    private fun path(): Boolean{
+        if(!accept(PATH_SYMBOL)) return false
+        if(!expect(LBRACE_SYMBOL))return false
+        if (!instructions()) return false
+        return expect(RBRACE_SYMBOL)
+    }
+
+    private fun instructions(): Boolean{
+        while (true){
+            if(!instruction()) return false
+            if (token.symbol == RBRACE_SYMBOL) break
+        }
+        return true
+    }
+
+    private fun instruction(): Boolean{
+        return poliline() || polispline() || line() || bend()
+    }
+
+    private fun poliline(): Boolean{
+        if(!accept(POLILINE_SYMBOL))return false
+        if (!expect(LPAREN_SYMBOL)) return false
+        if(!point())return false
+        while (accept(COMMA_SYMBOL)){
+            if(!point())return false
+        }
+        return expect(RPAREN_SYMBOL)
+    }
+
+    private fun polispline(): Boolean {
+        if (!accept(POLISPLINE_SYMBOL)) return false
+        if (!expect(LPAREN_SYMBOL)) return false
+        if (!bend()) return false
+        while (accept(COMMA_SYMBOL)){
+            if(!bend())return false
+        }
+        return expect(RPAREN_SYMBOL)
+    }
+
+    private fun bend(): Boolean{
+        if (!accept(BEND_SYMBOL)) return false
+        if(!expect(LPAREN_SYMBOL)) return false
+        if(!point()) return false
+        if(!expect(COMMA_SYMBOL)) return false
+        if (!point())return false
+        if (!expect(COMMA_SYMBOL))return false
+        if (!expr())return false
+        return expect(RPAREN_SYMBOL)
+    }
+
+    private fun line(): Boolean {
+        if(!accept(LINE_SYMBOL)) return false
+        if(!expect(LPAREN_SYMBOL)) return false
+        if(!point()) return false
+        if(!expect(COMMA_SYMBOL))return false
+        if (!point())return false
+        return expect(RPAREN_SYMBOL)
+    }
+
+    private fun simpleAttraction(symbol: Int): Boolean{
+        if(!accept(symbol)) return false
+        if(!expect(STRING_LITERAL_SYMBOL)) return false
+        if(!point()) return false
+        return true
+    }
+}
+
 fun printTokens(scanner: Scanner) {
     val token = scanner.getToken()
     if (token.symbol != EOF_SYMBOL) {
@@ -298,4 +549,11 @@ fun printTokens(scanner: Scanner) {
 fun main() {
     val file = File("input.txt").readText()
     printTokens(Scanner(ForForeachFFFAutomaton, file.byteInputStream()))
+    val scanner = Scanner(ForForeachFFFAutomaton, file.byteInputStream())
+    val parser = Parser(scanner)
+    if(parser.parse()){
+        println("\naccept")
+    }else{
+        println("reject")
+    }
 }
