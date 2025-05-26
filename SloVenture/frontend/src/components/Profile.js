@@ -12,7 +12,7 @@ function Profile() {
 
     useEffect(() => {
         const fetchProfile = async () => {
-            const url = 'http://localhost:3001/users/profile';
+            const url = `${process.env.REACT_APP_BACKEND_URL}/users/profile`;
 
             const res = await fetch(url, {
                 credentials: 'include'

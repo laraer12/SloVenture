@@ -12,7 +12,7 @@ function Map() {
 
   useEffect(() => {
     // slika zemljevida v ozadju
-    document.body.style.backgroundImage = "url('http://localhost:3001/images/world_map.jpg')";
+    document.body.style.backgroundImage = `url('${process.env.REACT_APP_BACKEND_URL}/images/world_map.jpg')`;
     document.body.style.backgroundSize = 'cover';
     document.body.style.backgroundPosition = 'center';
     document.body.style.backgroundRepeat = 'no-repeat';
@@ -63,8 +63,8 @@ function Map() {
     const fetchData = async () => {
       try {
         const [attractionsRes, imagesRes] = await Promise.all([
-          fetch('http://localhost:3001/attractions'),
-          fetch('http://localhost:3001/attraction-images')
+          fetch(`${process.env.REACT_APP_BACKEND_URL}/attractions`),
+          fetch(`${process.env.REACT_APP_BACKEND_URL}/attraction-images`)
         ]);
 
         const attractionsData = await attractionsRes.json();

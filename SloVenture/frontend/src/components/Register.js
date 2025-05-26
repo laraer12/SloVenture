@@ -9,7 +9,7 @@ function Register() {
     async function Register(e) {
         e.preventDefault();
 
-        const res = await fetch("http://localhost:3001/users", {
+        const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/users`, {
             method: 'POST',
             credentials: 'include',
             headers: {

@@ -12,7 +12,10 @@ function Attractions() {
   useEffect(() => {
     const fetchAttractions = async () => {
       try {
-        const response = await axios.get('http://localhost:3001/attractions');
+        const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/attractions`);
+
+        console.log("Fetching from:", `${process.env.REACT_APP_BACKEND_URL}/attractions`);
+
 
         if (response.data.message)
           setError(response.data.message);
@@ -63,7 +66,7 @@ function Attractions() {
 
     return images.length > 0 && images[index]?.url
       ? images[index].url
-      : 'http://localhost:3001/images/ni_slike.jpg';
+      : `${process.env.REACT_APP_BACKEND_URL}/images/ni_slike.jpg`;
   };
 
   if (loading)

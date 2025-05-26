@@ -12,7 +12,7 @@ function Attraction() {
   useEffect(() => {
     const fetchAttraction = async () => {
       try {
-        const response = await axios.get(`http://localhost:3001/attractions/${id}`);
+        const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/attractions/${id}`);
         const data = response.data;
         const fullAttraction = data.attraction || data;
         const images = data.images || fullAttraction.images || [];
