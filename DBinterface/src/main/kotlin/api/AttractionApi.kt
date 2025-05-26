@@ -226,18 +226,6 @@ fun parseAttraction(json: JsonObject): Attraction {
 
     val locationType = json["type"]?.jsonObject?.get("name")?.jsonPrimitive?.content ?: ""
 
-    val requiresReservation = false // TODO: no info
-    val openingHours = OpeningHours(
-        monday = "",
-        tuesday = "",
-        wednesday = "",
-        thursday = "",
-        friday = "",
-        saturday = "",
-        sunday = ""
-    ) // TODO: no info
-    val entryFee = 0.0 // TODO: no info
-
 
     val googleMapsLink = "https://maps.google.com/?q=$lat,$lon"
     val createdAt = DateTimeFormatter.ISO_INSTANT.format(Instant.now())
@@ -258,9 +246,6 @@ fun parseAttraction(json: JsonObject): Attraction {
         ratingElderlyFriendly = 0.0,
         ratingAccessible = 0.0,
         rating = 0.0,
-        requiresReservation = requiresReservation,
-        openingHours = openingHours,
-        entryFee = entryFee,
         googleMapsLink = googleMapsLink,
         createdAt = createdAt,
         verified = verified

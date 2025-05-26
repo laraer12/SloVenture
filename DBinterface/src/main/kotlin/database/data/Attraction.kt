@@ -3,13 +3,11 @@ package database.data
 import database.DatabaseClass
 import database.postToDatabase
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
 @Serializable
 data class Attraction(
@@ -27,9 +25,6 @@ data class Attraction(
     val ratingElderlyFriendly: Double,
     val ratingAccessible: Double,
     val rating: Double,
-    val requiresReservation: Boolean,
-    val openingHours: OpeningHours,
-    val entryFee: Double,
     val googleMapsLink: String,
     val createdAt: String? = null,
     val verified: Boolean,
@@ -50,28 +45,41 @@ data class Address(
     val country: String
 ) : DatabaseClass
 
-@Serializable
-data class OpeningHours(
-    val monday: String,
-    val tuesday: String,
-    val wednesday: String,
-    val thursday: String,
-    val friday: String,
-    val saturday: String,
-    val sunday: String
-) : DatabaseClass
-
-
 
 suspend fun postAttraction(attraction: Attraction): Boolean =
     postToDatabase(attraction, "attractions", Attraction.serializer())
 
 
-
-//povezava z web service
-
 val json = Json { ignoreUnknownKeys = true }
 val client = OkHttpClient()
+
+suspend fun getAttractionById(id: String): Attraction {
+    val request = Request.Builder()
+        .url("http://localhost:3001/attractions/$id")
+        .build()
+
+    val response = client.newCall(request).execute()
+    val responseBody = response.body?.string() ?: throw Exception("Empty response")
+
+    // Parse the root JSON
+    val root = Json.parseToJsonElement(responseBody).jsonObject
+
+    // Extract the "attraction" object
+    val attractionJson = root["attraction"]!!.jsonObject.toMutableMap()
+
+// Replace regionId object with just the _id string
+    val regionId = attractionJson["regionId"]!!.jsonObject["_id"]!!.jsonPrimitive.content
+    attractionJson["regionId"] = JsonPrimitive(regionId)
+
+// Encode updated JsonObject to string (specify serializer explicitly)
+    val fixedAttractionJsonString = Json.encodeToString(JsonElement.serializer(), JsonObject(attractionJson))
+
+// Decode into Attraction object
+    return Json.decodeFromString(fixedAttractionJsonString)
+
+}
+
+//povezava z web service
 /*
 suspend fun getAllAttractions(): List<Attraction>? {
     val request = Request.Builder()

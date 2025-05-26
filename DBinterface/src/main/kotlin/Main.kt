@@ -30,8 +30,12 @@ fun main() = application {
 /*
 fun main() = runBlocking {
 
+    val attraction= getAttractionById("682c5aec18a16faef25c8b11")
+    println(attraction.toString())
+
 
     // TESTNI PRIMERI ZA APIJE IN WEB SCRAPER
+    /*
     try {
 
         println("\nScraping details for Mangart...")
@@ -117,7 +121,12 @@ fun main() = runBlocking {
     } catch (e: Exception) {
         println("Failed to get address: ${e.message}")
     }
+<<<<<<< Updated upstream
 */
+=======
+    */
+
+>>>>>>> Stashed changes
 
 
 
