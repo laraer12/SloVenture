@@ -111,6 +111,9 @@ module.exports = {
             if (!user)
                 return res.status(404).json({ message: 'No such user' });
 
+            if (req.body.isAdmin !== undefined)
+                delete req.body.isAdmin;
+
             user.username = req.body.username || user.username;
             user.email = req.body.email || user.email;
             user.password = req.body.password || user.password;
@@ -128,16 +131,24 @@ module.exports = {
      * userController.remove()
      */
     remove: function (req, res) {
-            
-        var id = req.params.id;
+        const currentUserId = req.session.userId;
+        const targetUserId = req.params.id;
 
-        UserModel.findByIdAndRemove(id, function (err, user) {
-            if (err) {
-                return res.status(500).json({
-                    message: 'Error when deleting the user.',
-                    error: err
-                });
-            }
+        UserModel.findById(currentUserId, function (err, currentUser) {
+            if (err || !currentUser)
+                return res.status(500).json({ message: 'Error verifying user identity' });
+
+            // Če trenutni uporabnik ni admin in želi izbrisati nekoga drugega – zavrni
+            if (!currentUser.isAdmin && currentUserId !== targetUserId)
+                return res.status(403).json({ message: "Cannot delete another user" });
+
+            UserModel.findByIdAndRemove(targetUserId, function (err, user) {
+                if (err) {
+                    return res.status(500).json({
+                        message: 'Error when deleting the user.',
+                        error: err
+                    });
+                }
 
             TripModel.find({userId: id}, function (err, trips) {
                 if (err) {
@@ -171,6 +182,7 @@ module.exports = {
             });
 
             return res.status(204).json();
+            });
         });
     },
 
@@ -222,7 +234,8 @@ module.exports = {
             return res.json({
                 username: user.username,
                 email: user.email,
-                profilePicture: user.profilePicture
+                profilePicture: user.profilePicture,
+                isAdmin: user.isAdmin
             });
         });
     },

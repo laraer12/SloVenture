@@ -452,17 +452,7 @@ function Attraction() {
           {attraction.entryFee > 0 && (
             <p><strong>Vstopnina:</strong> {attraction.entryFee} €</p>
           )}
-
-          {/* Ustvarjeno */}
-          {attraction.createdAt && (
-            <p><strong>Ustvarjeno:</strong> {new Date(attraction.createdAt).toLocaleDateString()}</p>
-          )}
-
-          {/* Preverjeno */}
-          {typeof attraction.verified === 'boolean' && (
-            <p><strong>Preverjeno:</strong> {attraction.verified ? 'Da' : 'Ne'}</p>
-          )}
-
+          
           {/* Google maps */}
           {attraction.googleMapsLink && (
             <button type="button" className="btn btn-primary" onClick={() => window.open(attraction.googleMapsLink, '_blank', 'noopener,noreferrer')}>
@@ -536,8 +526,8 @@ function Attraction() {
                   </div>
                 </div>
 
-                {/* brisanje komentarja, gumb se prikaže samo lastniku komentarja */}
-                {user && comment.userId?._id === user._id && (
+                {/* brisanje komentarja, gumb se prikaže samo lastniku komentarja ali adminu */}
+                {user && (comment.userId?._id === user._id || user.isAdmin) && (
                   <button onClick={() => handleDeleteComment(comment._id)} className="btn btn-sm btn-outline-danger">Izbriši</button>
                 )}
               </li>
