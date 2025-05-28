@@ -124,30 +124,6 @@ function Attraction() {
     return parts.join(', ');
   }
 
-  // za pravilen izpis odpiralnega časa
-  function renderOpeningHours(hours) {
-    if (!hours)
-      return null;
-
-    const days = Object.entries(hours).filter(([day, value]) => value && value.trim() !== '');
-    
-    if (days.length === 0)
-      return null;
-
-    return (
-      <div>
-        <strong>Odpiralni čas:</strong>
-        <ul>
-          {days.map(([day, time]) => (
-            <li key={day}>
-              {day.charAt(0).toUpperCase() + day.slice(1)}: {time}
-            </li>
-          ))}
-        </ul>
-      </div>
-    );
-  }
-
   // objava komentarja
   function handleCommentSubmit(e) {
     e.preventDefault();
@@ -341,6 +317,39 @@ function Attraction() {
     }
   };
 
+  // funkcija za admina, s katero lahko izbriše sliko
+  const handleDeleteImage = async () => {
+    if (!window.confirm("Ali ste prepričani, da želite izbrisati to sliko?")) // če si admin premisli lahko sliko obdrži
+      return;
+
+    const imageToDelete = images[currentImageIndex];
+
+    if (!imageToDelete || !imageToDelete._id) {
+      setError('Slika ni veljavna.');
+      return;
+    }
+    try {
+      const res = await fetch(`http://localhost:3001/attraction-images/${imageToDelete._id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (!res.ok)
+        throw new Error('Napaka pri brisanju slike.');
+
+      // posodobim seznam slik in indeks
+      const newImages = images.filter((img, i) => i !== currentImageIndex);
+      setImages(newImages);
+
+      setCurrentImageIndex((prev) =>
+        newImages.length === 0 ? 0 : Math.max(0, prev - 1)
+      );
+    }
+    catch (err) {
+      setError(err.message);
+    }
+  };
+
   if (loading)
     return <p>Nalaganje...</p>;
 
@@ -370,6 +379,16 @@ function Attraction() {
                 <ChevronRight />
               </button>
             </>
+          )}
+
+          <br />
+          {/* gumb za izbris slike, ki se prikaže samo adminu */}
+          {user?.isAdmin && images.length > 0 && (
+            <div className="delete-button">
+              <button className="btn btn-danger" onClick={handleDeleteImage}>
+                Izbriši trenutno prikazano sliko
+              </button>
+            </div>
           )}
         </div>
 
@@ -420,39 +439,6 @@ function Attraction() {
             </div>
           )}
 
-          {/* Dostopnost */}
-          {attraction.ratingAccessible > 0 && (
-            <p><strong>Dostopnost:</strong> {attraction.ratingAccessible}/5</p>
-          )}
-
-          {/* Primerno za družine */}
-          {attraction.ratingFamilyFriendly > 0 && (
-            <p><strong>Primerno za družine:</strong> {attraction.ratingFamilyFriendly}/5</p>
-          )}
-
-          {/* Primerno za starejše */}
-          {attraction.ratingElderlyFriendly > 0 && (
-            <p><strong>Primerno za starejše:</strong> {attraction.ratingElderlyFriendly}/5</p>
-          )}
-          
-          {/* Ocena */}
-          {attraction.rating > 0 && (
-            <p><strong>Ocena:</strong> {attraction.rating}/5</p>
-          )}
-
-          {/* Potrebna rezervacija */}
-          {typeof attraction.requiresReservation === 'boolean' && (
-            <p><strong>Potrebna rezervacija:</strong> {attraction.requiresReservation ? 'Da' : 'Ne'}</p>
-          )}
-
-          {/* Odpiralni časi */}
-          {renderOpeningHours(attraction.openingHours)}
-
-          {/* Vstopnina */}
-          {attraction.entryFee > 0 && (
-            <p><strong>Vstopnina:</strong> {attraction.entryFee} €</p>
-          )}
-          
           {/* Google maps */}
           {attraction.googleMapsLink && (
             <button type="button" className="btn btn-primary" onClick={() => window.open(attraction.googleMapsLink, '_blank', 'noopener,noreferrer')}>
