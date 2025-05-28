@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useEffect, useState, useContext, useRef } from 'react';
 import axios from 'axios';
 import { UserContext } from '../userContext';
@@ -505,7 +505,11 @@ function Attraction() {
                   <img src={`http://localhost:3001/images/${comment.userId?.profilePicture}`} alt="Profilna slika" width="40" height="40" className="profile-picture-comment" onError={(e) => { e.target.onerror = null; e.target.src = 'http://localhost:3001/images/default-profile-picture.jpg'; }} />
 
                   <div>
-                    <strong>{comment.userId?.username || 'Neznan uporabnik'}:</strong> {comment.text}
+                    <strong>
+                      <Link to={`/profile/${comment.userId?._id}`} className="profile-link">
+                        {comment.userId?.username || 'Neznan uporabnik'}
+                      </Link>
+                    </strong>: {comment.text}
                     <div className="text-muted" style={{ fontSize: '0.8rem' }}>
                       {new Date(comment.createdAt).toLocaleString()}
                     </div>

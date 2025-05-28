@@ -232,3 +232,15 @@ code {
   display: flex;
   justify-content: center;
 }
+
+/* link do profila uporabnika (preko komentarja */
+.profile-link {
+  text-decoration: none;
+  color: black;
+  transition: color 0.3s ease;
+}
+
+.profile-link:hover {
+  color: blue;
+  cursor: pointer;
+}
