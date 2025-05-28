@@ -1,3 +1,4 @@
+const { get } = require('mongoose');
 var RegionModel = require('../models/regionModel.js');
 
 /**
@@ -7,6 +8,32 @@ var RegionModel = require('../models/regionModel.js');
  */
 module.exports = {
 
+
+    //ZA KOTLIN VMESNIK
+    getByName: function (req, res) {
+        const name = req.query.name;
+
+        if (!name) {
+            return res.status(400).json({
+                message: 'Missing region name in query parameter'
+            });
+        }
+
+        RegionModel.findOne({ name }, function (err, region) {
+            if (err) {
+                return res.status(500).json({
+                    message: 'Error when searching for region.',
+                    error: err
+                });
+            }
+
+            if (!region) {
+                return res.status(404).json(null);
+            }
+
+            return res.json(region);
+        });
+    },
     /**
      * regionController.list()
      */

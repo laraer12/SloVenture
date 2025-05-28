@@ -1,18 +1,13 @@
 var mongoose = require('mongoose');
 var Schema   = mongoose.Schema;
-var CoordinatesSchema = require('./attractionModel.js').schema;
+var {CoordinatesSchema} = require('./attractionModel.js');
 
 var weatherSchema = new Schema({
 	'date' : Date,
-	'temperature' : Number,
 	'maxTemperature' : Number,
 	'minTemperature' : Number,
 	'condition' : String,
-	'precipationProbability' : Number
-});
-
-var weatherForecastSchema = new Schema({
-	'daily' : [weatherSchema],
+	'precipitationProbabilityMax' : Number
 });
 
 var weatherDataSchema = new Schema({
@@ -21,8 +16,7 @@ var weatherDataSchema = new Schema({
 	 	type: Schema.Types.ObjectId,
 	 	ref: 'attraction'
 	},
-	'currentWeather' : weatherSchema,
-	'forecast' : weatherForecastSchema,
+	'forecast' :[weatherSchema],
 	'lastUpdated' : Date
 });
 

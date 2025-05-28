@@ -2,6 +2,9 @@ var express = require('express');
 var router = express.Router();
 var regionController = require('../controllers/regionController.js');
 
+
+router.get('/region', regionController.getByName); //ZA KOTLIN VMESNIK
+
 /*
  * GET
  */

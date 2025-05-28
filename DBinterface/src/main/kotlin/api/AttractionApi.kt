@@ -110,7 +110,7 @@ suspend fun retrieveAttractions(
 
 suspend fun retrieveAllAttractions(): List<Attraction> {
     val endpoint = "https://api.kamzavikend.si/public/search"
-    val totalAttractions = 120 //TODO 2696
+    val totalAttractions = 10 //TODO 2696
     val pageSize = 30
     val totalPages = (totalAttractions + pageSize - 1) / pageSize
 
@@ -185,16 +185,24 @@ suspend fun retrieveAllAttractions(): List<Attraction> {
 
     return allAttractions
 }
-
-fun parseAttraction(json: JsonObject): Attraction {
-    val id = json["id"]?.jsonPrimitive?.content ?: "" //zaenkrat puscam njihov id
+suspend fun parseAttraction(json: JsonObject): Attraction {
+    val id = json["id"]?.jsonPrimitive?.content ?: ""
     val name = json["name"]?.jsonPrimitive?.content ?: "Unknown"
 
-    //pustla bom njihov id za pokrajine ker je zaenkrat tak najlazje...
     val areas = json["areas"]?.jsonArray ?: JsonArray(emptyList())
-    val regionId = areas.firstOrNull {
+    val regionName = areas.firstOrNull {
         it.jsonObject["type"]?.jsonObject?.get("key")?.jsonPrimitive?.content == "region"
-    }?.jsonObject?.get("id")?.jsonPrimitive?.content ?: ""
+    }?.jsonObject?.get("name")?.jsonPrimitive?.content ?: ""
+
+    // Resolve or create region to get its ID
+    val regionId = resolveOrCreateRegion(regionName)
+
+    // Build full Region object
+    val region = Region(
+        id = regionId,
+        name = regionName,
+        location = emptyList() // Can be updated later if needed
+    )
 
     val locationJson = json["location"]?.jsonObject
     val lat = locationJson?.get("lat")?.jsonPrimitive?.doubleOrNull ?: 0.0
@@ -203,7 +211,6 @@ fun parseAttraction(json: JsonObject): Attraction {
 
     val attributes = json["attributes"]?.jsonArray ?: JsonArray(emptyList())
 
-    // helper ki najde value by slug
     fun findAttributeValue(slug: String): JsonElement? {
         return attributes.firstOrNull {
             it.jsonObject["attribute"]?.jsonObject?.get("slug")?.jsonPrimitive?.content == slug
@@ -219,22 +226,27 @@ fun parseAttraction(json: JsonObject): Attraction {
         is JsonPrimitive -> accValue.content
         else -> null
     }
-    val address = Address(street = "", city = "", postalCode = "", country = "Slovenia") //se nimamo
+
+    val address = Address(
+        street = "",
+        city = "",
+        postalCode = "",
+        country = "Slovenia"
+    )
 
     val classification = json["type"]?.jsonObject?.get("default_category")?.jsonObject?.get("name")
         ?.jsonPrimitive?.content ?: ""
 
     val locationType = json["type"]?.jsonObject?.get("name")?.jsonPrimitive?.content ?: ""
 
-
     val googleMapsLink = "https://maps.google.com/?q=$lat,$lon"
     val createdAt = DateTimeFormatter.ISO_INSTANT.format(Instant.now())
-    val verified = false // TODO
+    val verified = false
 
     return Attraction(
         id = id,
         name = name,
-        regionId = regionId,
+        region = region, // full Region object
         location = location,
         address = address,
         description = "",
@@ -242,7 +254,7 @@ fun parseAttraction(json: JsonObject): Attraction {
         locationType = locationType,
         elevation = elevation,
         accessibilityOptions = accessibilityOptions,
-        ratingFamilyFriendly = 0.0, //to dodajamo sami
+        ratingFamilyFriendly = 0.0,
         ratingElderlyFriendly = 0.0,
         ratingAccessible = 0.0,
         rating = 0.0,
@@ -251,6 +263,7 @@ fun parseAttraction(json: JsonObject): Attraction {
         verified = verified
     )
 }
+
 
 
 fun parseAttractionImages(json: JsonObject): List<AttractionImage> {

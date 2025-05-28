@@ -2,6 +2,7 @@ package database.data
 
 import database.DatabaseClass
 import database.postToDatabase
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 import okhttp3.MediaType.Companion.toMediaType
@@ -11,9 +12,9 @@ import okhttp3.RequestBody.Companion.toRequestBody
 
 @Serializable
 data class Attraction(
-    val id: String,
+    @SerialName("_id") val id: String,
     val name: String,
-    val regionId: String,
+    @SerialName("regionId") val region: Region?,
     val location: Coordinates,
     val address: Address?,
     val description: String?,
@@ -53,53 +54,34 @@ suspend fun postAttraction(attraction: Attraction): Boolean =
 val json = Json { ignoreUnknownKeys = true }
 val client = OkHttpClient()
 
-suspend fun getAttractionById(id: String): Attraction {
+
+
+@Serializable
+data class FullAttractionData(
+    val attraction: Attraction,
+    val weatherData: WeatherData? = null,
+    val nearbyAttractions: List<NearbyAttraction> = emptyList()
+)
+
+fun fetchFullAttractionData(id: String): FullAttractionData {
     val request = Request.Builder()
-        .url("http://localhost:3001/attractions/$id")
+        .url("http://localhost:3001/attractions/fullKotlin/$id")
         .build()
 
-    val response = client.newCall(request).execute()
-    val responseBody = response.body?.string() ?: throw Exception("Empty response")
-
-    // Parse the root JSON
-    val root = Json.parseToJsonElement(responseBody).jsonObject
-
-    // Extract the "attraction" object
-    val attractionJson = root["attraction"]!!.jsonObject.toMutableMap()
-
-// Replace regionId object with just the _id string
-    val regionId = attractionJson["regionId"]!!.jsonObject["_id"]!!.jsonPrimitive.content
-    attractionJson["regionId"] = JsonPrimitive(regionId)
-
-// Encode updated JsonObject to string (specify serializer explicitly)
-    val fixedAttractionJsonString = Json.encodeToString(JsonElement.serializer(), JsonObject(attractionJson))
-
-// Decode into Attraction object
-    return Json.decodeFromString(fixedAttractionJsonString)
-
-}
-
-//povezava z web service
-/*
-suspend fun getAllAttractions(): List<Attraction>? {
-    val request = Request.Builder()
-        .url("http://localhost:3001/api/attractions")
-        .get()
-        .build()
-
-    client.newCall(request).execute().use { response ->
+    val response = client.newCall(request).execute().use { response ->
         if (!response.isSuccessful) {
-            println("GET failed: ${response.code}")
-            return null
+            throw Exception("Failed to fetch full attraction data: HTTP ${response.code}")
         }
-
-        val body = response.body?.string() ?: return null
-        return json.decodeFromString<List<Attraction>>(body)
+        val responseBody = response.body?.string() ?: throw Exception("Empty response body")
+        json.decodeFromString<FullAttractionData>(responseBody)
     }
+    return response
 }
-*/
 
-suspend fun postAttractionFromApi(attraction: Attraction): String? { //vraca svoj id v bazi
+
+
+
+fun postAttractionFromApi(attraction: Attraction): String? { //vraca svoj id v bazi
     val jsonAttraction = json.encodeToString(Attraction.serializer(), attraction)
     val mediaType = "application/json".toMediaType()
     val body = jsonAttraction.toRequestBody(mediaType)
@@ -181,47 +163,5 @@ suspend fun postAttractionsWithImages(attractions: List<Attraction>): Boolean {
 }
 
 
-suspend fun getAttractionsByRegion(regionId: String): List<Attraction>? {
-    val request = Request.Builder()
-        .url("http://localhost:3001/api/attractions/region/$regionId")
-        .get()
-        .build()
 
-    client.newCall(request).execute().use { response ->
-        if (!response.isSuccessful) {
-            println("GET by region failed: ${response.code}")
-            return null
-        }
-
-        val body = response.body?.string() ?: return null
-        return json.decodeFromString<List<Attraction>>(body)
-    }
-}
-
-suspend fun updateAttraction(id: String, updated: Attraction): Boolean {
-    val jsonAttraction = json.encodeToString(Attraction.serializer(), updated)
-    val body = jsonAttraction.toRequestBody("application/json".toMediaType())
-
-    val request = Request.Builder()
-        .url("http://localhost:3001/api/attractions/$id")
-        .put(body)
-        .build()
-
-    client.newCall(request).execute().use { response ->
-        return response.isSuccessful
-    }
-}
-
-suspend fun deleteAttraction(id: String): Boolean {
-    val request = Request.Builder()
-        .url("http://localhost:3001/api/attractions/$id")
-        .delete()
-        .build()
-
-    client.newCall(request).execute().use { response ->
-        return response.isSuccessful
-    }
-}
 */
-
-

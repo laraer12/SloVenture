@@ -12,31 +12,17 @@ suspend fun fetchWeatherData(lat: Double, lon: Double): WeatherData {
         "https://api.open-meteo.com/v1/forecast?" +
                 "latitude=$lat&longitude=$lon" +
                 "&daily=weather_code,temperature_2m_max,temperature_2m_min" +
-                ",precipitation_probability_max&current=temperature_2m" +
-                ",weather_code,precipitation&timezone=Europe%2FBerlin"
+                ",precipitation_probability_max&timezone=Europe%2FBerlin"
 
     val response: String= HttpClientProvider.client.get(url).body()
     val json = Json.parseToJsonElement(response).jsonObject
-
-    val current = json["current"]!!.jsonObject
     val daily = json["daily"]!!.jsonObject
-
-    val currentWeather = Weather(
-        temperature = current["temperature_2m"]!!.jsonPrimitive.double,
-        condition = weatherCodeToDescription(current["weather_code"]!!.jsonPrimitive.int),
-        maxTemperature = daily["temperature_2m_max"]!!.jsonArray[0].jsonPrimitive.double,
-        minTemperature = daily["temperature_2m_min"]!!.jsonArray[0].jsonPrimitive.double,
-        precipitationProbability = daily["precipitation_probability_max"]!!.jsonArray[0].jsonPrimitive.int,
-        date = current["time"]!!.jsonPrimitive.content,
-    )
-
     val forecast = daily["temperature_2m_max"]!!.jsonArray.indices.map { i ->
         Weather(
-            temperature = null, //ker za napoved gledas max in min temperaturo !!!!!!!!!!
             condition = weatherCodeToDescription(daily["weather_code"]!!.jsonArray[i].jsonPrimitive.int),
             maxTemperature = daily["temperature_2m_max"]!!.jsonArray[i].jsonPrimitive.double,
             minTemperature = daily["temperature_2m_min"]!!.jsonArray[i].jsonPrimitive.double,
-            precipitationProbability = daily["precipitation_probability_max"]!!.jsonArray.getOrNull(i)?.jsonPrimitive?.int
+            precipitationProbabilityMax = daily["precipitation_probability_max"]!!.jsonArray.getOrNull(i)?.jsonPrimitive?.int
                 ?: 0,
             date = daily["time"]!!.jsonArray[i].jsonPrimitive.content
         )
@@ -44,8 +30,7 @@ suspend fun fetchWeatherData(lat: Double, lon: Double): WeatherData {
 
     return WeatherData(
         location = Coordinates(lat, lon),
-        currentWeather = currentWeather,
-        forecast = WeatherForecast(daily = forecast),
+        forecast = forecast,
         lastUpdated = Instant.now().toString()
     )
 }

@@ -1,5 +1,5 @@
 const axios = require('axios');
-var AttractionModel = require('../models/attractionModel.js');
+const { AttractionModel } = require('../models/attractionModel.js');
 var AttractionImageModel = require('../models/attractionImageModel.js');
 var ReviewModel = require('../models/reviewModel.js');
 var WeatherDataModel = require('../models/weatherDataModel.js');
@@ -200,9 +200,70 @@ module.exports = {
             });
     },
 
+
+    showFullAttractionKotlin: function (req, res) {
+    var id = req.params.id;
+
+    AttractionModel.findOne({ _id: id })
+        .populate('regionId')
+        .exec(function (err, attraction) {
+            if (err) {
+                return res.status(500).json({
+                    message: 'Error when getting attraction.',
+                    error: err
+                });
+            }
+            if (!attraction) {
+                return res.status(404).json({
+                    message: 'No such attraction'
+                });
+            }
+
+            AttractionImageModel.find({ attractionId: id })
+                .populate('uploadedBy')
+                .exec(function (err, images) {
+                    if (err) {
+                        return res.status(500).json({
+                            message: 'Error when getting attraction images.',
+                            error: err
+                        });
+                    }
+
+                    WeatherDataModel.findOne({ attractionId: id }).exec(function (err, weatherData) {
+                        if (err) {
+                            return res.status(500).json({
+                                message: 'Error when getting weather data.',
+                                error: err
+                            });
+                        }
+
+                        nearbyAttractionModel.find({ attractionId: id })
+                            .populate('nearbyAttractionId')
+                            .exec(function (err, nearbyAttractions) {
+                                if (err) {
+                                    return res.status(500).json({
+                                        message: 'Error when getting nearby attractions.',
+                                        error: err
+                                    });
+                                }
+
+                                return res.json({
+                                    attraction: attraction,
+                                    images: images,
+                                    weatherData: weatherData,
+                                    nearbyAttractions: nearbyAttractions
+                                });
+                            });
+                    });
+                });
+        });
+    },
+
+
     /**
      * attractionController.show()
      */
+
     show: function (req, res) {
         var id = req.params.id;
 
@@ -276,7 +337,7 @@ module.exports = {
                     });
             });
     },
-    
+
 
     /**
      * attractionController.create()
@@ -308,17 +369,6 @@ module.exports = {
         ratingElderlyFriendly: req.body.ratingElderlyFriendly,
         ratingAccessible: req.body.ratingAccessible,
         rating: req.body.rating,
-        requiresReservation: req.body.requiresReservation,
-        openingHours: {
-            monday: req.body.openingHours?.monday,
-            tuesday: req.body.openingHours?.tuesday,
-            wednesday: req.body.openingHours?.wednesday,
-            thursday: req.body.openingHours?.thursday,
-            friday: req.body.openingHours?.friday,
-            saturday: req.body.openingHours?.saturday,
-            sunday: req.body.openingHours?.sunday
-        },
-        entryFee: req.body.entryFee,
         googleMapsLink: req.body.googleMapsLink,
         createdAt: Date.now(),
         verified: req.body.verified

@@ -1,5 +1,5 @@
-var mongoose = require('mongoose');
-var Schema   = mongoose.Schema;
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
 const CoordinatesSchema = new Schema({
   lat: Number,
@@ -35,4 +35,7 @@ const attractionSchema = new Schema({
   verified: Boolean
 });
 
-module.exports = mongoose.model('attraction', attractionSchema);
+module.exports = {
+  AttractionModel: mongoose.model('attraction', attractionSchema),
+  CoordinatesSchema
+};

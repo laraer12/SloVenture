@@ -7,6 +7,9 @@ var attractionController = require('../controllers/attractionController.js');
 router.get('/search', attractionController.search);
 */
 
+
+router.get('/fullKotlin/:id', attractionController.showFullAttractionKotlin);
+
 /*
  * GET
  */

@@ -36,6 +36,9 @@ dependencies {
     implementation("it.skrape:skrapeit:1.3.0-alpha.1")
 
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+    implementation("media.kamel:kamel-image:0.5.0")
+
 }
 
 compose.desktop {

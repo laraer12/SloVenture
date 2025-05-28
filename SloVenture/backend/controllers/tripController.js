@@ -1,6 +1,6 @@
 var TripModel = require('../models/tripModel.js');
 var TripAttractionModel = require('../models/tripAttractionModel.js');
-var AttractionModel = require('../models/attractionModel.js');
+const { AttractionModel } = require('../models/attractionModel.js');
 var RegionModel = require('../models/regionModel.js');
 var AttractionImageModel = require('../models/attractionImageModel.js');
 

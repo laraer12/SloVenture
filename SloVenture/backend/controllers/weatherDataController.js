@@ -52,11 +52,18 @@ module.exports = {
      * weatherDataController.create()
      */
     create: async function (req, res) {
+        console.log('Received body:', req.body);
+
+
         const weatherData = new WeatherdataModel({
             attractionId: req.body.attractionId,
             currentWeather: req.body.currentWeather,
             forecast: req.body.forecast,
-            lastUpdated: req.body.lastUpdated
+            lastUpdated: req.body.lastUpdated,
+            location: {
+                lat: req.body.location.lat,
+                lon: req.body.location.lon
+            }
         });
 
         try {

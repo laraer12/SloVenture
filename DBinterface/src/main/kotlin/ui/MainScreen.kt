@@ -15,8 +15,7 @@ import database.testMongoConnection
 fun MainScreen(){
     Column(modifier=Modifier.padding(16.dp)){
         Text("Glavna stran!", modifier=Modifier.padding(bottom = 8.dp))
-        Button(onClick = { testMongoConnection() }) {
-            Text("Test Mongo povezava")
-        }
+        //AttractionListScreen()
+        UserListScreen()
     }
 }
