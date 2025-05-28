@@ -56,6 +56,7 @@ function Profile() {
         if (res.ok) {
             const data = await res.json();
             setProfile(data);
+            fileInputRef.current.value = '';
         }
     };
 

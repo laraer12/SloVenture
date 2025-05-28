@@ -7,7 +7,7 @@ var userSchema = new Schema({
 	'email' : String,
 	'password' : String,
 	'profilePicture' : { type: String, default: 'default-profile-picture.jpg' }, // če uporabnik še ni dodal svoje profilne slike se prikaže privzeta
-	'isAdmin' : Boolean,
+	'isAdmin': { type: Boolean, default: false }, // privzeto uporabnik ni admin
 	'createdAt' : Date
 });
 

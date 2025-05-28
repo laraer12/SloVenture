@@ -1,4 +1,5 @@
 var CommentModel = require('../models/commentModel.js');
+var UserModel = require('../models/userModel.js');
 
 /**
  * commentController.js
@@ -148,6 +149,9 @@ module.exports = {
     remove: function (req, res) {
         var id = req.params.id;
 
+        if (!req.session || !req.session.userId)
+            return res.status(401).json({ message: 'User not logged in' });
+
         CommentModel.findById(id, function (err, comment) {
             if (err) {
                 return res.status(500).json({
@@ -158,17 +162,29 @@ module.exports = {
             if (!comment)
                 return res.status(404).json({ message: 'Comment was not found' });
 
-            if (!req.session || !req.session.userId || comment.userId.toString() !== req.session.userId)
-                return res.status(403).json({ message: 'Only the owner of this comment can delete it' }); // omejitev da lahko izbriše komentar samo lastnik tega
-
-            comment.remove(function (err) {
-                if (err) {
+            UserModel.findById(req.session.userId, function (err, user) {
+                if (err || !user) {
                     return res.status(500).json({
-                        message: 'Error deleting comment',
+                        message: 'Error identifying user',
                         error: err
                     });
                 }
-                return res.status(204).send();
+
+                // preverim, če je uporabnik lastnik komentarja ali admin in samo potem lahko briše komentar
+                if (!user.isAdmin && comment.userId.toString() !== user._id.toString()) {
+                    return res.status(403).json({
+                        message: 'Only the admin or the user owner can delete this comment'
+                    });
+                }
+                comment.remove(function (err) {
+                    if (err) {
+                        return res.status(500).json({
+                            message: 'Error deleting comment',
+                            error: err
+                        });
+                    }
+                    return res.status(204).send();
+                });
             });
         });
     }
