@@ -2,7 +2,6 @@ package org.example
 
 import java.io.File
 import java.io.InputStream
-import kotlin.math.exp
 
 const val ERROR_STATE = 0
 const val EOF_SYMBOL = -1
@@ -23,14 +22,14 @@ const val BOX_SYMBOL = 13
 const val CIRCLE_SYMBOL = 14
 const val NEARBY_SYMBOL = 15
 const val FIRSTC_SYMBOL = 16
-const val SECONDC_SYMBOL =17
-const val STRING_LITERAL_SYMBOL =18
+const val SECONDC_SYMBOL = 17
+const val STRING_LITERAL_SYMBOL = 18
 const val NUM_SYMBOL = 19
 const val LBRACE_SYMBOL = 20
 const val RBRACE_SYMBOL = 21
-const val LPAREN_SYMBOL =22
+const val LPAREN_SYMBOL = 22
 const val RPAREN_SYMBOL = 23
-const val COMMA_SYMBOL =24
+const val COMMA_SYMBOL = 24
 const val PLUS_SYMBOL = 25
 const val MINUS_SYMBOL = 26
 const val TIMES_SYMBOL = 27
@@ -51,24 +50,24 @@ interface DFA {
     val states: Set<Int>
     val alphabet: IntRange
     fun next(state: Int, code: Int): Int
-    fun symbol(state:Int): Int
+    fun symbol(state: Int): Int
     val startState: Int
     val finalStates: Set<Int>
 }
 
-object ForForeachFFFAutomaton: DFA {
-    override val states = (1 ..19).toSet()
-    override val alphabet = 0 .. 255
+object ForForeachFFFAutomaton : DFA {
+    override val states = (1..19).toSet()
+    override val alphabet = 0..255
     override val startState = 1
     override val finalStates = setOf(2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19)
 
-    private val numberOfStates = states.max() + 1 // plus the ERROR_STATE
-    private val numberOfCodes = alphabet.max() + 1 // plus the EOF
-    private val transitions = Array(numberOfStates) {IntArray(numberOfCodes)}
-    private val values = Array(numberOfStates) {SKIP_SYMBOL}
+    private val numberOfStates = states.max() + 1
+    private val numberOfCodes = alphabet.max() + 1
+    private val transitions = Array(numberOfStates) { IntArray(numberOfCodes) }
+    private val values = Array(numberOfStates) { SKIP_SYMBOL }
 
     private fun setTransition(from: Int, chr: Char, to: Int) {
-        transitions[from][chr.code + 1] = to // + 1 because EOF is -1 and the array starts at 0
+        transitions[from][chr.code + 1] = to
     }
 
     private fun setTransition(from: Int, code: Int, to: Int) {
@@ -92,25 +91,25 @@ object ForForeachFFFAutomaton: DFA {
 
     init {
         //PVAR
-        for(c in 'A'..'Z') setTransition(1,c,2)
-        for(c in 'A'..'Z') setTransition(2, c, 2)
+        for (c in 'A'..'Z') setTransition(1, c, 2)
+        for (c in 'A'..'Z') setTransition(2, c, 2)
         setSymbol(2, PVAR_SYMBOL)
 
         //VAR IN RESERVED WORDS
         for (c in 'a'..'z') setTransition(1, c, 3)
         for (c in 'a'..'z') setTransition(2, c, 3)
         for (c in '0'..'9') setTransition(2, c, 3)
-        for(c in 'A'..'Z') setTransition(3,c,3)
-        for(c in 'a'..'z') setTransition(3,c,3)
-        for(c in 'A'..'Z') setTransition(3,c,3)
+        for (c in 'A'..'Z') setTransition(3, c, 3)
+        for (c in 'a'..'z') setTransition(3, c, 3)
+        for (c in 'A'..'Z') setTransition(3, c, 3)
 
 
         //NAMES - STRING LITERAL
         setTransition(1, '"', 4)
-        for(c in 'A'..'Z') setTransition(4,c,4)
-        for(c in 'a'..'z') setTransition(4,c,4)
-        setTransition(4,' ',4)
-        setTransition(4,'"',5)
+        for (c in 'A'..'Z') setTransition(4, c, 4)
+        for (c in 'a'..'z') setTransition(4, c, 4)
+        setTransition(4, ' ', 4)
+        setTransition(4, '"', 5)
         setSymbol(5, STRING_LITERAL_SYMBOL)
 
         //{
@@ -204,11 +203,11 @@ class Scanner(private val automaton: DFA, private val stream: InputStream) {
             buffer.add(code.toChar())
             code = stream.read()
         }
-        last = code // The code following the current lexeme is the first code of the next lexeme
+        last = code
 
         if (automaton.finalStates.contains(state)) {
             val lexeme = String(buffer.toCharArray())
-            val symbol = if(state == 3) reservedWord(lexeme) else automaton.symbol(state)
+            val symbol = if (state == 3) reservedWord(lexeme) else automaton.symbol(state)
             return if (symbol == SKIP_SYMBOL) {
                 getToken()
             } else {
@@ -220,7 +219,7 @@ class Scanner(private val automaton: DFA, private val stream: InputStream) {
     }
 }
 
-fun reservedWord(lexeme: String): Int{
+fun reservedWord(lexeme: String): Int {
     return when (lexeme) {
         "Region" -> REGION_SYMBOL
         "Hill" -> HILL_SYMBOL
@@ -288,11 +287,12 @@ fun name(symbol: Int) =
         else -> throw Error("Invalid symbol")
     }
 
-class Parser(private val scanner: Scanner){
-    private var token: Token  = scanner.getToken()
+class Parser(private val scanner: Scanner) {
+    private var token: Token = scanner.getToken()
+    private val program = Program()
 
     private fun accept(symbol: Int): Boolean {
-        if(token.symbol == symbol){
+        if (token.symbol == symbol) {
             token = scanner.getToken()
             return true
         }
@@ -300,21 +300,24 @@ class Parser(private val scanner: Scanner){
     }
 
     private fun expect(symbol: Int): Boolean {
-        if(!accept(symbol)){
+        if (!accept(symbol)) {
             println("Syntax error at ${token.startRow}:${token.startColumn}, expected ${name(symbol)}, got ${name(token.symbol)}")
             return false
         }
         return true
     }
 
-    fun parse(): Boolean {
+    fun parse(): String? {
         val success = program()
-        if(token.symbol != EOF_SYMBOL){
-            println("Unexpected token after: ${token.lexeme}")
-            return false
+
+        if(!success || token.symbol != EOF_SYMBOL){
+            println("Parsing failed or unexpected input at ${token.startRow}:${token.startColumn}")
+            return null
         }
-        return true
+
+        return program.toGeoJson()
     }
+
 
     private fun program(): Boolean {
         return statements()
@@ -334,207 +337,348 @@ class Parser(private val scanner: Scanner){
     }
 
     private fun statement(): Boolean {
-        return region() || declaration() || path()
-    }
-
-    private fun region(): Boolean {
-        if(!accept(REGION_SYMBOL)) return false
-        if(!expect(STRING_LITERAL_SYMBOL)) return false
-        if (!expect(LBRACE_SYMBOL)) return false
-        if (!regionArea()) return false
-        if (!attractions()) return false
-        return expect(RBRACE_SYMBOL)
-    }
-
-    private fun regionArea(): Boolean{
-        return poliline()
-    }
-
-    private fun attractions(): Boolean{
-        while (true) {
-            if (token.symbol in listOf(RBRACE_SYMBOL, EOF_SYMBOL)) break
-            if (!attraction()) return false
+        val region = region()
+        if(region != null){
+            program.regions.add(region)
+            return true
         }
-        return true
+        if (declaration()) return true
+
+        val path = path()
+        if(path != null){
+            program.paths.add(path)
+            return true
+        }
+        return false
     }
 
-    private fun attraction(): Boolean {
-        return hill() || cabin() || church() || mountain() || other() || castle() || lake() || nearby() || declaration()
+    private fun region(): Region? {
+        if (!accept(REGION_SYMBOL)) return null
+        val name = token.lexeme.trim('"')
+        if (!expect(STRING_LITERAL_SYMBOL)) return null
+        if (!expect(LBRACE_SYMBOL)) return null
+        val area = regionArea() ?: return null
+        val attractions = attractions() ?: return null
+        if (!expect(RBRACE_SYMBOL)) return null
+        return Region(name, area, attractions.first, attractions.second)
     }
 
-    private fun hill(): Boolean {
-        if (!simpleAttraction(HILL_SYMBOL)) return false
+    private fun regionArea(): Poliline? {
         return poliline()
     }
 
-    private fun cabin(): Boolean {
-        if(!simpleAttraction(CABIN_SYMBOL)) return false
-        return box()
+    private fun attractions(): Pair<List<Attraction>, List<Nearby>>? {
+        val attractions = mutableListOf<Attraction>()
+        val nearbyList = mutableListOf<Nearby>()
+        while (token.symbol !in listOf(RBRACE_SYMBOL, EOF_SYMBOL)) {
+            if(token.symbol == NEARBY_SYMBOL){
+                val nearby = nearby() ?: return null
+                nearbyList.add(nearby)
+                continue
+            }
+            else if(token.symbol == NVAR_DEC_SYMBOL){
+                if(!varDeclaration()) return null
+                continue
+            }else if (token.symbol == PVAR_DEC_SYMBOL){
+                if(!pvarDeclaration())  return null
+                continue
+            }
+            val attraction = attraction() ?: return null
+            attractions.add(attraction)
+        }
+        return Pair(attractions, nearbyList)
     }
 
-    private fun church(): Boolean {
-        if(!simpleAttraction(CHURCH_SYMBOL)) return false
-        return box()
+    private fun attraction(): Attraction? {
+        return hill()
+            ?: cabin()
+            ?: church()
+            ?: mountain()
+            ?: other()
+            ?: castle()
+            ?: lake()
     }
 
-
-    private fun mountain(): Boolean{
-        if(! simpleAttraction(MOUNTAIN_SYMBOL)) return false
-        return poliline()
+    private fun hill(): Hill? {
+        val (name, point) = simpleAttraction(HILL_SYMBOL)?:return null
+        val area = poliline()?: return null
+        return Hill(name, point, area)
     }
 
-
-    private fun other(): Boolean {
-        return simpleAttraction(OTHER_SYMBOL)
+    private fun cabin(): Cabin? {
+        val (name, point) = simpleAttraction(CABIN_SYMBOL)?:return null
+        val area = box()?:return null
+        return Cabin(name, point, area)
     }
 
-    private fun castle(): Boolean{
-        if(!simpleAttraction(CASTLE_SYMBOL)) return false
-        return box()
+    private fun church(): Church? {
+        val (name, point) = simpleAttraction(CHURCH_SYMBOL)?:return null
+        val area = box()?: return null
+        return Church(name, point, area)
     }
 
-    private fun lake(): Boolean{
-        if(!simpleAttraction(LAKE_SYMBOL)) return false
-        return circle()
+    private fun mountain(): Mountain? {
+        val (name, point) = simpleAttraction(MOUNTAIN_SYMBOL)?:return null
+        val area = poliline()?: return null
+        return Mountain(name, point, area)
     }
 
-    private fun nearby(): Boolean{
-        if(!accept(NEARBY_SYMBOL)) return false
-        if(!expect(LPAREN_SYMBOL)) return false
-        if(!point()) return false
-        if(!expect(COMMA_SYMBOL)) return false
-        if(!expr()) return false
-        return expect(RPAREN_SYMBOL)
+    private fun other(): Other? {
+        val (name, point) = simpleAttraction(OTHER_SYMBOL)?:return null
+        return Other(name, point)
     }
 
-    private fun declaration(): Boolean{
+    private fun castle(): Castle? {
+        val (name, point) = simpleAttraction(CASTLE_SYMBOL)?:return null
+        val area = box()?: return null
+        return Castle(name, point, area)
+    }
+
+    private fun lake(): Lake? {
+        val (name, point) = simpleAttraction(LAKE_SYMBOL)?:return null
+        val area = circle()?: return null
+        return Lake(name, point, area)
+    }
+
+    private fun nearby(): Nearby? {
+        if (!accept(NEARBY_SYMBOL)) return null
+        if (!expect(LPAREN_SYMBOL)) return null
+        val p = point()?: return null
+        if (!expect(COMMA_SYMBOL)) return null
+        val r = expr()?: return null
+        if(!expect(RPAREN_SYMBOL)) return null
+        return Nearby(p, r, program)
+    }
+
+    private fun declaration(): Boolean {
         return pvarDeclaration() || varDeclaration()
     }
 
-    private fun pvarDeclaration(): Boolean{
-        if(!accept(PVAR_DEC_SYMBOL)) return false
-        if(!expect(PVAR_SYMBOL)) return false
-        if(!expect(ASSIGN_SYMBOL)) return false
-        return point()
+    private fun pvarDeclaration(): Boolean {
+        if (!accept(PVAR_DEC_SYMBOL)) return false
+        val name = token.lexeme
+        if (!expect(PVAR_SYMBOL)) return false
+        if (!expect(ASSIGN_SYMBOL)) return false
+        val value = point()?:return false
+        val newPvar = Pvar(name, value)
+        program.pvars.add(newPvar)
+        return true
     }
 
     private fun varDeclaration(): Boolean {
-        if(!accept(NVAR_DEC_SYMBOL)) return false
-        if(!expect(VAR_SYMBOL)) return false
-        if(!expect(ASSIGN_SYMBOL)) return false
-        return expr()
-    }
-
-    private fun expr(): Boolean{
-        if(!term()) return false
-        while(token.symbol in listOf(PLUS_SYMBOL, MINUS_SYMBOL, TIMES_SYMBOL, DIVIDE_SYMBOL)){
-            token = scanner.getToken()
-            if(!term())return false
-        }
+        if (!accept(NVAR_DEC_SYMBOL)) return false
+        val name = token.lexeme
+        if (!expect(VAR_SYMBOL)) return false
+        if (!expect(ASSIGN_SYMBOL)) return false
+        val value = expr()?:return false
+        val newVar = Var(name, value)
+        program.vars.add(newVar)
         return true
     }
 
-    private fun term(): Boolean{
+    private fun expr(): Double? = additive()
+
+    private fun additive(): Double? {
+        var result = multiplicative() ?: return null
+        while (token.symbol == PLUS_SYMBOL || token.symbol == MINUS_SYMBOL) {
+            val op = token.symbol
+            token = scanner.getToken()
+            val right = multiplicative() ?: return null
+            result = if (op == PLUS_SYMBOL) result + right else result - right
+        }
+        return result
+    }
+
+    private fun multiplicative(): Double? {
+        var result = unary() ?: return null
+        while (token.symbol == TIMES_SYMBOL || token.symbol == DIVIDE_SYMBOL) {
+            val op = token.symbol
+            token = scanner.getToken()
+            val right = unary() ?: return null
+            result = if (op == TIMES_SYMBOL) result * right else result / right
+        }
+        return result
+    }
+
+    private fun unary(): Double? {
+        return when (token.symbol) {
+            PLUS_SYMBOL -> {
+                token = scanner.getToken()
+                unary()
+            }
+            MINUS_SYMBOL -> {
+                token = scanner.getToken()
+                unary()?.let { -it }
+            }
+            else -> term()
+        }
+    }
+
+    private fun term(): Double? {
         return when (token.symbol) {
             FIRSTC_SYMBOL -> {
                 token = scanner.getToken()
-                expect(LPAREN_SYMBOL) && expect(PVAR_SYMBOL) && expect(RPAREN_SYMBOL)
+                if (!expect(LPAREN_SYMBOL)) return null
+                val p = point()?: return null
+                if (!expect(RPAREN_SYMBOL)) return null
+                p.long
             }
+
             SECONDC_SYMBOL -> {
                 token = scanner.getToken()
-                expect(LPAREN_SYMBOL) && expect(PVAR_SYMBOL) && expect(RPAREN_SYMBOL)
+                if (!expect(LPAREN_SYMBOL)) return null
+                val p = point()?: return null
+                if (!expect(RPAREN_SYMBOL)) return null
+                p.lat
             }
-            NUM_SYMBOL, VAR_SYMBOL -> {
-                token = scanner.getToken(); true
+
+            NUM_SYMBOL -> {
+                val raw = token.lexeme.trim('"')
+                val number = raw.toDoubleOrNull()
+                token = scanner.getToken()
+                number
             }
-            else -> false
+
+            VAR_SYMBOL -> {
+                val name = token.lexeme
+                token = scanner.getToken()
+                val variable = program.vars.find { it.name == name }
+                if (variable == null) {
+                    println("Undefined variable: $name")
+                    return null
+                }
+                variable.value
+            }
+
+            else -> null
         }
     }
 
-    private fun point(): Boolean{
+    private fun point(): Point? {
+        val pvar = token.lexeme
         return if (accept(POINT_SYMBOL)) {
-            expect(LPAREN_SYMBOL) && expr() && expect(COMMA_SYMBOL) && expr() && expect(RPAREN_SYMBOL)
+            if (!expect(LPAREN_SYMBOL)) return null
+            val x = expr() ?: return null
+            if (!expect(COMMA_SYMBOL)) return null
+            val y = expr() ?: return null
+            if (!expect(RPAREN_SYMBOL)) return null
+            Point(x, y)
         } else if (accept(PVAR_SYMBOL)) {
-            true
+            program.pvars.find { it.name == pvar }?.value
         } else {
-            false
+            null
         }
     }
 
-    private fun box(): Boolean{
-        return expect(BOX_SYMBOL) && expect(LPAREN_SYMBOL) && point() && expect(COMMA_SYMBOL) && point() && expect(
-            RPAREN_SYMBOL)
+    private fun box(): Box? {
+        if (!accept(BOX_SYMBOL))return null
+        if (!expect(LPAREN_SYMBOL))return null
+
+        val topLeft = point()?: return null
+
+        if (!expect(COMMA_SYMBOL)) return null
+
+        val bottomRight = point()?: return null
+
+        if (!expect(RPAREN_SYMBOL)) return null
+        return Box(topLeft, bottomRight)
     }
 
-    private fun circle(): Boolean{
-        return expect(CIRCLE_SYMBOL) && expect(LPAREN_SYMBOL) && point() && expect(COMMA_SYMBOL) && expr() && expect(
-            RPAREN_SYMBOL)
+    private fun circle(): Circle? {
+        if (!accept(CIRCLE_SYMBOL))return null
+        if (!expect(LPAREN_SYMBOL)) return null
+
+        val p = point()?:return null
+
+        if (!expect(COMMA_SYMBOL)) return null
+        val r = expr() ?: return null
+
+        if (!expect(RPAREN_SYMBOL)) return null
+        return Circle(p, r)
     }
 
-    private fun path(): Boolean{
-        if(!accept(PATH_SYMBOL)) return false
-        if(!expect(LBRACE_SYMBOL))return false
-        if (!instructions()) return false
-        return expect(RBRACE_SYMBOL)
+    private fun path(): Path? {
+        if (!accept(PATH_SYMBOL)) return null
+        if (!expect(LBRACE_SYMBOL)) return null
+        val instructions = instructions() ?: return null
+        if (!expect(RBRACE_SYMBOL)) return null
+        return Path(instructions)
     }
 
-    private fun instructions(): Boolean{
-        while (true){
-            if(!instruction()) return false
-            if (token.symbol == RBRACE_SYMBOL) break
+    private fun instructions(): List<Instruction>? {
+        val instructions = mutableListOf<Instruction>()
+        while (true) {
+            if(token.symbol == RBRACE_SYMBOL) break
+            val instruction = instruction() ?: return null
+            instructions.add(instruction)
         }
-        return true
+        return instructions
     }
 
-    private fun instruction(): Boolean{
-        return poliline() || polispline() || line() || bend()
+    private fun instruction(): Instruction? {
+        return poliline() ?: polispline() ?: line() ?: bend()
     }
 
-    private fun poliline(): Boolean{
-        if(!accept(POLILINE_SYMBOL))return false
-        if (!expect(LPAREN_SYMBOL)) return false
-        if(!point())return false
-        while (accept(COMMA_SYMBOL)){
-            if(!point())return false
+    private fun poliline(): Poliline? {
+        val points = mutableListOf<Point>()
+        if (!accept(POLILINE_SYMBOL)) return null
+        if (!expect(LPAREN_SYMBOL)) return null
+        val firstPoint = point() ?: return null
+        points.add(firstPoint)
+        while (accept(COMMA_SYMBOL)) {
+            val nextPoint = point() ?: return null
+            points.add(nextPoint)
         }
-        return expect(RPAREN_SYMBOL)
+
+        if (!expect(RPAREN_SYMBOL)) return null
+        return Poliline(points)
     }
 
-    private fun polispline(): Boolean {
-        if (!accept(POLISPLINE_SYMBOL)) return false
-        if (!expect(LPAREN_SYMBOL)) return false
-        if (!bend()) return false
-        while (accept(COMMA_SYMBOL)){
-            if(!bend())return false
+    private fun polispline(): Polispline? {
+        if (!accept(POLISPLINE_SYMBOL)) return null
+        if (!expect(LPAREN_SYMBOL)) return null
+        val bends = mutableListOf<Bend>()
+
+        val first = bend() ?: return null
+        bends.add(first)
+
+        while (accept(COMMA_SYMBOL)) {
+            val next = bend() ?: return null
+            bends.add(next)
         }
-        return expect(RPAREN_SYMBOL)
+
+        if (!expect(RPAREN_SYMBOL)) return null
+        return Polispline(bends)
     }
 
-    private fun bend(): Boolean{
-        if (!accept(BEND_SYMBOL)) return false
-        if(!expect(LPAREN_SYMBOL)) return false
-        if(!point()) return false
-        if(!expect(COMMA_SYMBOL)) return false
-        if (!point())return false
-        if (!expect(COMMA_SYMBOL))return false
-        if (!expr())return false
-        return expect(RPAREN_SYMBOL)
+    private fun bend(): Bend? {
+        if (!accept(BEND_SYMBOL)) return null
+        if (!expect(LPAREN_SYMBOL)) return null
+        val start = point() ?: return null
+        if (!expect(COMMA_SYMBOL)) return null
+        val end = point() ?: return null
+        if (!expect(COMMA_SYMBOL)) return null
+        val angle = expr() ?: return null
+        if (!expect(RPAREN_SYMBOL)) return null
+        return Bend(start, end, angle)
     }
 
-    private fun line(): Boolean {
-        if(!accept(LINE_SYMBOL)) return false
-        if(!expect(LPAREN_SYMBOL)) return false
-        if(!point()) return false
-        if(!expect(COMMA_SYMBOL))return false
-        if (!point())return false
-        return expect(RPAREN_SYMBOL)
+    private fun line(): Line? {
+        if (!accept(LINE_SYMBOL)) return null
+        if (!expect(LPAREN_SYMBOL)) return null
+        val start = point() ?: return null
+        if (!expect(COMMA_SYMBOL)) return null
+        val end = point() ?: return null
+        if (!expect(RPAREN_SYMBOL)) return null
+        return Line(start, end)
     }
 
-    private fun simpleAttraction(symbol: Int): Boolean{
-        if(!accept(symbol)) return false
-        if(!expect(STRING_LITERAL_SYMBOL)) return false
-        if(!point()) return false
-        return true
+    private fun simpleAttraction(symbol: Int): Pair<String, Point>? {
+        if (!accept(symbol)) return null
+        val name = token.lexeme.trim('"')
+        if (!expect(STRING_LITERAL_SYMBOL)) return null
+        val point = point() ?: return null
+        return Pair(name, point)
     }
 }
 
@@ -551,9 +695,5 @@ fun main() {
     printTokens(Scanner(ForForeachFFFAutomaton, file.byteInputStream()))
     val scanner = Scanner(ForForeachFFFAutomaton, file.byteInputStream())
     val parser = Parser(scanner)
-    if(parser.parse()){
-        println("\naccept")
-    }else{
-        println("reject")
-    }
+    println("\n" + parser.parse())
 }

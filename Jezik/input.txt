@@ -1,28 +1,8 @@
-
-pvar A = point(1.0, 1.0)
-pvar B = point(2.0, 2.0)
-var r = firstC(B)
-
-Region "Gorenjska" {
-    poliline(point(1.0, 1.0), point(2.0, 2.0), point(3.0, 3.0))
-
-    Hill "Triglav" point(4.0, 5.0) poliline(point(3.0, 4.0), point(4.0, 4.5))
-    Cabin "Planinska koca" point(3.5, 4.5) box(point(3.0, 4.0), point(4.0, 5.0))
-    Other "Vinska klet" point(2.5, 3.0)
-    Castle "Blejski grad" point(2.2, 2.5) box(point(2.0, 2.0), point(2.5, 3.0))
-}
-
-Region "Primorska" {
-    poliline(point(5.0, 5.0), point(6.0, 6.0), point(7.0, 5.5))
-
-    Lake "Jezero" point(6.0, 6.0) circle(point(6.0, 6.0), 2.5)
-    Church "Cerkev svetega Marka" point(5.5, 5.5) box(point(5.4, 5.4), point(5.6, 5.6))
-    Mountain "Nanos" point(6.5, 5.5) poliline(point(6.0, 5.0), point(6.5, 6.0))
-    nearby(point(6.0, 6.0), 3.0)
-}
-
-Path {
-    poliline(A, B, point(3.0, 3.0))
-    bend(point(3.0, 3.0), point(4.0, 4.0), 1.5)
-    polispline(bend(point(4.0, 4.0), point(5.0, 5.0), 2.0))
+pvar START = point(16.32869355291811, 46.67567554314593)
+Region "Prekmurje" {
+    poliline(START, point(16.326218079385626, 46.67319307836718), point(16.325408789961614, 46.67095549675824), point(16.326575118838036, 46.66808080148243), point(16.331954513242977, 46.666823075020545), point(16.338643052304008, 46.66698641424577), point(16.344331880903184, 46.66937116173659), point(16.343570196738312, 46.67539790516716), point(16.33581053932133, 46.677684297235686), point(16.331859302722478, 46.67712904062182), START)
+    Lake "Bukovnisko jezero" point(16.33536060764561, 46.674377137467786) circle(point(16.33536060764561, 46.674377137467786), 0.250)
+    Church "Kapela svetega Vida" point(16.33331051093242, 46.67099885581254) box(point(16.333280495004402, 46.67102720371557), point(16.333347304650573, 46.67097250110828))
+    Other "Energijska Tocka" point(16.333883517662287, 46.67089275907108)
+    Cabin "Gozdarska koca" point(16.334766934109183, 46.67271596173532) box(point(16.334669525984822, 46.67277438309296), point(16.334875886900136, 46.672653084441606))
 }
