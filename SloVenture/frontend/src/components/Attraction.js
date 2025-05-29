@@ -10,6 +10,9 @@ import Box from '@mui/material/Box';
 // podobno kot pri Attractions.js da imam navigacijske puščice da vidim vse slike
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
+// za izris vremena kot graf
+import { Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart, Bar } from 'recharts';
+
 function Attraction() {
   const { id } = useParams();
   const [attraction, setAttraction] = useState(null);
@@ -37,10 +40,15 @@ function Attraction() {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef();
 
-  // za pridobivanje znamenitosti
+  // vreme
+  const [weatherData, setWeatherData] = useState(null);
+  const [loadingWeather, setLoadingWeather] = useState(true);
+  const [errorWeather, setErrorWeather] = useState(null);
+
   useEffect(() => {
     document.title = "Nalaganje znamenitosti..."; // naslov zavihka, dokler se znamenitost ne naloži
 
+    // za pridobivanje znamenitosti
     const fetchAttraction = async () => {
       try {
         const response = await axios.get(`http://localhost:3001/attractions/${id}`);
@@ -67,7 +75,33 @@ function Attraction() {
         setLoading(false);
       }
     };
+
+    // za pridobivanje vremena
+    const fetchWeather = async () => {
+      try {
+        const res = await axios.get(`http://localhost:3001/weather-data/by-attraction/${id}`);
+        const forecast = res.data.forecast;
+
+        if (!forecast || forecast.length === 0)
+          setErrorWeather("Trenutno vremenska napoved ni na voljo");
+        
+        else
+          setWeatherData(res.data);
+      }
+      catch (error) {
+        if (error.response?.status === 404)
+          setErrorWeather("Trenutno vremenska napoved ni na voljo");
+        
+        else
+          setErrorWeather("Napaka pri nalaganju vremenskih podatkov.");
+      }
+      finally {
+        setLoadingWeather(false);
+      }
+    };
+
     fetchAttraction();
+    fetchWeather();
   }, [id]);
 
   // puščice za navigacijo med slikami znamenitosti
@@ -447,8 +481,70 @@ function Attraction() {
           )}
         </div>
       </div>
+
+      <hr />
+      
+      {/* Vreme */}
+      {loadingWeather ? (
+        <p>Nalaganje vremenskih podatkov...</p>
+      ) : errorWeather ? (
+        <p>{errorWeather}</p>
+      ) : !weatherData?.forecast?.length ? (
+        <p>Ni vremenskih podatkov za to znamenitost.</p>
+      ) : (
+        <>
+          <h2>Vremenska napoved</h2>
+          <p>Zadnja posodobitev: {new Date(weatherData.lastUpdated).toLocaleString()}</p>
+
+          <ResponsiveContainer width="100%" height={350}> {/* graf je prilagodljiv glede na velikost ekrana */}
+            <ComposedChart /* kombiniram lahko črte, stolpce ipd. */
+
+              /* vsi potrebni podakti za vreme */
+              data={weatherData.forecast.map(entry => ({
+                date: new Date(entry.date).toLocaleDateString(),
+                maxTemperature: entry.maxTemperature,
+                minTemperature: entry.minTemperature,
+                condition: entry.condition,
+                precipitationProbability: entry.precipitationProbabilityMax
+              }))}
+            >
+              <CartesianGrid strokeDasharray="3 3" /> {/* mreža */}
+
+              {/* katere vrednosti so prikazane na kateri osi */}
+              <XAxis dataKey="date" />
+              <YAxis yAxisId="left" label={{ value: 'Temperatura (°C)', angle: -90, position: 'insideLeft' }} />
+              <YAxis yAxisId="right" orientation="right" domain={[0, 100]} label={{ value: 'Padavine (%)', angle: -90, position: 'insideRight' }} />
+              
+              {/* ko uporabnik "hovera" o grafu se mu izpiše ta vsebina */}
+              <Tooltip
+                content={({ active, payload, label }) => {
+                  if (active && payload && payload.length) {
+                    const data = payload[0].payload;
+
+                    return (
+                      <div style={{ backgroundColor: "#FFF", border: "1px solid #CCC", padding: "10px" }}>
+                        <strong>{label}</strong><br />
+                        <span style={{ color: "#FF7300" }}>Max temp.: {data.maxTemperature}°C</span><br />
+                        <span style={{ color: "#387908" }}>Min temp.: {data.minTemperature}°C</span><br />
+                        <span style={{ color: "#3498db" }}>Možnost padavin: {data.precipitationProbability}%</span><br />
+                        <span>Vreme: {data.condition}</span>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+
+              {/* legenda, ki prikazuje kaj kaj pomeni na grafu */}
+              <Legend />
+              <Line yAxisId="left" type="monotone" dataKey="maxTemperature" name="Max temp." stroke="#FF7300" />
+              <Line yAxisId="left" type="monotone" dataKey="minTemperature" name="Min temp." stroke="#387908" />
+              <Bar yAxisId="right" dataKey="precipitationProbability" name="Padavine (%)" fill="#3498db" barSize={20} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </>
+      )}
       <div>
-        <hr />
         
         {/* obrazec, kamor uporabnika lahko doda svojo sliko znamenitosti, prikaz samo prijavljenemu uporabniku */}
         {user && (

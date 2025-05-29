@@ -65,7 +65,7 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 const mongoose = require('mongoose');
-const uri = "mongodb+srv://ime:geslo@sloventure.4djf5rv.mongodb.net/SloVentureDB?retryWrites=true&w=majority&appName=SloVenture";
+const uri = "mongodb+srv://nikavuk:EpskaBaza123@sloventure.4djf5rv.mongodb.net/SloVentureDB?retryWrites=true&w=majority&appName=SloVenture";
 
 const clientOptions = { serverApi: { version: '1', strict: true, deprecationErrors: true } };
 
