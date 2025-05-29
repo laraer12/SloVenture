@@ -20,5 +20,6 @@ router.put('/:id', userController.update);
 router.delete('/:id', userController.remove);
 
 router.post('/upload-profile-picture', upload.single('profilePicture'), userController.uploadProfilePicture); // sprememba profilne slike
+router.put('/:id/remove-profile-picture', userController.removeProfilePicture); // da lahko admin izbriše neprimerno profilno sliko uporabnika
 
 module.exports = router;
