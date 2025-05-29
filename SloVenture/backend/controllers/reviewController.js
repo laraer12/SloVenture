@@ -1,4 +1,5 @@
 var ReviewModel = require('../models/reviewModel.js');
+var { AttractionModel } = require('../models/attractionModel.js');
 
 /**
  * reviewController.js
@@ -203,9 +204,28 @@ module.exports = {
                 ratingAccessible: getDistribution(reviews, 'ratingAccessible'),
             };
 
+            // shranim posobljene podatke o oceni tudi v attraction v bazi
+            const updatedAttraction = await AttractionModel.findByIdAndUpdate(
+                attractionId,
+                {
+                    $set: {
+                        rating: averages.rating,
+                        ratingFamilyFriendly: averages.ratingFamilyFriendly,
+                        ratingElderlyFriendly: averages.ratingElderlyFriendly,
+                        ratingAccessible: averages.ratingAccessible
+                    }
+                },
+                { new: true }
+            );
+
+            if (!updatedAttraction) {
+                console.error('Attraction not found with ID:', attractionId);
+                return res.status(404).json({ message: 'Attraction not found' });
+            }
             res.json({ averages, distributions, count: reviews.length });
         }
         catch (err) {
+            console.error('Full error:', err);
             res.status(500).json({ message: 'Error getting averages', error: err });
         }
     }
