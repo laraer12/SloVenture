@@ -1,4 +1,8 @@
+var fs = require('fs');
+var path = require('path');
+
 var AttractionImageModel = require('../models/attractionImageModel.js');
+var UserModel = require('../models/userModel');
 
 var axios = require('axios');
 
@@ -130,17 +134,35 @@ module.exports = {
      * attractionImageController.remove()
      */
     remove: function (req, res) {
-        var id = req.params.id;
+        var id = req.session?.id;
 
-        AttractionImageModel.findByIdAndRemove(id, function (err, attractionImage) {
-            if (err) {
-                return res.status(500).json({
-                    message: 'Error when deleting the attractionImage.',
-                    error: err
+        if (!id)
+            return res.status(401).json({ message: 'User not logged in' });
+
+        UserModel.findById(id, function (err, user) {
+            if (err || !user?.isAdmin)
+                return res.status(403).json({ message: 'Only the admin can delete images' });
+
+            AttractionImageModel.findById(req.params.id, function (err, image) {
+                if (err || !image)
+                    return res.status(404).json({ message: 'Image not found' });
+
+                const imagePath = path.join(__dirname, '..', 'public', image.url); // pot, kamor se shranijo slike, ki jih uporabnik naloži preko vmesnika
+
+                // izbrišem sliko iz mape
+                fs.unlink(imagePath, function (err) {
+                    if (err && err.code !== 'ENOENT')
+                        return res.status(500).json({ message: 'Error deleting image', error: err });
+                    
+                    // izbrišem sliko iz baze
+                    AttractionImageModel.findByIdAndDelete(req.params.id, function (err) {
+                        if (err) 
+                            return res.status(500).json({ message: 'Error deleting from database', error: err });
+
+                        return res.sendStatus(204);
+                    });
                 });
-            }
-
-            return res.status(204).json();
+            });
         });
     },
 

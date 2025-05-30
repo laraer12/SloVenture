@@ -7,26 +7,33 @@ function Map() {
   const mapRef = useRef(); // za izris zemljevida
   const navigate = useNavigate(); // da lahko kliknem na piko in se mi odpre stran z znamenitostjo
   const [attractions, setAttractions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // za slike znamenitosti
   const [hoveredAttraction, setHoveredAttraction] = useState(null);
   const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
+  const [popupPos, setPopupPos] = useState({ left: 0, top: 0 });
+  const popupRef = useRef(null);
+
+  // barve pikic po regijah
+  const [regionColors, setRegionColors] = useState({});
+  const [uniqueRegionIds, setUniqueRegionIds] = useState([]);
+  const [regionIdToName, setRegionIdToName] = useState({});
 
   useEffect(() => {
     document.title = "Zemljevid"; // naslov zavihka
 
-    // slika zemljevida v ozadju
-    document.body.style.backgroundImage = "url('http://localhost:3001/images/world_map.jpg')";
-    document.body.style.backgroundSize = 'cover';
-    document.body.style.backgroundPosition = 'center';
-    document.body.style.backgroundRepeat = 'no-repeat';
-    
     // velikost zemljevida
-    const width = 650;
-    const height = 450;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
 
+    // sedaj povečano na celoten ekran in responsive
     const svg = d3.select(mapRef.current)
       .append('svg')
-      .attr('width', width)
-      .attr('height', height);
+      .attr('width', '100%')
+      .attr('height', '100%')
+      .attr('viewBox', `0 0 ${width} ${height}`)
+      .attr('preserveAspectRatio', 'xMidYMid meet');
 
     // kvader kjer se nahaja zemljevid slovenije
     svg.append('rect')
@@ -37,7 +44,7 @@ function Map() {
     // približno sredina slovenije, da bo prikazana na sredini kvadrata
     const projection = d3.geoMercator()
       .center([14.9, 46.1])
-      .scale(10000) // povečam zemljevid, drugače se sploh ne bi videl
+      .scale(17000) // povečam zemljevid, drugače se sploh ne bi videl
       .translate([width / 2, height / 2]);
 
     const path = d3.geoPath().projection(projection);
@@ -64,13 +71,25 @@ function Map() {
 
     const fetchData = async () => {
       try {
-        const [attractionsRes, imagesRes] = await Promise.all([
+        const [attractionsRes, imagesRes, regionsRes] = await Promise.all([
           fetch('http://localhost:3001/attractions'),
-          fetch('http://localhost:3001/attraction-images')
+          fetch('http://localhost:3001/attraction-images'),
+          fetch('http://localhost:3001/regions'), // pridobim še regije
         ]);
 
         const attractionsData = await attractionsRes.json();
         const imagesData = await imagesRes.json();
+        const regionsData = await regionsRes.json();
+        
+        // da se na legendi izpiše ime regije, ne pa njen ID
+        const regionIdToName = {};
+          regionsData.forEach(region => {
+            const id = region._id?.$oid || region._id || region.id;
+            const name = region.name || region.naziv || "Nepoznana regija";
+            regionIdToName[id] = name;
+          });
+
+        // slike
         const imageMap = {};
 
         imagesData.forEach(img => {
@@ -81,12 +100,12 @@ function Map() {
 
           if (!imageMap[id])
             imageMap[id] = [];
-          
 
           imageMap[id].push(img.url);
         });
 
-        const parsedData = attractionsData.map((item, index) => {
+        // znamenitosti
+        const parsedData = attractionsData.map(item => {
           const attraction = item.attraction ?? item;
           const location = item.location ?? attraction.location;
 
@@ -100,17 +119,47 @@ function Map() {
             return null;
 
           const id = attraction._id?.$oid || attraction._id;
+
+          // pridobim ID iz regije
+          const extractId = (val) => {
+            if (!val)
+              return null;
+
+            if (typeof val === 'object') {
+              if ('$oid' in val)
+                return val.$oid;
+
+              if ('_id' in val)
+                return val._id;
+            }
+            return val;
+          };
+          
+          const regionId = extractId(attraction.regionId);
           const firstImage = imageMap[id]?.[0] || null;
 
           return {
             id,
             name: attraction.name,
             coordinates: [lon, lat],
+            regionId,
             image: firstImage
           };
         }).filter(Boolean);
 
         setAttractions(parsedData);
+
+        // nastavim različne barve za različne regije
+        const uniqueRegionIds = [...new Set(parsedData.map(d => d.regionId).filter(Boolean))];
+        setUniqueRegionIds(uniqueRegionIds);
+
+        const colorScale = d3.scaleOrdinal(d3.schemeCategory10).domain(uniqueRegionIds);
+
+        const regionColors = Object.fromEntries(uniqueRegionIds.map(id => [id, colorScale(id)]));
+        setRegionColors(regionColors);
+        
+        setRegionIdToName(regionIdToName);
+        setLoading(false);
 
         // na zemljevidu izrišem tudi piko, ki predstavlja znamenitost glede na njene koordinate
         g.selectAll('circle.znamenitost')
@@ -121,71 +170,98 @@ function Map() {
           .attr('cx', d => projection(d.coordinates)[0])
           .attr('cy', d => projection(d.coordinates)[1])
           .attr('r', 4)
-          .attr('fill', 'green')
+
+          // vsaki regiji dodam svojo barvo, če slučajno nima podane regije se pika obarva črno
+          .attr('fill', d => {
+            const color = regionColors[d.regionId];
+            return color || 'black';
+          })
           .style('cursor', 'pointer')
           .on('mouseover', (event, d) => {
             const [x, y] = d3.pointer(event);
             setHoverPosition({ x, y });
             setHoveredAttraction(d);
+
+            // da se okvirček vedno prikaže znotraj ekrana in ne izven, odvisno kje hoveramo
+            setTimeout(() => {
+              if (popupRef.current) {
+                const popupRect = popupRef.current.getBoundingClientRect();
+                const padding = 5;
+                const viewportWidth = window.innerWidth;
+                const viewportHeight = window.innerHeight;
+
+                let left = x + padding;
+                let top = y - popupRect.height / 2;
+
+                if (left + popupRect.width > viewportWidth)
+                  left = x - popupRect.width - padding;
+
+                if (top < 0)
+                  top = 0;
+                
+                if (top + popupRect.height > viewportHeight)
+                  top = viewportHeight - popupRect.height;
+
+                setPopupPos({ left, top });
+              }
+            }, 0);
           })
           .on('mouseout', () => {
-            setHoveredAttraction(null);
+            setHoveredAttraction(null); // da ni prikazana prejšnja znamenitost, kjer je uporabnik šel čez z miško
           })
           .on('click', (event, d) => {
             navigate(`/attractions/${d.id}`); // uporabnika preusmerim na stran, kjer si lahko ogleda podrobnosti znamenitosti
           });
-      }
-      catch (err) {
+
+      } catch (err) {
         console.error("Napaka pri fetchanju podatkov:", err);
+        setLoading(false);
       }
     };
 
     fetchData();
 
+    const handleResize = () => {
+      window.location.reload(); // ali prilagodi SVG dinamiko
+    };
+
     // ker trenutno želim imeti sliko zemljevida v ozadju samo tu, returnam za ostale strani null, da tega več ne bo
     return () => {
-      document.body.style.backgroundImage = null;
-      document.body.style.backgroundSize = null;
-      document.body.style.backgroundPosition = null;
-      document.body.style.backgroundRepeat = null;
       d3.select(mapRef.current).selectAll('*').remove();
+      window.removeEventListener('resize', handleResize);
     };
   }, []);
 
   return (
-    <div style={{ textAlign: 'center', position: 'relative' }}>
-      <h3 id="map-title">Kam gremo pa danes? :-)</h3>
-      <div id="map" ref={mapRef}></div>
+    <div id="map">
+      <div ref={mapRef} style={{ width: '100%', height: '100%', }} />
+
+      {/* Legenda */}
+      <div id="legenda">
+        <h3 style={{ marginTop: 0, marginBottom: 10 }}>Legenda regij</h3>
+
+        {loading && <div>Nalaganje...</div>}
+        {!loading && uniqueRegionIds.length === 0 && <div>Ni regij za prikaz</div>}
+
+        {/* izpis seznama regij */}
+        {!loading && uniqueRegionIds.length > 0 && (
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+            {uniqueRegionIds.map(regionId => (
+              <li key={regionId} style={{ display: 'flex', alignItems: 'center', marginBottom: 6 }}>
+                <div id="region" style={{ backgroundColor: regionColors[regionId] || 'black' }} />
+                <span>{regionIdToName[regionId] || regionId}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       {/* S tem prikažem ob piki ime ter sliko znamenitosti */}
       {hoveredAttraction && (
-        <div
-          style={{
-            position: 'absolute',
-            left: hoverPosition.x + 350,
-            top: hoverPosition.y - 20,
-            backgroundColor: 'white',
-            border: '1px solid gray',
-            padding: '10px',
-            borderRadius: '8px',
-            boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-            width: '200px',
-            zIndex: 999
-          }}
-        >
+        <div id="attraction-info" ref={popupRef} style={{ left: popupPos.left, top: popupPos.top }}>
           <strong>{hoveredAttraction.name}</strong>
           {hoveredAttraction.image && (
-            <img
-              src={hoveredAttraction.image}
-              alt={hoveredAttraction.name}
-              style={{
-                width: '100%',
-                marginTop: '10px',
-                borderRadius: '6px',
-                maxHeight: '120px',
-                objectFit: 'cover'
-              }}
-            />
+            <img id="attraction-info-image" src={hoveredAttraction.image} alt={hoveredAttraction.name} />
           )}
         </div>
       )}

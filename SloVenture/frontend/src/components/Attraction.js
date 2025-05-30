@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useEffect, useState, useContext, useRef } from 'react';
 import axios from 'axios';
 import { UserContext } from '../userContext';
@@ -9,6 +9,9 @@ import Box from '@mui/material/Box';
 
 // podobno kot pri Attractions.js da imam navigacijske puščice da vidim vse slike
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+
+// za izris vremena kot graf
+import { Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart, Bar } from 'recharts';
 
 function Attraction() {
   const { id } = useParams();
@@ -37,10 +40,15 @@ function Attraction() {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef();
 
-  // za pridobivanje znamenitosti
+  // vreme
+  const [weatherData, setWeatherData] = useState(null);
+  const [loadingWeather, setLoadingWeather] = useState(true);
+  const [errorWeather, setErrorWeather] = useState(null);
+
   useEffect(() => {
     document.title = "Nalaganje znamenitosti..."; // naslov zavihka, dokler se znamenitost ne naloži
 
+    // za pridobivanje znamenitosti
     const fetchAttraction = async () => {
       try {
         const response = await axios.get(`http://localhost:3001/attractions/${id}`);
@@ -67,7 +75,33 @@ function Attraction() {
         setLoading(false);
       }
     };
+
+    // za pridobivanje vremena
+    const fetchWeather = async () => {
+      try {
+        const res = await axios.get(`http://localhost:3001/weather-data/by-attraction/${id}`);
+        const forecast = res.data.forecast;
+
+        if (!forecast || forecast.length === 0)
+          setErrorWeather("Trenutno vremenska napoved ni na voljo");
+        
+        else
+          setWeatherData(res.data);
+      }
+      catch (error) {
+        if (error.response?.status === 404)
+          setErrorWeather("Trenutno vremenska napoved ni na voljo");
+        
+        else
+          setErrorWeather("Napaka pri nalaganju vremenskih podatkov.");
+      }
+      finally {
+        setLoadingWeather(false);
+      }
+    };
+
     fetchAttraction();
+    fetchWeather();
   }, [id]);
 
   // puščice za navigacijo med slikami znamenitosti
@@ -122,30 +156,6 @@ function Attraction() {
     const parts = [address.street, address.city, address.postalCode, address.country]
       .filter(part => part && part.trim() !== '');
     return parts.join(', ');
-  }
-
-  // za pravilen izpis odpiralnega časa
-  function renderOpeningHours(hours) {
-    if (!hours)
-      return null;
-
-    const days = Object.entries(hours).filter(([day, value]) => value && value.trim() !== '');
-    
-    if (days.length === 0)
-      return null;
-
-    return (
-      <div>
-        <strong>Odpiralni čas:</strong>
-        <ul>
-          {days.map(([day, time]) => (
-            <li key={day}>
-              {day.charAt(0).toUpperCase() + day.slice(1)}: {time}
-            </li>
-          ))}
-        </ul>
-      </div>
-    );
   }
 
   // objava komentarja
@@ -341,6 +351,39 @@ function Attraction() {
     }
   };
 
+  // funkcija za admina, s katero lahko izbriše sliko
+  const handleDeleteImage = async () => {
+    if (!window.confirm("Ali ste prepričani, da želite izbrisati to sliko?")) // če si admin premisli lahko sliko obdrži
+      return;
+
+    const imageToDelete = images[currentImageIndex];
+
+    if (!imageToDelete || !imageToDelete._id) {
+      setError('Slika ni veljavna.');
+      return;
+    }
+    try {
+      const res = await fetch(`http://localhost:3001/attraction-images/${imageToDelete._id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (!res.ok)
+        throw new Error('Napaka pri brisanju slike.');
+
+      // posodobim seznam slik in indeks
+      const newImages = images.filter((img, i) => i !== currentImageIndex);
+      setImages(newImages);
+
+      setCurrentImageIndex((prev) =>
+        newImages.length === 0 ? 0 : Math.max(0, prev - 1)
+      );
+    }
+    catch (err) {
+      setError(err.message);
+    }
+  };
+
   if (loading)
     return <p>Nalaganje...</p>;
 
@@ -370,6 +413,16 @@ function Attraction() {
                 <ChevronRight />
               </button>
             </>
+          )}
+
+          <br />
+          {/* gumb za izbris slike, ki se prikaže samo adminu */}
+          {user?.isAdmin && images.length > 0 && (
+            <div className="delete-button">
+              <button className="btn btn-danger" onClick={handleDeleteImage}>
+                Izbriši trenutno prikazano sliko
+              </button>
+            </div>
           )}
         </div>
 
@@ -420,49 +473,6 @@ function Attraction() {
             </div>
           )}
 
-          {/* Dostopnost */}
-          {attraction.ratingAccessible > 0 && (
-            <p><strong>Dostopnost:</strong> {attraction.ratingAccessible}/5</p>
-          )}
-
-          {/* Primerno za družine */}
-          {attraction.ratingFamilyFriendly > 0 && (
-            <p><strong>Primerno za družine:</strong> {attraction.ratingFamilyFriendly}/5</p>
-          )}
-
-          {/* Primerno za starejše */}
-          {attraction.ratingElderlyFriendly > 0 && (
-            <p><strong>Primerno za starejše:</strong> {attraction.ratingElderlyFriendly}/5</p>
-          )}
-          
-          {/* Ocena */}
-          {attraction.rating > 0 && (
-            <p><strong>Ocena:</strong> {attraction.rating}/5</p>
-          )}
-
-          {/* Potrebna rezervacija */}
-          {typeof attraction.requiresReservation === 'boolean' && (
-            <p><strong>Potrebna rezervacija:</strong> {attraction.requiresReservation ? 'Da' : 'Ne'}</p>
-          )}
-
-          {/* Odpiralni časi */}
-          {renderOpeningHours(attraction.openingHours)}
-
-          {/* Vstopnina */}
-          {attraction.entryFee > 0 && (
-            <p><strong>Vstopnina:</strong> {attraction.entryFee} €</p>
-          )}
-
-          {/* Ustvarjeno */}
-          {attraction.createdAt && (
-            <p><strong>Ustvarjeno:</strong> {new Date(attraction.createdAt).toLocaleDateString()}</p>
-          )}
-
-          {/* Preverjeno */}
-          {typeof attraction.verified === 'boolean' && (
-            <p><strong>Preverjeno:</strong> {attraction.verified ? 'Da' : 'Ne'}</p>
-          )}
-
           {/* Google maps */}
           {attraction.googleMapsLink && (
             <button type="button" className="btn btn-primary" onClick={() => window.open(attraction.googleMapsLink, '_blank', 'noopener,noreferrer')}>
@@ -471,8 +481,70 @@ function Attraction() {
           )}
         </div>
       </div>
+
+      <hr />
+      
+      {/* Vreme */}
+      {loadingWeather ? (
+        <p>Nalaganje vremenskih podatkov...</p>
+      ) : errorWeather ? (
+        <p>{errorWeather}</p>
+      ) : !weatherData?.forecast?.length ? (
+        <p>Ni vremenskih podatkov za to znamenitost.</p>
+      ) : (
+        <>
+          <h2>Vremenska napoved</h2>
+          <p>Zadnja posodobitev: {new Date(weatherData.lastUpdated).toLocaleString()}</p>
+
+          <ResponsiveContainer width="100%" height={350}> {/* graf je prilagodljiv glede na velikost ekrana */}
+            <ComposedChart /* kombiniram lahko črte, stolpce ipd. */
+
+              /* vsi potrebni podakti za vreme */
+              data={weatherData.forecast.map(entry => ({
+                date: new Date(entry.date).toLocaleDateString(),
+                maxTemperature: entry.maxTemperature,
+                minTemperature: entry.minTemperature,
+                condition: entry.condition,
+                precipitationProbability: entry.precipitationProbabilityMax
+              }))}
+            >
+              <CartesianGrid strokeDasharray="3 3" /> {/* mreža */}
+
+              {/* katere vrednosti so prikazane na kateri osi */}
+              <XAxis dataKey="date" />
+              <YAxis yAxisId="left" label={{ value: 'Temperatura (°C)', angle: -90, position: 'insideLeft' }} />
+              <YAxis yAxisId="right" orientation="right" domain={[0, 100]} label={{ value: 'Padavine (%)', angle: -90, position: 'insideRight' }} />
+              
+              {/* ko uporabnik "hovera" o grafu se mu izpiše ta vsebina */}
+              <Tooltip
+                content={({ active, payload, label }) => {
+                  if (active && payload && payload.length) {
+                    const data = payload[0].payload;
+
+                    return (
+                      <div style={{ backgroundColor: "#FFF", border: "1px solid #CCC", padding: "10px" }}>
+                        <strong>{label}</strong><br />
+                        <span style={{ color: "#FF7300" }}>Max temp.: {data.maxTemperature}°C</span><br />
+                        <span style={{ color: "#387908" }}>Min temp.: {data.minTemperature}°C</span><br />
+                        <span style={{ color: "#3498db" }}>Možnost padavin: {data.precipitationProbability}%</span><br />
+                        <span>Vreme: {data.condition}</span>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+
+              {/* legenda, ki prikazuje kaj kaj pomeni na grafu */}
+              <Legend />
+              <Line yAxisId="left" type="monotone" dataKey="maxTemperature" name="Max temp." stroke="#FF7300" />
+              <Line yAxisId="left" type="monotone" dataKey="minTemperature" name="Min temp." stroke="#387908" />
+              <Bar yAxisId="right" dataKey="precipitationProbability" name="Padavine (%)" fill="#3498db" barSize={20} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </>
+      )}
       <div>
-        <hr />
         
         {/* obrazec, kamor uporabnika lahko doda svojo sliko znamenitosti, prikaz samo prijavljenemu uporabniku */}
         {user && (
@@ -529,15 +601,19 @@ function Attraction() {
                   <img src={`http://localhost:3001/images/${comment.userId?.profilePicture}`} alt="Profilna slika" width="40" height="40" className="profile-picture-comment" onError={(e) => { e.target.onerror = null; e.target.src = 'http://localhost:3001/images/default-profile-picture.jpg'; }} />
 
                   <div>
-                    <strong>{comment.userId?.username || 'Neznan uporabnik'}:</strong> {comment.text}
+                    <strong>
+                      <Link to={`/profile/${comment.userId?._id}`} className="profile-link">
+                        {comment.userId?.username || 'Neznan uporabnik'}
+                      </Link>
+                    </strong>: {comment.text}
                     <div className="text-muted" style={{ fontSize: '0.8rem' }}>
                       {new Date(comment.createdAt).toLocaleString()}
                     </div>
                   </div>
                 </div>
 
-                {/* brisanje komentarja, gumb se prikaže samo lastniku komentarja */}
-                {user && comment.userId?._id === user._id && (
+                {/* brisanje komentarja, gumb se prikaže samo lastniku komentarja ali adminu */}
+                {user && (comment.userId?._id === user._id || user.isAdmin) && (
                   <button onClick={() => handleDeleteComment(comment._id)} className="btn btn-sm btn-outline-danger">Izbriši</button>
                 )}
               </li>

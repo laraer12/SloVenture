@@ -1,3 +1,6 @@
+const fs = require('fs');
+const path = require('path');
+
 var UserModel = require('../models/userModel.js');
 var TripModel = require('../models/tripModel.js');
 var TripAttractionModel = require('../models/tripAttractionModel.js');
@@ -144,6 +147,9 @@ module.exports = {
             if (!user)
                 return res.status(404).json({ message: 'No such user' });
 
+            if (req.body.isAdmin !== undefined)
+                delete req.body.isAdmin;
+
             user.username = req.body.username || user.username;
             user.email = req.body.email || user.email;
             user.password = req.body.password || user.password;
@@ -163,16 +169,24 @@ module.exports = {
      * userController.remove()
      */
     remove: function (req, res) {
-            
-        var id = req.params.id;
+        const currentUserId = req.session.userId;
+        const targetUserId = req.params.id;
 
-        UserModel.findByIdAndRemove(id, function (err, user) {
-            if (err) {
-                return res.status(500).json({
-                    message: 'Error when deleting the user.',
-                    error: err
-                });
-            }
+        UserModel.findById(currentUserId, function (err, currentUser) {
+            if (err || !currentUser)
+                return res.status(500).json({ message: 'Error verifying user identity' });
+
+            // Če trenutni uporabnik ni admin in želi izbrisati nekoga drugega – zavrni
+            if (!currentUser.isAdmin && currentUserId !== targetUserId)
+                return res.status(403).json({ message: "Cannot delete another user" });
+
+            UserModel.findByIdAndRemove(targetUserId, function (err, user) {
+                if (err) {
+                    return res.status(500).json({
+                        message: 'Error when deleting the user.',
+                        error: err
+                    });
+                }
 
             TripModel.find({userId: id}, function (err, trips) {
                 if (err) {
@@ -206,6 +220,7 @@ module.exports = {
             });
 
             return res.status(204).json();
+            });
         });
     },
 
@@ -257,7 +272,8 @@ module.exports = {
             return res.json({
                 username: user.username,
                 email: user.email,
-                profilePicture: user.profilePicture
+                profilePicture: user.profilePicture,
+                isAdmin: user.isAdmin
             });
         });
     },
@@ -292,6 +308,49 @@ module.exports = {
                     });
                 }
                 return res.json(updatedUser);
+            });
+        });
+    },
+
+    removeProfilePicture: function(req, res) {
+        const userId = req.params.id; // ID uporabnika, ki mu resetiram sliko
+        const currentUserId = req.session.userId;
+
+        if (!currentUserId)
+            return res.status(401).json({ message: 'Not logged in' });
+
+        UserModel.findById(currentUserId, function(err, currentUser) {
+            if (err || !currentUser)
+                return res.status(500).json({ message: 'Error verifying user identity' });
+
+            if (!currentUser.isAdmin)
+                return res.status(403).json({ message: 'Access denied: Admin only' });
+
+            UserModel.findById(userId, function(err, user) {
+                if (err || !user)
+                    return res.status(404).json({ message: 'User not found' });
+
+                // če je profilna slika že default, ne nardim nič
+                if (user.profilePicture === 'default-profile-picture.jpg')
+                    return res.json({ message: 'Profile picture is already default', user });
+
+                // če trenutna profilna slika ni default, jo poskušam izbrisati iz diska
+                const imagePath = path.join(__dirname, '..', 'public', 'images', user.profilePicture);
+
+                fs.unlink(imagePath, function(err) {
+                    if (err && err.code !== 'ENOENT')
+                        return res.status(500).json({ message: 'Error deleting profile picture file', error: err });
+
+                    // po brisanju datoteke ali če datoteka ni obstajala, nastavim default in shranim
+                    user.profilePicture = 'default-profile-picture.jpg';
+
+                    user.save(function(err, updatedUser) {
+                        if (err)
+                            return res.status(500).json({ message: 'Error updating user', error: err });
+
+                        return res.json({ message: 'Profile picture reset to default', user: updatedUser });
+                    });
+                });
             });
         });
     }

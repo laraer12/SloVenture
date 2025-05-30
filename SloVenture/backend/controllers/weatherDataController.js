@@ -147,6 +147,25 @@ module.exports = {
         }
     },
 
+    /**
+     * weatherDataController.getByAttractionId()
+     * pridobim vreme za določeno znamenitost
+     */
+    getByAttractionId: async function(req, res) {
+        try {
+            const weatherData = await WeatherdataModel.findOne({ attractionId: req.params.attractionId });
+
+            if (!weatherData)
+                return res.status(404).json({ message: 'Weather data not found' });
+
+            return res.json(weatherData);
+        }
+        catch (err) {
+            return res.status(500).json({ message: 'Error fetching weather data', error: err });
+        }
+    }
+
+    /* test apija
     // pridobim vreme in napoved glede na lat in lon
     getWeatherByCoordinates: async function (req, res) {
         try {
@@ -217,4 +236,5 @@ module.exports = {
             });
         }
     }
+        */
 };

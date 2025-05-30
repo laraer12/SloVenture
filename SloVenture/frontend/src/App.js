@@ -53,6 +53,7 @@ function App() {
             <Route path="/login" exact element={<Login />}></Route>
             <Route path="/register" element={<Register />}></Route>
             <Route path="/profile" element={<Profile />}></Route>
+            <Route path="/profile/:id" element={<Profile />} /> {/* ogled tujega profila */}
             <Route path="/logout" element={<Logout />}></Route>
             <Route path="/map" element={<Map />}></Route>
             <Route path="/attractions" element={<Attractions />}></Route>
