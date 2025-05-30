@@ -12,7 +12,7 @@ import java.time.Instant
 import java.time.format.DateTimeFormatter
 
 private val client = HttpClient()
-
+/*
 val validCategories =
     setOf("pohodnistvo", "kultura", "naravne-lepote", "poletna-osvezitev", "raziskovanje", "feretanje", "supanje")
 val validTypes = setOf(
@@ -106,7 +106,7 @@ suspend fun retrieveAttractions(
         println("Error fetching or enriching attractions: ${e.localizedMessage}")
         emptyList()
     }
-}
+}*/
 
 suspend fun retrieveAllAttractions(): List<Attraction> {
     val endpoint = "https://api.kamzavikend.si/public/search"
@@ -246,7 +246,7 @@ suspend fun parseAttraction(json: JsonObject): Attraction {
     return Attraction(
         id = id,
         name = name,
-        region = region, // full Region object
+        regionId = region.id, // TODO
         location = location,
         address = address,
         description = "",
@@ -259,8 +259,7 @@ suspend fun parseAttraction(json: JsonObject): Attraction {
         ratingAccessible = 0.0,
         rating = 0.0,
         googleMapsLink = googleMapsLink,
-        createdAt = createdAt,
-        verified = verified
+        createdAt = createdAt
     )
 }
 

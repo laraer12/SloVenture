@@ -31,8 +31,7 @@ const attractionSchema = new Schema({
   ratingAccessible: Number,
   rating: Number,
   googleMapsLink: String,
-  createdAt: Date,
-  verified: Boolean
+  createdAt: Date
 });
 
 module.exports = {

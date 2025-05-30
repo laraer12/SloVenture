@@ -9,13 +9,39 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.*
-import database.testMongoConnection
+import androidx.compose.material.*
+import androidx.compose.runtime.*
+import database.data.*
+import kotlinx.serialization.json.*
+import java.util.*
 
 @Composable
-fun MainScreen(){
-    Column(modifier=Modifier.padding(16.dp)){
-        Text("Glavna stran!", modifier=Modifier.padding(bottom = 8.dp))
-        //AttractionListScreen()
-        UserListScreen()
+fun MainScreen() {
+    var selectedScreen by remember { mutableStateOf("Attractions") }
+
+    Column(modifier = Modifier.padding(16.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(
+                onClick = { selectedScreen = "Attractions" },
+                enabled = selectedScreen != "Attractions"
+            ) {
+                Text("Attractions")
+            }
+
+            Button(
+                onClick = { selectedScreen = "Users" },
+                enabled = selectedScreen != "Users"
+            ) {
+                Text("Users")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        when (selectedScreen) {
+            "Attractions" -> AttractionListScreen()
+            "Users" -> UserListScreen()
+        }
     }
 }
+

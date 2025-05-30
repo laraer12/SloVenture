@@ -37,8 +37,9 @@ dependencies {
 
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
-    implementation("media.kamel:kamel-image:0.5.0")
+    //implementation("media.kamel:kamel-image-default:1.0.0")
 
+    implementation(compose.materialIconsExtended)
 }
 
 compose.desktop {

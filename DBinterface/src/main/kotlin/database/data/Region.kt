@@ -4,6 +4,7 @@ import database.DatabaseClass
 import database.postToDatabase
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
@@ -16,11 +17,11 @@ data class Region(
     val location: List<Coordinates>
 ) : DatabaseClass
 
-suspend fun postRegion(region: Region): Boolean =
+fun postRegion(region: Region): Boolean =
     postToDatabase(region, "regions", Region.serializer())
 
 
-suspend fun resolveOrCreateRegion(regionName: String): String? {
+fun resolveOrCreateRegion(regionName: String): String? {
     if (regionName.isBlank()) return null
 
     val getRequest = Request.Builder()
@@ -62,4 +63,19 @@ suspend fun resolveOrCreateRegion(regionName: String): String? {
 
     return null
 }
+
+suspend fun getAllRegions(): List<Region> {
+    val request = Request.Builder()
+        .url("http://localhost:3001/regions")
+        .get()
+        .build()
+
+    client.newCall(request).execute().use { response ->
+        if (!response.isSuccessful) return emptyList()
+
+        val body = response.body?.string() ?: return emptyList()
+        return json.decodeFromString(ListSerializer(Region.serializer()), body)
+    }
+}
+
 

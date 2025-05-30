@@ -11,15 +11,12 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import api.fetchWeatherData
 import api.retrieveAllAttractions
-import api.retrieveAttractions
 import api.reverseGeocode
 import database.data.*
 import ui.MainScreen
 import kotlinx.coroutines.runBlocking
 import webScraper.fetchAttractionDetails
 import kotlinx.coroutines.runBlocking
-
-
 
 
 @Preview
@@ -29,7 +26,6 @@ fun main() = application {
         MainScreen()
     }
 }
-
 
 
 /*
@@ -54,12 +50,12 @@ fun main()= runBlocking {
 fun main() = runBlocking {
 
     try {
-        val lat = 46.474976596813
-        val lon = 13.783485757269
+        val lat = 46.359146
+        val lon = 14.597428
 
         println("\nFetching weather for lat=$lat, lon=$lon")
         val weatherData = fetchWeatherData(lat, lon)
-        weatherData.attractionId="68346017590b5417be111d73"
+        weatherData.attractionId = "683827e9d7b6fefd76ddc70a"
         postWeatherData(weatherData)
         println("Forecast entries: ${weatherData.forecast}")
     } catch (e: Exception) {
@@ -67,11 +63,11 @@ fun main() = runBlocking {
         e.printStackTrace()
     }
 
+
     val editableAttraction = fetchFullAttractionData("68346017590b5417be111d73")
     println("Attraction: ${editableAttraction.attraction.name}")
     println("Region name: ${editableAttraction.attraction.region?.name}")
     println("Weather data: ${editableAttraction.weatherData.toString()}")
-    */
 
 
     //val attraction= getAttractionById("682c5aec18a16faef25c8b11")
@@ -79,7 +75,7 @@ fun main() = runBlocking {
 
 
     // TESTNI PRIMERI ZA APIJE IN WEB SCRAPER
-/*
+
     try {
 
         println("\nScraping details for Mangart...")
@@ -101,63 +97,57 @@ fun main() = runBlocking {
         println("Error during test: ${e.message}")
         e.printStackTrace()
     }
+    */
+
 /*
-//cerkev
-    val category = "kultura"
-    val type = "cerkev"
-    val num = 10
-    val page = 1
-
-*/
-    /*
 //DODAJANJE
-    //val attractions = retrieveAttractions(category, type, num, page)
-    val attractions = retrieveAllAttractions()
+//val attractions = retrieveAttractions(category, type, num, page)
+val attractions = retrieveAllAttractions()
 
 
-    if (attractions.isEmpty()) {
-        println("No attractions retrieved.")
+if (attractions.isEmpty()) {
+    println("No attractions retrieved.")
+}
+println("Retrieved ${attractions.size} attractions:")
+for (attraction in attractions) {
+    println("- ${attraction.name} at ${attraction.location.lat}, ${attraction.location.lon}")
+    println("      ${attraction.description}")
+
+    if (attraction.images.isNotEmpty()) {
+        println("Images:")
+        for (img in attraction.images) {
+            println("    • ${img.url} (source: ${img.source}, uploadedBy: ${img.uploadedBy})")
+        }
+    } else {
+        println("No images available.")
     }
-    println("Retrieved ${attractions.size} attractions:")
-    for (attraction in attractions) {
-        println("- ${attraction.name} at ${attraction.location.lat}, ${attraction.location.lon}")
-        println("      ${attraction.description}")
 
-        if (attraction.images.isNotEmpty()) {
-            println("Images:")
-            for (img in attraction.images) {
-                println("    • ${img.url} (source: ${img.source}, uploadedBy: ${img.uploadedBy})")
+    //val updatedAttraction = attraction.copy(regionId = "682731c683c43363632dd813")
+    //val savedAttractionId = postAttractionFromApi(updatedAttraction)
+    val savedAttractionId = postAttractionFromApi(attraction)
+
+
+    if (savedAttractionId != null) {
+        println("Saved attraction '${attraction.name}' to database.")
+
+        for (image in attraction.images) {
+            val imageWithCorrectId = image.copy(
+                attractionId = savedAttractionId,
+                uploadedBy = "682afdbd9ea2a20014bae933" //TODO ZACASNO SAMO DA LAHKO SHRANIM
+            )
+            val imageSaved = postAttractionImage(imageWithCorrectId)
+            if (imageSaved) {
+                println("Saved image: ${image.url}")
+            } else {
+                println("Failed to save image: ${image.url}")
             }
-        } else {
-            println("No images available.")
         }
-
-        //val updatedAttraction = attraction.copy(regionId = "682731c683c43363632dd813")
-        //val savedAttractionId = postAttractionFromApi(updatedAttraction)
-        val savedAttractionId = postAttractionFromApi(attraction)
-
-
-        if (savedAttractionId != null) {
-            println("Saved attraction '${attraction.name}' to database.")
-
-            for (image in attraction.images) {
-                val imageWithCorrectId = image.copy(
-                    attractionId = savedAttractionId,
-                    uploadedBy = "682afdbd9ea2a20014bae933" //TODO ZACASNO SAMO DA LAHKO SHRANIM
-                )
-                val imageSaved = postAttractionImage(imageWithCorrectId)
-                if (imageSaved) {
-                    println("Saved image: ${image.url}")
-                } else {
-                    println("Failed to save image: ${image.url}")
-                }
-            }
-        } else {
-            println("Failed to save attraction '${attraction.name}'.")
-        }
+    } else {
+        println("Failed to save attraction '${attraction.name}'.")
     }
 }
-*/
+}*/
+
 
 /*
     val coordinates = Coordinates(lat = 46.282617972686, lon = 13.862262386349)
@@ -173,7 +163,6 @@ fun main() = runBlocking {
     }
 }
  */
-
 
 
 /* TESTNI PRIMERI ZA SHRANJEVANJE

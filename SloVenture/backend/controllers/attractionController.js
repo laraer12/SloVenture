@@ -56,6 +56,47 @@ module.exports = {
             });
     },
 
+    listKotlin: function (req, res) {
+        AttractionModel.find()
+            .exec(function (err, attractions) {
+                if (err) {
+                    return res.status(500).json({
+                        message: 'Error when getting attraction.',
+                        error: err
+                    });
+                }
+                if (attractions.length === 0)
+                    return res.json([]);
+
+                var promises = attractions.map(function (attraction) {
+                    return AttractionImageModel.find({ attractionId: attraction._id })
+                        .then(function (images) {
+                            return {
+                                attraction: attraction,
+                                images: images
+                            };
+                        })
+                        .catch(function () {
+                            return {
+                                attraction: attraction,
+                                images: []
+                            };
+                        });
+                });
+
+                Promise.all(promises)
+                    .then(function (result) {
+                        return res.json(result);
+                    })
+                    .catch(function (err) {
+                        return res.status(500).json({
+                            message: 'Error when processing attractions.',
+                            error: err
+                        });
+                    });
+            });
+    },
+
     /**
      * attractionController.listByRegion()
      */
@@ -200,12 +241,10 @@ module.exports = {
             });
     },
 
-
     showFullAttractionKotlin: function (req, res) {
     var id = req.params.id;
 
     AttractionModel.findOne({ _id: id })
-        .populate('regionId')
         .exec(function (err, attraction) {
             if (err) {
                 return res.status(500).json({
@@ -238,7 +277,6 @@ module.exports = {
                         }
 
                         nearbyAttractionModel.find({ attractionId: id })
-                            .populate('nearbyAttractionId')
                             .exec(function (err, nearbyAttractions) {
                                 if (err) {
                                     return res.status(500).json({
@@ -258,7 +296,6 @@ module.exports = {
                 });
         });
     },
-
 
     /**
      * attractionController.show()

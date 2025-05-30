@@ -14,7 +14,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 data class Attraction(
     @SerialName("_id") val id: String,
     val name: String,
-    @SerialName("regionId") val region: Region?,
+    @SerialName("regionId") val regionId: String?, //TODO
     val location: Coordinates,
     val address: Address?,
     val description: String?,
@@ -28,7 +28,6 @@ data class Attraction(
     val rating: Double,
     val googleMapsLink: String,
     val createdAt: String? = null,
-    val verified: Boolean,
     val images: List<AttractionImage> = emptyList()  //to sem dodala
 ) : DatabaseClass
 
@@ -47,7 +46,7 @@ data class Address(
 ) : DatabaseClass
 
 
-suspend fun postAttraction(attraction: Attraction): Boolean =
+fun postAttraction(attraction: Attraction): Boolean =
     postToDatabase(attraction, "attractions", Attraction.serializer())
 
 
@@ -78,15 +77,11 @@ fun fetchFullAttractionData(id: String): FullAttractionData {
     return response
 }
 
-
-
-
 fun postAttractionFromApi(attraction: Attraction): String? { //vraca svoj id v bazi
     val jsonAttraction = json.encodeToString(Attraction.serializer(), attraction)
     val mediaType = "application/json".toMediaType()
     val body = jsonAttraction.toRequestBody(mediaType)
 
-    // raw JSON string
     println("JSON payload being sent:\n$jsonAttraction")
 
     val request = Request.Builder()
@@ -100,68 +95,33 @@ fun postAttractionFromApi(attraction: Attraction): String? { //vraca svoj id v b
             return null
         }
 
-        // parse response JSON to extract MongoDB ObjectId
         val responseBody = response.body?.string() ?: return null
         val responseJson = Json.parseToJsonElement(responseBody).jsonObject
         return responseJson["_id"]?.jsonPrimitive?.content
     }
 }
-/*
 
+fun updateAttraction(attraction: Attraction): Boolean {
+    val jsonAttraction = json.encodeToString(Attraction.serializer(), attraction)
+    val body = jsonAttraction.toRequestBody("application/json".toMediaType())
 
-suspend fun postAttractionsWithImages(attractions: List<Attraction>): Boolean {
-    for (attraction in attractions) {
-        val jsonAttraction = json.encodeToString(Attraction.serializer(), attraction)
-        val mediaType = "application/json".toMediaType()
-        val attractionBody = jsonAttraction.toRequestBody(mediaType)
+    val request = Request.Builder()
+        .url("http://localhost:3001/attractions/${attraction.id}")
+        .put(body)
+        .build()
 
-        val attractionRequest = Request.Builder()
-            .url("http://localhost:3001/attractions")
-            .post(attractionBody)
-            .build()
-
-        println("Posting attraction:\n$jsonAttraction")
-
-        val attractionResponse = client.newCall(attractionRequest).execute()
-        if (!attractionResponse.isSuccessful) {
-            println("Failed to post attraction: ${attractionResponse.code}")
-            attractionResponse.close()
-            return false
-        }
-
-        // Get the posted attraction ID (assuming backend returns full object)
-        val savedAttractionJson = attractionResponse.body?.string()
-        attractionResponse.close()
-
-        val savedAttraction = json.decodeFromString(Attraction.serializer(), savedAttractionJson!!)
-        val attractionId = savedAttraction.id
-
-        // Post each image associated with the attraction
-        for (image in attraction.images) {
-            val imageWithAttractionId = image.copy(attractionId = attractionId)
-            val jsonImage = json.encodeToString(AttractionImage.serializer(), imageWithAttractionId)
-            val imageBody = jsonImage.toRequestBody(mediaType)
-
-            val imageRequest = Request.Builder()
-                .url("http://localhost:3001/attractionImages")
-                .post(imageBody)
-                .build()
-
-            println("Posting image:\n$jsonImage")
-
-            val imageResponse = client.newCall(imageRequest).execute()
-            if (!imageResponse.isSuccessful) {
-                println("Failed to post image: ${imageResponse.code}")
-                imageResponse.close()
-                return false
-            }
-            imageResponse.close()
-        }
+    client.newCall(request).execute().use { response ->
+        return response.isSuccessful
     }
-
-    return true
 }
 
+fun deleteAttraction(id: String): Boolean {
+    val request = Request.Builder()
+        .url("http://localhost:3001/attractions/$id")
+        .delete()
+        .build()
 
-
-*/
+    client.newCall(request).execute().use { response ->
+        return response.isSuccessful
+    }
+}

@@ -84,7 +84,8 @@ module.exports = {
                 var user = new UserModel({
                     username: req.body.username,
                     email: req.body.email,
-                    password: req.body.password
+                    password: req.body.password,
+                    isAdmin: false
                 });
 
                 user.save(function (err, savedUser) {
@@ -100,6 +101,38 @@ module.exports = {
         });
     },
 
+    createKotlin: function (req, res) {
+        const { username, email, password, isAdmin, profilePicture } = req.body;
+
+        if (!username || !email || !password) {
+            return res.status(400).json({ message: 'All fields are required!' });
+        }
+
+        UserModel.findOne({ $or: [{ username }, { email }] }, function (err, existingUser) {
+            if (err)
+                return res.status(500).json({ message: 'Error checking user existence', error: err });
+
+            if (existingUser)
+                return res.status(400).json({ message: 'Username or email already exists' });
+
+            const user = new UserModel({
+                username,
+                email,
+                password,
+                isAdmin,
+                profilePicture
+            });
+
+            user.save(function (err, savedUser) {
+                if (err)
+                    return res.status(500).json({ message: 'Error creating user', error: err });
+
+                return res.status(201).json(savedUser);
+            });
+        });
+    },
+
+
     /**
      * userController.update()
      */
@@ -114,6 +147,8 @@ module.exports = {
             user.username = req.body.username || user.username;
             user.email = req.body.email || user.email;
             user.password = req.body.password || user.password;
+            user.isAdmin = req.body.isAdmin;
+            user.profilePicture = req.body.profilePicture || user.profilePicture;
 
             user.save(function (err, updatedUser) {
                 if (err)

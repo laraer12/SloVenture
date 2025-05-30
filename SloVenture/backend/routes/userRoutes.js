@@ -11,6 +11,7 @@ const csrf = require('csurf');
 const csrfProtection = csrf({ cookie: true });
 
 router.get('/', userController.list);
+router.post('/Kotlin', userController.createKotlin);
 router.post('/', csrfProtection, userController.create); // registracija, sedaj dodana csrf zaščita
 router.post('/login', userController.login); // prijava
 router.get('/profile', userController.profile); // prikaz profila

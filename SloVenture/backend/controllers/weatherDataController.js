@@ -9,6 +9,27 @@ var WeatherdataModel = require('../models/weatherDataModel.js');
 module.exports = {
 
     /**
+     * weatherDataController.findByAttractionId()
+     */
+    findByAttractionId: async function (req, res) {
+        const { attractionId } = req.params;
+
+        try {
+            const weatherData = await WeatherdataModel.findOne({ attractionId });
+            if (!weatherData) {
+                return res.status(404).json({ message: 'No weather data found for this attraction' });
+            }
+            return res.status(200).json(weatherData);
+        } catch (err) {
+            return res.status(500).json({
+                message: 'Error when fetching weather data by attractionId',
+                error: err
+            });
+        }
+    },
+
+
+    /**
      * weatherDataController.list()
      */
     list: async function (req, res) {
