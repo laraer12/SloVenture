@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import axios from 'axios';
 
 function Profile() {
     const { id } = useParams(); // pridobim id iz URL-ja, če obstaja
@@ -8,6 +10,10 @@ function Profile() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [currentUser, setCurrentUser] = useState(null); // trenutno prijavljen uporabnik
+
+    // za prikaz obiskanih znamenitosti
+    const [visitedAttractions, setVisitedAttractions] = useState([]);
+    const [imageIndexes, setImageIndexes] = useState({});
 
     useEffect(() => {
         document.title = "Profil"; // naslov zavihka
@@ -49,6 +55,7 @@ function Profile() {
         fetchProfile();
     }, [id]);
 
+    // posodobitev profilne slike
     const handleProfilePictureUpload = async (e) => {
         e.preventDefault();
 
@@ -72,7 +79,9 @@ function Profile() {
             fileInputRef.current.value = '';
         }
     };
+    
 
+    // funkcija za brisanje profilne slike (na voljo samo adminu)
     const handleRemoveProfilePicture = async () => {
         if (!window.confirm("Ali ste prepričani, da želite izbrisati profilno sliko tega uporabnika?")) // če si admin premisli se slika uporabnika ne bo izbrisala
             return;
@@ -92,6 +101,70 @@ function Profile() {
             const errorData = await res.json();
             alert('Napaka: ' + errorData.message);
         }
+    };
+
+    // pridobim informacije o obiskih uporabnika
+    useEffect(() => {
+        const fetchVisitedAttractions = async () => {
+            if (!profile?._id)
+                return;
+
+            try {
+                const res = await axios.get(`http://localhost:3001/user-visit/user/${profile._id}`);
+                setVisitedAttractions(res.data);
+            }
+            catch (err) {
+                console.error('Napaka pri nalaganju obiskov:', err);
+            }
+        };
+
+        fetchVisitedAttractions();
+    }, [profile?._id]);
+
+    // za prikaz slik znamenitosti
+    useEffect(() => {
+        const initialIndexes = {};
+
+        visitedAttractions.forEach((visit) => {
+            if (visit._id) 
+                initialIndexes[visit._id] = 0;
+        });
+        setImageIndexes(initialIndexes);
+    }, [visitedAttractions]);
+
+    // puščice
+    const handlePrev = (visitId, length) => {
+        setImageIndexes((prev) => ({
+        ...prev,
+        [visitId]: (prev[visitId] - 1 + length) % length,
+        }));
+    };
+
+    const handleNext = (visitId, length) => {
+        setImageIndexes((prev) => ({
+        ...prev,
+        [visitId]: (prev[visitId] + 1) % length,
+        }));
+    };
+
+    // pridobivanje slik
+    const getImageUrl = (visit) => {
+        const images = visit.attractionImages && visit.attractionImages.length > 0
+            ? visit.attractionImages
+            : (visit.images || []);
+        const index = imageIndexes[visit._id] || 0;
+
+        if (images.length === 0)
+            return 'http://localhost:3001/images/ni_slike.jpg';
+
+        const url = images[index]?.url || images[index];
+
+        if (!url)
+            return 'http://localhost:3001/images/ni_slike.jpg';
+
+        return url.startsWith('http://') || url.startsWith('https://')
+            ? url
+            : `http://localhost:3001${url}`;
     };
 
     const isOwnProfile = currentUser && profile && currentUser.username === profile.username;
@@ -141,6 +214,60 @@ function Profile() {
             <div>
                 <p><strong>Uporabniško ime:</strong> {profile.username}</p>
                 <p><strong>Email:</strong> {profile.email}</p>
+            </div>
+            
+            <hr />
+
+            <h2>Obiskane znamenitosti</h2>
+
+            <div className="attractions-container" style={{ padding: "2rem" }}>
+                {visitedAttractions.length === 0 ? (
+                    <div>Ni obiskane znamenitosti.</div>
+                    ) : (
+                        visitedAttractions.map((visit) => {
+                            const attraction = visit.attractionId;
+
+                            if (!attraction)
+                                return null;
+
+                            const images = visit.attractionImages && visit.attractionImages.length > 0
+                                ? visit.attractionImages
+                                : (visit.images || []);
+
+                            const imageUrl = getImageUrl(visit);
+                            const visitDateStr = new Date(visit.visitDate).toLocaleDateString();
+
+                            return (
+                                <Link to={`/attractions/${attraction._id}`} key={`${attraction._id}-${visit._id}`} className="attraction-card-link">
+                                    <div className="attraction-card">
+                                        
+                                        {/* prikaz slik ter možnost pomikanja med njimi */}
+                                        <div className="image-wrapper">
+                                            <img src={imageUrl} alt={attraction.name || 'Znamenitost'} className="attraction-image fade-image" key={imageUrl} />
+                                            {images.length > 1 && (
+                                                <>
+                                                    {/* puščice za pomikanje med slikami */}
+                                                    <button className="nav-button left" onClick={(e) => { e.preventDefault(); handlePrev(visit._id, images.length); }}>
+                                                        <ChevronLeft />
+                                                    </button>
+                                                    <button className="nav-button right" onClick={(e) => { e.preventDefault(); handleNext(visit._id, images.length); }}>
+                                                        <ChevronRight />
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
+                                        
+                                        {/* informacije o znamenitosti ter datum obiska */}
+                                        <div className="attraction-details">
+                                            <h3 className="attraction-name">{attraction.name || 'Neznano ime'}</h3>
+                                            <p className="attraction-locationType">{attraction.locationType || 'Neznan tip lokacije'}</p>
+                                            <strong className="attraction-visited">Obiskano:</strong> <span className="attraction-visit-date">{visitDateStr}</span>
+                                        </div>
+                                    </div>
+                                </Link>
+                            );
+                        })
+                    )}
             </div>
         </>
     );

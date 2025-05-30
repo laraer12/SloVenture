@@ -45,6 +45,11 @@ function Attraction() {
   const [loadingWeather, setLoadingWeather] = useState(true);
   const [errorWeather, setErrorWeather] = useState(null);
 
+  // da uporabnik lahko shrani obiskano znamenitost
+  const [visitDate, setVisitDate] = useState('');
+  const [visitSuccess, setVisitSuccess] = useState(false);
+  const [userVisits, setUserVisits] = useState([]);
+
   useEffect(() => {
     document.title = "Nalaganje znamenitosti..."; // naslov zavihka, dokler se znamenitost ne naloži
 
@@ -353,7 +358,11 @@ function Attraction() {
 
   // funkcija za admina, s katero lahko izbriše sliko
   const handleDeleteImage = async () => {
-    if (!window.confirm("Ali ste prepričani, da želite izbrisati to sliko?")) // če si admin premisli lahko sliko obdrži
+    if (!user || !user.isAdmin) {
+      setError('Nimate dovoljenja za brisanje slike.');
+      return;
+    }
+    if (!window.confirm("Ali ste prepričani, da želite izbrisati to sliko?"))
       return;
 
     const imageToDelete = images[currentImageIndex];
@@ -368,19 +377,85 @@ function Attraction() {
         credentials: 'include',
       });
 
-      if (!res.ok)
-        throw new Error('Napaka pri brisanju slike.');
-
-      // posodobim seznam slik in indeks
-      const newImages = images.filter((img, i) => i !== currentImageIndex);
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.message || 'Napaka pri brisanju slike.');
+      }
+      const newImages = images.filter((_, i) => i !== currentImageIndex);
       setImages(newImages);
-
       setCurrentImageIndex((prev) =>
         newImages.length === 0 ? 0 : Math.max(0, prev - 1)
       );
     }
     catch (err) {
-      setError(err.message);
+      console.error(err);
+      setError(err.message || 'Napaka pri brisanju slike.');
+    }
+  };
+
+  // pridobi obstoječe obiske tega uporabnika
+  useEffect(() => {
+    const fetchUserVisits = async () => {
+      try {
+        const res = await axios.get(`http://localhost:3001/user-visit/user/${user._id}`, {
+          withCredentials: true,
+        });
+
+        setUserVisits(res.data);
+      }
+      catch (err) {
+        console.error('Napaka pri pridobivanju obiskov:', err);
+      }
+    };
+
+    if (user)
+      fetchUserVisits();
+  }, [user]);
+
+  // shranjevanje obiska
+  const handleVisitSubmit = async () => {
+    if (!visitDate) {
+      alert('Prosim izberite datum obiska.');
+      return;
+    }
+
+    // datum obiska znamenitosti
+    const alreadyVisited = userVisits.some((visit) => {
+      const visitedDate = new Date(visit.visitDate).toISOString().split('T')[0];
+      return visit.attractionId === attraction._id && visitedDate === visitDate;
+    });
+
+    // če je na izbran datum že shranil obisk je napaka
+    if (alreadyVisited) {
+      alert('Na ta datum ste že označili znamenitost kot obiskano.');
+      return;
+    }
+
+    // drugače shranim
+    try {
+      await axios.post(
+        'http://localhost:3001/user-visit',
+        {
+          userId: user._id,
+          attractionId: attraction._id,
+          visitDate: visitDate,
+        },
+        { withCredentials: true }
+      );
+
+      alert('Obisk uspešno shranjen!');
+      setVisitSuccess(true);
+      setVisitDate('');
+      setUserVisits([...userVisits, { attractionId: attraction._id, visitDate }]);
+    }
+    catch (err) {
+      if (err.response && err.response.status === 409)
+        alert('Na ta datum ste že označili znamenitost kot obiskano.');
+      
+      else {
+        console.error('Napaka pri shranjevanju obiska:', err);
+        alert('Napaka pri shranjevanju obiska.');
+      }
     }
   };
 
@@ -417,7 +492,7 @@ function Attraction() {
 
           <br />
           {/* gumb za izbris slike, ki se prikaže samo adminu */}
-          {user?.isAdmin && images.length > 0 && (
+          {user && user.isAdmin && images.length > 0 && (
             <div className="delete-button">
               <button className="btn btn-danger" onClick={handleDeleteImage}>
                 Izbriši trenutno prikazano sliko
@@ -542,8 +617,26 @@ function Attraction() {
               <Bar yAxisId="right" dataKey="precipitationProbability" name="Padavine (%)" fill="#3498db" barSize={20} />
             </ComposedChart>
           </ResponsiveContainer>
+
+          <hr />
         </>
       )}
+
+      {/* Obisk znamenitosti */}
+      {user && (
+        <div className="visit-section">
+          <h4>Ste obiskali to znamenitost?</h4>
+
+          <br />
+
+          <input type="date" value={visitDate} onChange={(e) => setVisitDate(e.target.value)} />
+          <button onClick={handleVisitSubmit} className="btn btn-success" style={{ marginLeft: 10 }}>
+            Označi kot obiskano
+          </button>
+          <hr />
+        </div>
+      )}
+
       <div>
         
         {/* obrazec, kamor uporabnika lahko doda svojo sliko znamenitosti, prikaz samo prijavljenemu uporabniku */}
@@ -560,10 +653,10 @@ function Attraction() {
             </button>
 
             {error && <p style={{ color: 'red' }}>{error}</p>}
+
+            <hr />
           </div>
         )}
-
-        <hr />
 
         {/* del za komentarje */}
         <div>
@@ -621,6 +714,7 @@ function Attraction() {
           </ul>
         </div>
       </div>
+
       <div>
         <hr />
         {/* prikaz ocen, zvezdic, grafov */}
@@ -668,10 +762,9 @@ function Attraction() {
             </div>
           </>
         )}
+        <hr />
       </div>
 
-      <hr />
-      
       {/* prikaz statistike ocen z grafi, povprečje ter število obiskovalcev, ki so glasovali */}
       <h3>Ocene obiskovalcev</h3>
       

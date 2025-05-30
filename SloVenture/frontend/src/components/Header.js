@@ -23,7 +23,7 @@ function Header(props) {
                                     context.user ?
                                         <>
                                             <li className="nav-item">
-                                                <Link className="nav-link" to='/profile'>Profil</Link>
+                                                <Link className="nav-link" to={`/profile/${context.user._id}`}>Profil</Link>
                                             </li>
                                             <li className="nav-item">
                                                 <Link className="nav-link" to='/logout'>Odjava</Link>

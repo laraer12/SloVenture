@@ -125,6 +125,17 @@ code {
   color: #777;
 }
 
+.attraction-visited {
+  color: #333;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.attraction-visit-date {
+  color: #333;
+  font-weight: 500;
+}
+
 .attraction-description {
   font-size: 0.9rem;
   color: #555;

@@ -1,4 +1,5 @@
 var UservisitModel = require('../models/userVisitModel.js');
+var AttractionImageModel = require('../models/attractionImageModel.js');
 
 /**
  * userVisitController.js
@@ -51,21 +52,35 @@ module.exports = {
      * userVisitController.create()
      */
     create: function (req, res) {
-        var userVisit = new UservisitModel({
-			userId : req.body.userId,
-			attractionId : req.body.attractionId,
-			visitDate : req.body.visitDate
-        });
+        const { userId, attractionId, visitDate } = req.body;
 
-        userVisit.save(function (err, userVisit) {
+        // preverim, ali zapis že obstaja
+        UservisitModel.findOne({ userId, attractionId, visitDate }, function (err, existingVisit) {
             if (err) {
                 return res.status(500).json({
                     message: 'Error when creating userVisit',
                     error: err
                 });
             }
+            if (existingVisit)
+                return res.status(409).json({ message: 'Visit already exists' });
 
-            return res.status(201).json(userVisit);
+            // če pa ne obstaja, ustvarim nov zapis
+            const userVisit = new UservisitModel({
+                userId,
+                attractionId,
+                visitDate
+            });
+
+            userVisit.save(function (err, savedVisit) {
+                if (err) {
+                    return res.status(500).json({
+                        message: 'Error saving visit',
+                        error: err
+                    });
+                }
+                return res.status(201).json(savedVisit);
+            });
         });
     },
 
@@ -122,5 +137,41 @@ module.exports = {
 
             return res.status(204).json();
         });
+    },
+
+    /**
+     * userVisitController.findByUserId()
+     */
+    findByUserId: async function (req, res) {
+        const userId = req.params.userId;
+
+        try {
+            // dobim vse obiske uporabnika z znamenitostmi
+            const visits = await UservisitModel.find({ userId })
+                .populate('attractionId')
+                .exec();
+
+            // za vsako zanmenitost poiščem slike in jih dodam
+            const visitsWithImages = await Promise.all(visits.map(async (visit) => {
+                const attractionId = visit.attractionId?._id;
+                let images = [];
+
+                if (attractionId)
+                    images = await AttractionImageModel.find({ attractionId }).select('url -_id');
+
+                return {
+                    ...visit.toObject(),
+                    attractionImages: images.map(img => img.url)
+                };
+            }));
+
+            return res.json(visitsWithImages);
+        }
+        catch (err) {
+            return res.status(500).json({
+                message: 'Error getting user visits with images',
+                error: err
+            });
+        }
     }
 };
