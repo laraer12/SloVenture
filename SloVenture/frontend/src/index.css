@@ -202,6 +202,7 @@ code {
 }
 
 /* puščice na slikah znamenitosti */
+
 .nav-button {
   position: absolute;
   top: 50%;
@@ -278,4 +279,65 @@ code {
 .profile-link:hover {
   color: blue;
   cursor: pointer;
+}
+
+/* filter za regije */
+
+.region-filter {
+  margin-top: 1rem;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid #DDD;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.region-buttons {
+  display: grid;
+  gap: 0.8rem;
+  width: 100%;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.region-label input[type="checkbox"] {
+  display: none;
+}
+
+.region-label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #CCC;
+  border-radius: 0.5rem;
+  padding: 0.4rem 0.9rem;
+  background-color: white;
+  color: #333;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  transform-origin: center;
+  text-align: center;
+}
+
+.region-label:hover {
+  transform: scale(1.05);
+}
+
+.region-label input[type="checkbox"]:checked + span {
+  color: white;
+  border-color: #0D6EFD;
+}
+
+.region-label span {
+  display: inline-block;
+}
+
+.region-label.checked {
+  background-color: #0D6EFD;
+  color: white;
+  border-color: #0D6EFD;
+}
+
+.region-label.checked span {
+  color: white;
 }
