@@ -14,6 +14,7 @@ function Profile() {
     // za prikaz obiskanih znamenitosti
     const [visitedAttractions, setVisitedAttractions] = useState([]);
     const [imageIndexes, setImageIndexes] = useState({});
+    const [visitedLoading, setVisitedLoading] = useState(true);
 
     useEffect(() => {
         document.title = "Profil"; // naslov zavihka
@@ -106,15 +107,19 @@ function Profile() {
     // pridobim informacije o obiskih uporabnika
     useEffect(() => {
         const fetchVisitedAttractions = async () => {
-            if (!profile?._id)
+            if (!profile?._id) {
+                setVisitedLoading(false);
                 return;
+            }
 
+            setVisitedLoading(true);
             try {
                 const res = await axios.get(`http://localhost:3001/user-visit/user/${profile._id}`);
                 setVisitedAttractions(res.data);
-            }
-            catch (err) {
+            } catch (err) {
                 console.error('Napaka pri nalaganju obiskov:', err);
+            } finally {
+                setVisitedLoading(false);
             }
         };
 
@@ -221,10 +226,12 @@ function Profile() {
             <h2>Obiskane znamenitosti</h2>
 
             <div className="attractions-container" style={{ padding: "2rem" }}>
-                {visitedAttractions.length === 0 ? (
-                    <div>Ni obiskane znamenitosti.</div>
-                    ) : (
-                        visitedAttractions.map((visit) => {
+            {visitedLoading ? (
+                <p>Nalaganje obiskov...</p>
+            ) : visitedAttractions.length === 0 ? (
+                <div>Ni obiskane znamenitosti.</div>
+            ) : (
+                visitedAttractions.map((visit) => {
                             const attraction = visit.attractionId;
 
                             if (!attraction)
