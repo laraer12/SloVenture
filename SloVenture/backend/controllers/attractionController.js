@@ -351,7 +351,7 @@ module.exports = {
                                             error: err
                                         });
                                     }
-                                   
+                                   // pridobimo nearby attractions
                                     nearbyAttractionModel.find({ attractionId: id })
                                         .populate({
                                             path: 'nearbyAttractionId',
@@ -373,27 +373,8 @@ module.exports = {
                                                     nearbyAttractions: []
                                                 });
                                             }
-                                                
-                                               /*
-                                            nearbyAttractions.forEach(function (nearbyAttraction) {
-                                                AttractionImageModel.find({ attractionId: nearbyAttraction.nearbyAttractionId._id })
-                                                    .exec(function (err, images) {
-                                                        if (err) {
-                                                            console.error('Error fetching images for nearby attraction:', err);
-                                                        } else {
-                                                            nearbyAttraction.images = images;
-                                                        }
-                                                    });
-                                            });
-                                            return res.json({
-                                                    attraction: attraction,
-                                                    images: images,
-                                                    reviews: reviews,
-                                                    weatherData: weatherData,
-                                                    nearbyAttractions: nearbyAttractions
-                                                });
-                                            */
-                                           
+                                            
+                                            // pridobimo slike za vsako znamenitost v nearbyAttractions
                                             var promises = nearbyAttractions.map(function (nearbyAttraction) {
                                             return AttractionImageModel.find({ attractionId: nearbyAttraction.nearbyAttractionId._id })
                                                 .then(function (nearbyImages) {
@@ -411,31 +392,23 @@ module.exports = {
                                             });
 
                                             Promise.all(promises)
-  .then(function (results) {
-    const enhancedNearbyAttractions = results.map(item => {
-      // pridobimo "čisti" objekt znamenitosti
-      const attraction = item.nearbyAttraction.nearbyAttractionId.toObject ? item.nearbyAttraction.nearbyAttractionId.toObject() : item.nearbyAttraction.nearbyAttractionId;
-      attraction.images = item.images;
-      return attraction;
-    });
-
-    return res.json({
-      attraction,
-      images,
-      reviews,
-      weatherData,
-      nearbyAttractions: enhancedNearbyAttractions
-    });
-  })
+                                                .then(function (results) {
+                                                  const enhancedNearbyAttractions = results.map(item => {
+                                                    // pridobimo "čisti" objekt znamenitosti
+                                                    const attraction = item.nearbyAttraction.nearbyAttractionId.toObject ? item.nearbyAttraction.nearbyAttractionId.toObject() : item.nearbyAttraction.nearbyAttractionId;
+                                                    attraction.images = item.images;
+                                                    return attraction;
+                                                  });
+                                              
+                                                  return res.json({
+                                                    attraction,
+                                                    images,
+                                                    reviews,
+                                                    weatherData,
+                                                    nearbyAttractions: enhancedNearbyAttractions
+                                                  });
+                                                })
                                             });
-                                         /*       
-                                    return res.json({
-                                        attraction: attraction,
-                                        images: images,
-                                        reviews: reviews,
-                                        weatherData: weatherData,
-                                    });
-                                    */
                                 });
                             });
                     });
@@ -525,7 +498,7 @@ module.exports = {
 
                         nearbyAttraction.save(function (err) {
                             if (err && err.code === 11000) {
-                                //console.log('Nearby attraction already exists, skipping save:');
+
                             }
                             else if (err) {
                                 console.error('Error saving nearby attraction:', err);
@@ -540,7 +513,7 @@ module.exports = {
 
                         nearbyAttraction2.save(function (err) {
                             if (err && err.code === 11000) {
-                                //console.log('Nearby attraction already exists, skipping save:');
+
                             }
                             else if (err) {
                                 console.error('Error saving nearby attraction:', err);

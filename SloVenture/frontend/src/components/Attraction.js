@@ -13,6 +13,12 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 // za izris vremena kot graf
 import { Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart, Bar } from 'recharts';
 
+//za realnočasovne komentarje in ocene
+import io from 'socket.io-client';
+const socket = io('http://localhost:3001',{
+  withCredentials: true,
+}); // povezava na backend za real-time komentarje
+
 function Attraction() {
   const { id } = useParams();
   const [attraction, setAttraction] = useState(null);
@@ -197,6 +203,31 @@ function Attraction() {
 
     fetchComments();
   }, [id]);
+
+  //realnoičasovni komentarji in ocene
+  useEffect(() => {
+    socket.connect();
+
+    socket.on("commentAdded", (newComment) => {
+      setComments((prev) => [...prev, newComment]); // dodam nov komentar v seznam komentarjev  
+    });
+
+    socket.on("commentDeleted", (deletedCommentId) => {
+      setComments((prev) => prev.filter(comment => comment._id !== deletedCommentId)); // odstranitev komentarja iz seznama
+    });
+
+    //posodobimo povprečne ocene, ko je dodana nova ocena
+    socket.on("reviewAdded", (newReview) => {
+      fetchUpdatedAverages(); 
+    });
+
+    return () => {
+      socket.off("commentAdded");
+      socket.off("commentDeleted");
+      socket.off("reviewAdded");
+      socket.disconnect();
+    };
+  }, []);
 
   // za pravilen izpis naslova
   function formatAddress(address) {

@@ -7,6 +7,7 @@
 var app = require('../app');
 var debug = require('debug')('sloventure:server');
 var http = require('http');
+const {Server} = require('socket.io');
 
 /**
  * Get port from environment and store in Express.
@@ -20,6 +21,22 @@ app.set('port', port);
  */
 
 var server = http.createServer(app);
+
+//ustvari Socket.IO server in ga poveže s HTTP strežnikom
+const io = new Server(server, {
+  cors: {
+    origin: ['http://localhost:3000', 'http://localhost:3001'],
+    methods: ['GET', 'POST'],
+    credentials: true
+  }
+});
+
+app.set('io', io);
+
+io.on('connection', (socket) => {
+  socket.on('disconnect', () => {
+  });
+});
 
 /**
  * Listen on provided port, on all network interfaces.
