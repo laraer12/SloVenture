@@ -95,6 +95,10 @@ module.exports = {
                         error: err
                     });
                 }
+
+                const io = req.app.get('io');
+                io.emit("reviewAdded", review);
+
                 return res.status(200).json({
                     message: 'Review successfully given',
                     review: review

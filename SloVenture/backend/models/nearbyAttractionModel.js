@@ -13,4 +13,6 @@ var nearbyAttractionSchema = new Schema({
 	'distance' : Number
 });
 
+nearbyAttractionSchema.index({ attractionId: 1, nearbyAttractionId: 1 }, { unique: true }); //prepreči podvajanje
+
 module.exports = mongoose.model('nearbyAttraction', nearbyAttractionSchema);
