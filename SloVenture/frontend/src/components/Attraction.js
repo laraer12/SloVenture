@@ -45,6 +45,10 @@ function Attraction() {
   const [loadingWeather, setLoadingWeather] = useState(true);
   const [errorWeather, setErrorWeather] = useState(null);
 
+  //bližnje znamenitosti (nearbySttractions)
+  const [nearbyAttractions, setNearbyAttractions] = useState([]);
+  const [imageIndexes, setImageIndexes] = useState({}); // za slike bližnjih znamenitosti 
+
   useEffect(() => {
     document.title = "Nalaganje znamenitosti..."; // naslov zavihka, dokler se znamenitost ne naloži
 
@@ -55,10 +59,22 @@ function Attraction() {
         const data = response.data;
         const fullAttraction = data.attraction || data;
         const images = data.images || fullAttraction.images || [];
+        const nearbyAttractions = data.nearbyAttractions || [];
+        const imageIndexes = {};
+
+        nearbyAttractions.forEach((item) => {
+          console.log("slike bližnjih znamenitosti:", item.images);
+          if (item._id) {
+            imageIndexes[item._id] = 0; // nastavim začetni indeks slike za vsako bližnjo znamenitost
+          }
+        });
+
 
         setAttraction(fullAttraction);
         setImages(images);  // shranim vse slike
         setCurrentImageIndex(0); // nastavim prvo sliko kot trenutno
+        setNearbyAttractions(nearbyAttractions); // shranim bližnje znamenitosti
+        setImageIndexes(imageIndexes); // shranim indekse slik bližnjih znamenitosti
 
         // ko se naloži za naslov uporabim ime znamenitosti
         if (fullAttraction.name)
@@ -117,6 +133,21 @@ function Attraction() {
     );
   };
 
+  // klik puščic pri pomikanju slik za bližnje znamenitosti
+  const handlePrevNearby = (id, length) => {
+    setImageIndexes((prev) => ({
+      ...prev,
+      [id]: (prev[id] - 1 + length) % length,
+    }));
+  };
+
+  const handleNextNearby = (id, length) => {
+    setImageIndexes((prev) => ({
+      ...prev,
+      [id]: (prev[id] + 1) % length,
+    }));
+  };
+
   // pridobim slike iz baze
   const getImageUrl = () => {
     if (images.length === 0)
@@ -132,6 +163,25 @@ function Attraction() {
 
     return `http://localhost:3001${url}`;
   };
+
+  //pridobivanje slik bližnjih znamenitosti iz baze
+ const getNearbyImageUrl = (item) => {
+  const attractionId = item?._id;
+  const images = item?.images || [];
+  const index = imageIndexes[attractionId] || 0;
+
+  if (images.length === 0)
+    return 'http://localhost:3001/images/ni_slike.jpg';
+
+  const url = images[index]?.url;
+
+  if (!url)
+    return 'http://localhost:3001/images/ni_slike.jpg';
+
+  return url.startsWith('http://') || url.startsWith('https://')
+    ? url
+    : `http://localhost:3001${url}`;
+};
 
   // za pridobivanje komentarjev
   useEffect(() => {
@@ -699,7 +749,71 @@ function Attraction() {
           <strong>Število obiskovalcev, ki so glasovali:</strong> {ratingAverages.count}
         </div>
       )}
-    </div>
+      
+      <hr />
+
+      {/* bližnje znamenitosti */}
+      <h3>Bližnje znamenitosti</h3>
+      <div className="attractions-container" style={{ padding: '2rem' }}>
+        {nearbyAttractions.length === 0 ? (
+          <div>Ni bližnjih znamenitosti.</div>
+        ) : (
+          nearbyAttractions.map((nearby) => {
+            if (!nearby) return null;
+          
+            const images = nearby.images || [];
+            const imageUrl = getNearbyImageUrl(nearby);
+          
+            return (
+              <Link
+                to={`/attractions/${nearby._id}`}
+                key={nearby._id}
+                className="attraction-card-link"
+              >
+                <div className="attraction-card">
+                  <div className="image-wrapper">
+                    <img
+                      src={imageUrl}
+                      alt={nearby.name || 'Znamenitost'}
+                      className="attraction-image fade-image"
+                      key={imageUrl}
+                    />
+                    {images.length > 1 && (
+                      <>
+                        <button
+                          className="nav-button left"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handlePrevNearby(nearby._id, images.length);
+                          }}
+                        >
+                          <ChevronLeft />
+                        </button>
+                        <button
+                          className="nav-button right"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleNextNearby(nearby._id, images.length);
+                          }}
+                        >
+                          <ChevronRight />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                  
+                  <div className="attraction-details">
+                    <h3 className="attraction-name">{nearby.name || 'Neznano ime'}</h3>
+                    <p className="attraction-locationType">{nearby.locationType || 'Neznan tip lokacije'}</p>
+                    <p className="attraction-description">{nearby.description || 'Opis ni na voljo.'}</p>
+                  </div>
+                </div>
+              </Link>
+            );
+          })
+        )}
+      </div>
+    </div>   
   );
 }
 

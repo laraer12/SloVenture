@@ -4,6 +4,7 @@ var AttractionImageModel = require('../models/attractionImageModel.js');
 var ReviewModel = require('../models/reviewModel.js');
 var WeatherDataModel = require('../models/weatherDataModel.js');
 var nearbyAttractionModel = require('../models/nearbyAttractionModel.js');
+const app = require('../app.js');
 
 /**
  * attractionController.js
@@ -297,6 +298,7 @@ module.exports = {
         });
     },
 
+
     /**
      * attractionController.show()
      */
@@ -317,7 +319,7 @@ module.exports = {
                     return res.status(404).json({
                         message: 'No such attraction'
                     });
-                }
+                }                    
                 AttractionImageModel.find({ attractionId: id })
                     .populate({
                         path: 'uploadedBy',
@@ -349,6 +351,7 @@ module.exports = {
                                             error: err
                                         });
                                     }
+                                   
                                     nearbyAttractionModel.find({ attractionId: id })
                                         .populate({
                                             path: 'nearbyAttractionId',
@@ -361,14 +364,78 @@ module.exports = {
                                                     error: err
                                                 });
                                             }
-                                            return res.json({
-                                                attraction: attraction,
-                                                images: images,
-                                                reviews: reviews,
-                                                weatherData: weatherData,
-                                                nearbyAttractions: nearbyAttractions
+                                            if (!nearbyAttractions || nearbyAttractions.length === 0) {
+                                                return res.json({
+                                                    attraction,
+                                                    images,
+                                                    reviews,
+                                                    weatherData,
+                                                    nearbyAttractions: []
+                                                });
+                                            }
+                                                
+                                               /*
+                                            nearbyAttractions.forEach(function (nearbyAttraction) {
+                                                AttractionImageModel.find({ attractionId: nearbyAttraction.nearbyAttractionId._id })
+                                                    .exec(function (err, images) {
+                                                        if (err) {
+                                                            console.error('Error fetching images for nearby attraction:', err);
+                                                        } else {
+                                                            nearbyAttraction.images = images;
+                                                        }
+                                                    });
                                             });
-                                        });
+                                            return res.json({
+                                                    attraction: attraction,
+                                                    images: images,
+                                                    reviews: reviews,
+                                                    weatherData: weatherData,
+                                                    nearbyAttractions: nearbyAttractions
+                                                });
+                                            */
+                                           
+                                            var promises = nearbyAttractions.map(function (nearbyAttraction) {
+                                            return AttractionImageModel.find({ attractionId: nearbyAttraction.nearbyAttractionId._id })
+                                                .then(function (nearbyImages) {
+                                                    return {
+                                                        nearbyAttraction: nearbyAttraction,
+                                                        images: nearbyImages
+                                                    };
+                                                })
+                                                .catch(function () {
+                                                    return {
+                                                        nearbyAttraction: nearbyAttraction,
+                                                        images: []
+                                                    };
+                                                });
+                                            });
+
+                                            Promise.all(promises)
+  .then(function (results) {
+    const enhancedNearbyAttractions = results.map(item => {
+      // pridobimo "čisti" objekt znamenitosti
+      const attraction = item.nearbyAttraction.nearbyAttractionId.toObject ? item.nearbyAttraction.nearbyAttractionId.toObject() : item.nearbyAttraction.nearbyAttractionId;
+      attraction.images = item.images;
+      return attraction;
+    });
+
+    return res.json({
+      attraction,
+      images,
+      reviews,
+      weatherData,
+      nearbyAttractions: enhancedNearbyAttractions
+    });
+  })
+                                            });
+                                         /*       
+                                    return res.json({
+                                        attraction: attraction,
+                                        images: images,
+                                        reviews: reviews,
+                                        weatherData: weatherData,
+                                    });
+                                    */
                                 });
                             });
                     });
@@ -381,46 +448,111 @@ module.exports = {
      */
     create: function (req, res) {
 
-    //test TODO
-    console.log("Incoming request body:", req.body);
-
-    const attraction = new AttractionModel({
-        name: req.body.name,
-        regionId: req.body.regionId,
-        location: {
-            lat: req.body.location.lat,
-            lon: req.body.location.lon
-        },
-        address: {
-            street: req.body.address.street,
-            city: req.body.address.city,
-            postalCode: req.body.address.postalCode,
-            country: req.body.address.country
-        },
-        description: req.body.description,
-        classification: req.body.classification,
-        locationType: req.body.locationType,
-        elevation: req.body.elevation,
-        accessibilityOptions: req.body.accessibilityOptions,
-        ratingFamilyFriendly: req.body.ratingFamilyFriendly,
-        ratingElderlyFriendly: req.body.ratingElderlyFriendly,
-        ratingAccessible: req.body.ratingAccessible,
-        rating: req.body.rating,
-        googleMapsLink: req.body.googleMapsLink,
-        createdAt: Date.now(),
-        verified: req.body.verified
-    });
-
-    attraction.save(function (err, saved) {
-        if (err) {
-            return res.status(500).json({
-                message: 'Error when creating attraction',
-                error: err
-            });
+        function toMeters(lat, lon){
+            const R = 6371e3; // Radius of the Earth in meters
+            const x =toRadians(lon) * R * Math.cos(toRadians(lat));
+            const y = toRadians(lat) * R;
+            return { x: x, y: y };
         }
-        return res.status(201).json(saved);
-    });
-},
+
+        function approximateDistance(lat1, lon1, lat2, lon2) {
+            const {x: x1, y: y1} = toMeters(lat1, lon1);
+            const {x: x2, y: y2} = toMeters(lat2, lon2);
+            return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+        }
+
+        function toRadians(degrees) {
+            return degrees * (Math.PI / 180);
+        }
+
+    //test TODO
+        console.log("Incoming request body:", req.body);
+
+        const attraction = new AttractionModel({
+            name: req.body.name,
+            regionId: req.body.regionId,
+            location: {
+                lat: req.body.location.lat,
+                lon: req.body.location.lon
+            },
+            address: {
+                street: req.body.address.street,
+                city: req.body.address.city,
+                postalCode: req.body.address.postalCode,
+                country: req.body.address.country
+            },
+            description: req.body.description,
+            classification: req.body.classification,
+            locationType: req.body.locationType,
+            elevation: req.body.elevation,
+            accessibilityOptions: req.body.accessibilityOptions,
+            ratingFamilyFriendly: req.body.ratingFamilyFriendly,
+            ratingElderlyFriendly: req.body.ratingElderlyFriendly,
+            ratingAccessible: req.body.ratingAccessible,
+            rating: req.body.rating,
+            googleMapsLink: req.body.googleMapsLink,
+            createdAt: Date.now(),
+            verified: req.body.verified
+        });
+
+        attraction.save(function (err, saved) {
+            if (err) {
+                return res.status(500).json({
+                    message: 'Error when creating attraction',
+                    error: err
+                });
+            }
+
+            AttractionModel.find(function (err, attractions) {
+                if (err) {
+                    return res.status(500).json({
+                        message: 'Error when getting attractions.',
+                        error: err
+                    });
+                }
+
+                //izračun nearby attractions
+                attractions.forEach(function (attr) {
+                    var distance = approximateDistance(attr.location.lat, attr.location.lon, attraction.location.lat, attraction.location.lon);
+
+                    if (distance < 2000 && attr._id.toString() !== attraction._id.toString()) {              
+
+                        var nearbyAttraction = new nearbyAttractionModel({
+                            attractionId: attraction._id,
+                            nearbyAttractionId: attr._id,
+                            distance: distance
+                        })
+
+                        nearbyAttraction.save(function (err) {
+                            if (err && err.code === 11000) {
+                                //console.log('Nearby attraction already exists, skipping save:');
+                            }
+                            else if (err) {
+                                console.error('Error saving nearby attraction:', err);
+                            }
+                        });
+
+                        var nearbyAttraction2 = new nearbyAttractionModel({
+                            attractionId: attr._id,
+                            nearbyAttractionId: attraction._id,
+                            distance: distance
+                        });
+
+                        nearbyAttraction2.save(function (err) {
+                            if (err && err.code === 11000) {
+                                //console.log('Nearby attraction already exists, skipping save:');
+                            }
+                            else if (err) {
+                                console.error('Error saving nearby attraction:', err);
+                            }
+                        });
+                    }
+                });
+            });
+
+            return res.status(201).json(saved);
+        });
+    },  
 
 
     /**
