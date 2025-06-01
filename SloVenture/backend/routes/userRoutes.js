@@ -10,6 +10,7 @@ var upload = multer({ dest: 'public/images/' });
 const csrf = require('csurf');
 const csrfProtection = csrf({ cookie: true });
 
+router.get('/getIdByUsername/:username', userController.getIdByUsername);
 router.get('/', userController.list);
 router.post('/Kotlin', userController.createKotlin);
 router.post('/', csrfProtection, userController.create); // registracija, sedaj dodana csrf zaščita

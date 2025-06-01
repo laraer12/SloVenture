@@ -10,6 +10,7 @@ router.get('/search', attractionController.search);
 
 router.get('/fullKotlin/:id', attractionController.showFullAttractionKotlin);
 router.get('/listKotlin', attractionController.listKotlin);
+router.get('/getAllAttractionsKotlin', attractionController.getAllAttractionsKotlin);
 /*
  * GET
  */

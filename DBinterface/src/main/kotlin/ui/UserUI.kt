@@ -38,6 +38,7 @@ fun UserListScreen() {
     var showAddUser by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var searchQuery by remember { mutableStateOf("") }
     var refreshTrigger by remember { mutableStateOf(0) }
 
     LaunchedEffect(refreshTrigger) {
@@ -95,8 +96,19 @@ fun UserListScreen() {
                         }
                     }
                 }
-
                 Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = {
+                        searchQuery = it
+                        users = users.filter { user ->
+                            user.username.contains(it, ignoreCase = true)
+                        }
+                    },
+                    label = { Text("Išči znamenitost...") },
+                    modifier = Modifier.fillMaxWidth()
+                )
 
                 if (isLoading) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

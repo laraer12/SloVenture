@@ -8,6 +8,7 @@ var TripAttractionModel = require('../models/tripAttractionModel.js');
 var axios = require('axios');
 
 var multer = require('multer'); // za objavo datotek
+const { getFormLabelUtilityClasses } = require('@mui/material');
 
 var storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -26,6 +27,22 @@ var upload = multer({ storage: storage }); // inicializacija multer-ja
  * @description :: Server-side logic for managing users.
  */
 module.exports = {
+
+    getIdByUsername: function (req, res) {
+        UserModel.findOne({ username: req.params.username }, function (err, user) {
+            if (err) {
+                return res.status(500).json({
+                    message: 'Error when getting user by username.',
+                    error: err
+                });
+            }
+            if (!user)
+                return res.status(404).json({ message: 'No such user' });
+            
+            return res.json(user);
+        });
+    },
+
 
     /**
      * userController.list()

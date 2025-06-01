@@ -125,3 +125,36 @@ fun deleteAttraction(id: String): Boolean {
         return response.isSuccessful
     }
 }
+
+@Serializable
+data class AttractionMinimal(
+    @SerialName("_id") val id: String,
+    val name: String,
+    val location: Coordinates?
+)
+
+fun getAllAttractions(): List<AttractionMinimal> {
+    val request = Request.Builder()
+        .url("http://localhost:3001/attractions/getAllAttractionsKotlin")
+        .get()
+        .build()
+
+    client.newCall(request).execute().use { response ->
+        if (!response.isSuccessful) {
+            println("Failed to fetch attractions: HTTP ${response.code}")
+            return emptyList()
+        }
+
+        val responseBody = response.body?.string() ?: return emptyList()
+
+        return try {
+            json.decodeFromString<List<AttractionMinimal>>(responseBody)
+        } catch (e: Exception) {
+            println("Failed to parse attractions: ${e.message}")
+            emptyList()
+        }
+    }
+}
+
+
+

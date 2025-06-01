@@ -17,6 +17,7 @@ import okhttp3.Request
 import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -34,6 +35,7 @@ fun AttractionListScreen() {
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var searchQuery by remember { mutableStateOf("") }
+    var showAddDialog by remember { mutableStateOf(false) }
 
     fun fetchAttractions() {
         coroutineScope.launch {
@@ -89,11 +91,22 @@ fun AttractionListScreen() {
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Vse znamenitosti", fontSize = 22.sp, fontWeight = FontWeight.Bold)
-            IconButton(onClick = { fetchAttractions() }) {
-                Icon(Icons.Default.Refresh, contentDescription = "Osveži")
+            Text(
+                "Znamenitosti",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { fetchAttractions() }) {
+                    Icon(Icons.Default.Refresh, contentDescription = "Osveži")
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(onClick = { showAddDialog = true }) {
+                    Text("Dodaj znamenitost")
+                }
             }
         }
 
@@ -149,11 +162,22 @@ fun AttractionListScreen() {
             }
         }
 
+        if (showAddDialog) {
+            AddAttractionDialog(
+                onDismiss = { showAddDialog = false },
+                onSave = { newAttraction ->
+                    showAddDialog = false
+                    fetchAttractions()
+                }
+            )
+        }
+
         errorMessage?.let {
             Text("Error: $it", color = MaterialTheme.colors.error)
         }
     }
 }
+
 
 @Composable
 fun AttractionDetailScreen(
@@ -494,6 +518,138 @@ fun EditAttractionDialog(
     }
 }
 
+@Composable
+fun AddAttractionDialog(
+    onDismiss: () -> Unit,
+    onSave: (Attraction) -> Unit
+) {
+    val coroutineScope = rememberCoroutineScope()
+
+    var name by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var classification by remember { mutableStateOf("") }
+    var locationType by remember { mutableStateOf("") }
+    var elevation by remember { mutableStateOf("") }
+    var accessibilityOptions by remember { mutableStateOf("") }
+    var selectedRegionId by remember { mutableStateOf("") }
+    var address by remember { mutableStateOf(Address("", "", "", "")) }
+    var coordinates by remember { mutableStateOf(Coordinates(0.0, 0.0)) }
+
+    var isFetchingWeather by remember { mutableStateOf(false) }
+    var weatherData by remember { mutableStateOf<WeatherData?>(null) }
+
+    var regions by remember { mutableStateOf<List<Region>>(emptyList()) }
+    LaunchedEffect(Unit) {
+        regions = getAllRegions()
+    }
+
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            elevation = 8.dp,
+            modifier = Modifier
+                .width(600.dp)
+                .height(600.dp)
+        ) {
+            Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                Text("Dodaj znamenitost", style = MaterialTheme.typography.h6)
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Ime") })
+                    OutlinedTextField(
+                        value = description,
+                        onValueChange = { description = it },
+                        label = { Text("Opis") })
+                    OutlinedTextField(
+                        value = classification,
+                        onValueChange = { classification = it },
+                        label = { Text("Klasifikacija") })
+                    OutlinedTextField(
+                        value = locationType,
+                        onValueChange = { locationType = it },
+                        label = { Text("Tip lokacije") })
+                    OutlinedTextField(
+                        value = elevation,
+                        onValueChange = { elevation = it },
+                        label = { Text("Nadmorska višina (m)") })
+                    OutlinedTextField(
+                        value = accessibilityOptions,
+                        onValueChange = { accessibilityOptions = it },
+                        label = { Text("Dostopnost") })
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+
+                    RegionDropdown(
+                        regions = regions,
+                        selectedRegionId = selectedRegionId,
+                        onRegionSelected = { selectedRegionId = it.id.toString() }
+                    )
+
+                    AddressFields(
+                        address = address,
+                        onAddressChange = { address = it }
+                    )
+
+                    LocationFields(
+                        coordinates = coordinates,
+                        onCoordinatesChange = { coordinates = it }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
+                    Button(onClick = onDismiss) {
+                        Text("Prekliči")
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(onClick = {
+                        try {
+                            val newAttraction = Attraction(
+                                id = "",
+                                name = name,
+                                description = description.ifBlank { null },
+                                classification = classification,
+                                locationType = locationType,
+                                elevation = elevation.toDoubleOrNull() ?: 0.0,
+                                accessibilityOptions = accessibilityOptions.ifBlank { null },
+                                regionId = selectedRegionId,
+                                address = address,
+                                location = coordinates,
+                                rating = 0.0,
+                                ratingAccessible = 0.0,
+                                ratingElderlyFriendly = 0.0,
+                                ratingFamilyFriendly = 0.0,
+                                googleMapsLink = "https://maps.google.com/?q=${coordinates.lat},${coordinates.lon}"
+                            )
+
+                            val generatedId = postAttractionFromApi(newAttraction)
+                            if (generatedId != null) {
+                                val savedAttraction = newAttraction.copy(id = generatedId)
+                                onSave(savedAttraction)
+                            } else {
+                                println("Ni bilo mogoče shraniti znamenitosti.")
+                            }
+                        } catch (e: Exception) {
+                            println("Napaka: ${e.message}")
+                        }
+                    }) {
+                        Text("Shrani")
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 @Composable
 fun RegionDropdown(
@@ -582,6 +738,8 @@ fun FetchWeatherButton(onFetchWeather: () -> Unit, enabled: Boolean = true) {
         Text("Pridobi vremenske podatke")
     }
 }
+
+
 
 
 

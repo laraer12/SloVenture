@@ -17,30 +17,46 @@ import java.util.*
 
 @Composable
 fun MainScreen() {
-    var selectedScreen by remember { mutableStateOf("Attractions") }
+
+    var selectedScreen by remember { mutableStateOf("Pregled znamenitosti") }
 
     Column(modifier = Modifier.padding(16.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(
-                onClick = { selectedScreen = "Attractions" },
-                enabled = selectedScreen != "Attractions"
+                onClick = { selectedScreen = "Pregled znamenitosti" },
+                enabled = selectedScreen != "Pregled znamenitosti"
             ) {
-                Text("Attractions")
+                Text("Pregled znamenitosti")
             }
 
             Button(
-                onClick = { selectedScreen = "Users" },
-                enabled = selectedScreen != "Users"
+                onClick = { selectedScreen = "Pregled uporabnikov" },
+                enabled = selectedScreen != "Pregled uporabnikov"
             ) {
-                Text("Users")
+                Text("Pregled uporabnikov")
+            }
+
+            Button(
+                onClick = { selectedScreen = "Uvoz znamenitosti" },
+                enabled = selectedScreen != "Uvoz znamenitosti"
+            ) {
+                Text("Uvoz znamenitosti")
+            }
+            Button(
+                onClick = { selectedScreen = "Uvoz vremena" },
+                enabled = selectedScreen != "Uvoz vremena"
+            ) {
+                Text("Uvoz vremena")
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         when (selectedScreen) {
-            "Attractions" -> AttractionListScreen()
-            "Users" -> UserListScreen()
+            "Pregled znamenitosti" -> AttractionListScreen()
+            "Pregled uporabnikov" -> UserListScreen()
+            "Uvoz znamenitosti" -> AttractionImportScreen()
+            "Uvoz vremena" -> WeatherImportScreen()
         }
     }
 }

@@ -2,117 +2,23 @@ package api
 
 import database.data.*
 import io.ktor.client.*
-import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 
 private val client = HttpClient()
-/*
-val validCategories =
-    setOf("pohodnistvo", "kultura", "naravne-lepote", "poletna-osvezitev", "raziskovanje", "feretanje", "supanje")
-val validTypes = setOf(
-    "hrib",
-    "koca",
-    "cerkev",
-    "planina",
-    "drugo",
-    "jezero",
-    "grad",
-    "slap",
-    "park",
-    "kopalisce",
-    "dvorec",
-    "muzej-na-prostem",
-    "izvir",
-    "jama",
-    "razgledni-stolp",
-    "sup-tocka",
-    "bivak",
-    "soteska",
-    "ferata",
-    "pravljicna-pot"
-)
 
-suspend fun retrieveAttractions(
-    category: String?,
-    type: String?,
-    num: Int?,
-    page: Int?
+
+suspend fun retrieveAllAttractions(
+    maxCount: Int,
+    onProgress: (suspend (Attraction) -> Unit)? = null
 ): List<Attraction> {
-    if (num == null || page == null) {
-        error("Missing parameters: please provide num and page")
-    }
-    if (num < 1 || page < 1) {
-        error("Invalid parameters: num and page should be greater than 0")
-    }
-    if (num * page > 2696 + num) {
-        error("Invalid parameters: num * page should be less than 2696")
-    }
-    if (category != null && category !in validCategories) {
-        error("Invalid category: please provide a valid category")
-    }
-    if (type != null && type !in validTypes) {
-        error("Invalid type: please provide a valid type")
-    }
-
     val endpoint = "https://api.kamzavikend.si/public/search"
-
-    return try {
-        val response: HttpResponse = client.get(endpoint) {
-            headers {
-                append(HttpHeaders.Accept, "application/json")
-            }
-            parameter("page[size]", num)
-            parameter("page[number]", page)
-            if (type != null) parameter("filter[type.slug]", type)
-            if (category != null) parameter("filter[categories.slug]", category)
-        }
-
-        val jsonText = response.bodyAsText()
-        val json = Json.parseToJsonElement(jsonText).jsonObject
-        val dataArray = json["data"]?.jsonArray ?: return emptyList()
-
-        dataArray.map { attractionJsonElement ->
-            val obj = attractionJsonElement.jsonObject
-            val baseAttraction = parseAttraction(obj)
-            val kamzavikendImages = parseAttractionImages(obj)
-
-            val slug = obj["slug"]?.jsonPrimitive?.content ?: ""
-            val scraped = webScraper.fetchAttractionDetails(slug)
-
-            val address = reverseGeocode(baseAttraction.location)
-            val enrichedAttraction = baseAttraction.copy(
-                address = address,
-                description = scraped.descriptionParagraphs.joinToString("\n\n"),
-                images = kamzavikendImages + scraped.imageLinks.map { url ->
-                    AttractionImage(
-                        id = null,
-                        attractionId = baseAttraction.id,
-                        url = url,
-                        source = "webScraper",
-                        uploadedBy = "admin",
-                        createdAt = baseAttraction.createdAt
-                    )
-                }
-            )
-            enrichedAttraction
-        }
-    } catch (e: Exception) {
-        println("Error fetching or enriching attractions: ${e.localizedMessage}")
-        emptyList()
-    }
-}*/
-
-suspend fun retrieveAllAttractions(): List<Attraction> {
-    val endpoint = "https://api.kamzavikend.si/public/search"
-    val totalAttractions = 10 //TODO 2696
     val pageSize = 30
-    val totalPages = (totalAttractions + pageSize - 1) / pageSize
+    val totalPages = (maxCount + pageSize - 1) / pageSize
 
     val allAttractions = mutableListOf<Attraction>()
     var globalIndex = 1
@@ -130,14 +36,9 @@ suspend fun retrieveAllAttractions(): List<Attraction> {
             val json = Json.parseToJsonElement(jsonText).jsonObject
             val dataArray = json["data"]?.jsonArray ?: continue
 
-            val attractions = dataArray.mapNotNull { attractionJsonElement ->
-                if (attractionJsonElement !is JsonObject) {
-                    println("Warning: Skipping non-object element in data array: $attractionJsonElement")
-                    return@mapNotNull null
-                }
-
-                println("Processing attraction $globalIndex of $totalAttractions")
-                globalIndex++
+            for (attractionJsonElement in dataArray) {
+                if (globalIndex > maxCount) break
+                if (attractionJsonElement !is JsonObject) continue
 
                 try {
                     val baseAttraction = parseAttraction(attractionJsonElement)
@@ -156,13 +57,12 @@ suspend fun retrieveAllAttractions(): List<Attraction> {
                                     attractionId = baseAttraction.id,
                                     url = url,
                                     source = "webScraper",
-                                    uploadedBy = "admin",
+                                    uploadedBy = "Admin",
                                     createdAt = baseAttraction.createdAt
                                 )
                             }
                         )
                     } catch (e: Exception) {
-                        println("Warning: Failed to enrich attraction ${baseAttraction.id}: ${e.localizedMessage}")
                         baseAttraction.copy(
                             address = reverseGeocode(baseAttraction.location),
                             description = "",
@@ -170,14 +70,15 @@ suspend fun retrieveAllAttractions(): List<Attraction> {
                         )
                     }
 
-                    enrichedAttraction
+                    allAttractions.add(enrichedAttraction)
+                    onProgress?.invoke(enrichedAttraction)
+                    globalIndex++
                 } catch (e: Exception) {
                     println("Warning: Skipping invalid attraction due to exception: ${e.localizedMessage}")
-                    null
                 }
             }
 
-            allAttractions.addAll(attractions)
+            if (globalIndex > maxCount) break
         }
     } catch (e: Exception) {
         println("Fatal error during bulk fetch: ${e.localizedMessage}")
@@ -185,7 +86,9 @@ suspend fun retrieveAllAttractions(): List<Attraction> {
 
     return allAttractions
 }
-suspend fun parseAttraction(json: JsonObject): Attraction {
+
+
+fun parseAttraction(json: JsonObject): Attraction {
     val id = json["id"]?.jsonPrimitive?.content ?: ""
     val name = json["name"]?.jsonPrimitive?.content ?: "Unknown"
 
@@ -194,14 +97,12 @@ suspend fun parseAttraction(json: JsonObject): Attraction {
         it.jsonObject["type"]?.jsonObject?.get("key")?.jsonPrimitive?.content == "region"
     }?.jsonObject?.get("name")?.jsonPrimitive?.content ?: ""
 
-    // Resolve or create region to get its ID
     val regionId = resolveOrCreateRegion(regionName)
 
-    // Build full Region object
     val region = Region(
         id = regionId,
         name = regionName,
-        location = emptyList() // Can be updated later if needed
+        location = emptyList()
     )
 
     val locationJson = json["location"]?.jsonObject
@@ -262,8 +163,6 @@ suspend fun parseAttraction(json: JsonObject): Attraction {
         createdAt = createdAt
     )
 }
-
-
 
 fun parseAttractionImages(json: JsonObject): List<AttractionImage> {
     val attractionId = json["id"]?.jsonPrimitive?.content ?: return emptyList()

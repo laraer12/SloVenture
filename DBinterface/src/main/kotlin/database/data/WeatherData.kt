@@ -26,11 +26,9 @@ data class Weather(
 
 fun postWeatherData(weatherData: WeatherData): Boolean {
     val existing = getWeatherDataByAttractionId(weatherData.attractionId ?: return false)
-
     if (existing != null) {
         deleteWeatherData(existing.id ?: return false)
     }
-
     return postToDatabase(weatherData, "weather-data", WeatherData.serializer())
 }
 

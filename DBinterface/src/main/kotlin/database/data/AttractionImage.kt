@@ -10,7 +10,7 @@ data class AttractionImage(
     val attractionId: String,
     val url: String,
     val source: String,
-    val uploadedBy: String,
+    val uploadedBy: String?,
     val createdAt: String? = null
 ) : DatabaseClass
 

@@ -4,7 +4,10 @@ import database.DatabaseClass
 import database.postToDatabase
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -70,5 +73,30 @@ fun updateUser(user: User): Boolean {
 
     client.newCall(request).execute().use { response ->
         return response.isSuccessful
+    }
+}
+
+fun getUserIdByUsername(username: String): String? {
+    val url = "http://localhost:3001/users/getIdByUsername/$username"
+    val request = Request.Builder()
+        .url(url)
+        .get()
+        .build()
+
+    return try {
+        client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                println("Failed to fetch user: ${response.code}")
+                return null
+            }
+
+            val body = response.body?.string() ?: return null
+            val json = Json.parseToJsonElement(body).jsonObject
+
+            return json["_id"]?.jsonPrimitive?.content
+        }
+    } catch (e: Exception) {
+        println("Exception fetching user ID: ${e.localizedMessage}")
+        null
     }
 }
