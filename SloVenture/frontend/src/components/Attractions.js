@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -9,41 +9,69 @@ function Attractions() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // filter po regijah
+  const [regions, setRegions] = useState([]);
+  const [selectedRegionIds, setSelectedRegionIds] = useState([]);
+  const [filteredAttractions, setFilteredAttractions] = useState([]);
+
   useEffect(() => {
     document.title = "Znamenitosti"; // naslov zavihka
 
-    const fetchAttractions = async () => {
+    // pridobim in znamenitosti in regije
+    const fetchData = async () => {
       try {
-        const response = await axios.get('http://localhost:3001/attractions');
+        const [regionsRes, attractionsRes] = await Promise.all([
+          axios.get('http://localhost:3001/regions'),
+          axios.get('http://localhost:3001/attractions'),
+        ]);
 
-        if (response.data.message)
-          setError(response.data.message);
+        setRegions(regionsRes.data);
+        setAttractions(attractionsRes.data);
 
-        else {
-          setAttractions(response.data);
+        const initialIndexes = {};
+        attractionsRes.data.forEach((item) => {
+          const id = item.attraction?._id;
 
-          const initialIndexes = {};
-
-          response.data.forEach((item) => {
-            const id = item.attraction?._id;
-
-            if (id)
-              initialIndexes[id] = 0;
-          });
-          setImageIndexes(initialIndexes);
-        }
+          if (id)
+            initialIndexes[id] = 0;
+        });
+        
+        setImageIndexes(initialIndexes);
       }
       catch (err) {
-        setError('Napaka pri pridobivanju znamenitosti.');
+        setError('Napaka pri pridobivanju podatkov.');
+        console.error(err);
       }
       finally {
         setLoading(false);
       }
     };
-    fetchAttractions();
+
+    fetchData();
   }, []);
 
-  /* klik puščic pri pomikanju slik za znamenitosti */
+  // filtriranje na podlagi izbranih regij
+  useEffect(() => {
+    if (selectedRegionIds.length === 0)
+      setFilteredAttractions(attractions);
+    
+    else {
+      const filtered = attractions.filter((item) =>
+        selectedRegionIds.includes(item.attraction?.regionId?._id)
+      );
+      setFilteredAttractions(filtered);
+    }
+  }, [selectedRegionIds, attractions]);
+
+  const handleRegionToggle = (regionId) => {
+    setSelectedRegionIds((prev) =>
+      prev.includes(regionId)
+        ? prev.filter((id) => id !== regionId)
+        : [...prev, regionId]
+    );
+  };
+
+  // klik puščic pri pomikanju slik za znamenitosti
   const handlePrev = (id, length) => {
     setImageIndexes((prev) => ({
       ...prev,
@@ -72,10 +100,9 @@ function Attractions() {
     if (!url)
       return 'http://localhost:3001/images/ni_slike.jpg';
 
-    if (url.startsWith('http://') || url.startsWith('https://'))
-      return url;
-    
-    return `http://localhost:3001${url}`;
+    return url.startsWith('http://') || url.startsWith('https://')
+      ? url
+      : `http://localhost:3001${url}`;
   };
 
   if (loading)
@@ -84,56 +111,71 @@ function Attractions() {
   if (error)
     return <div style={{ color: 'red' }}>{error}</div>;
 
-  if (!Array.isArray(attractions) || attractions.length === 0)
-    return <div>Ni razpoložljivih znamenitosti.</div>;
-
   return (
-    <div className="attractions-container">
-      {attractions.map((item) => {
-        const attraction = item.attraction;
+    <>
+      {/* filter po regijah */}
+      <div className="region-filter">
+        <h3>Išči po regijah:</h3>
 
-        if (!attraction)
-          return null;
+        {/* checkboxi prikazani kot gumbi za izbor regij */}
+        <div className="region-buttons">
+          {regions.map((region) => {
+            const isChecked = selectedRegionIds.includes(region._id);
+            return (
+              <label key={region._id} className={`region-label ${isChecked ? 'checked' : ''}`}>
+                <input type="checkbox" value={region._id} checked={isChecked} onChange={() => handleRegionToggle(region._id)} />
+                <span>{region.name}</span>
+              </label>
+            );
+          })}
+        </div>
+      </div>
 
-        const images = item?.images || [];
-        const imageUrl = getImageUrl(item);
+      {/* znamenitosti */}
+      <div className="attractions-container" style={{ padding: '2rem' }}>
+        {filteredAttractions.length === 0 ? (
+          <div>Ni znamenitosti za izbrane regije.</div>
+        ) : (
+          filteredAttractions.map((item) => {
+            const attraction = item.attraction;
 
-        return (
-          <Link 
-            to={`/attractions/${attraction._id}`}
-            key={attraction._id}
-            className="attraction-card-link"
-          >
-            <div className="attraction-card">
-              <div className="image-wrapper">
+            if (!attraction)
+              return null;
 
-                {/* Slika */}
-                <img src={imageUrl} alt={attraction.name || 'Znamenitost'} className={`attraction-image fade-image`} key={imageUrl} />
-                {images.length > 1 && (
-                  <>
+            const images = item?.images || [];
+            const imageUrl = getImageUrl(item);
+
+            return (
+              <Link to={`/attractions/${attraction._id}`} key={attraction._id} className="attraction-card-link">
+                <div className="attraction-card">
+                  <div className="image-wrapper">
+                    <img src={imageUrl} alt={attraction.name || 'Znamenitost'} className="attraction-image fade-image" key={imageUrl} />
+                    {images.length > 1 && (
+                      <>
+                        {/* Prikaz puščic */}
+                        <button className="nav-button left" onClick={(e) => { e.preventDefault(); handlePrev(attraction._id, images.length); }}>
+                          <ChevronLeft />
+                        </button>
+                        <button className="nav-button right" onClick={(e) => { e.preventDefault(); handleNext(attraction._id, images.length); }}>
+                          <ChevronRight />
+                        </button>
+                      </>
+                    )}
+                  </div>
                   
-                  {/* Prikaz puščic */}
-                    <button className="nav-button left" onClick={(e) => { e.preventDefault(); handlePrev(attraction._id, images.length); }}>
-                      <ChevronLeft />
-                    </button>
-                    <button className="nav-button right" onClick={(e) => { e.preventDefault(); handleNext(attraction._id, images.length); }}>
-                      <ChevronRight />
-                    </button>
-                  </>
-                )}
-              </div>
-
-              {/* Ostali podatki */}
-              <div className="attraction-details">
-                <h3 className="attraction-name">{attraction.name || 'Neznano ime'}</h3>
-                <p className="attraction-locationType">{attraction.locationType || 'Neznan tip lokacije'}</p>
-                <p className="attraction-description">{attraction.description || 'Opis ni na voljo.'}</p>
-              </div>
-            </div>
-          </Link>
-        );
-      })}
-    </div>
+                  {/* Ostali podatki */}
+                  <div className="attraction-details">
+                    <h3 className="attraction-name">{attraction.name || 'Neznano ime'}</h3>
+                    <p className="attraction-locationType">{attraction.locationType || 'Neznan tip lokacije'}</p>
+                    <p className="attraction-description">{attraction.description || 'Opis ni na voljo.'}</p>
+                  </div>
+                </div>
+              </Link>
+            );
+          })
+        )}
+      </div>
+    </>
   );
 }
 

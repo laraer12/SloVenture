@@ -6,8 +6,8 @@ var tripSchema = new Schema({
 	 	type: Schema.Types.ObjectId,
 	 	ref: 'user'
 	},
-	'name' : String,
-	'description' : String,
+	'tripName' : String,
+	'tripDescription' : String,
 	'startDate' : Date,
 	'endDate' : Date,
 	'isPublic' : Boolean,

@@ -6,10 +6,11 @@ import Login from "./components/Login";
 import Register from "./components/Register";
 import Profile from "./components/Profile";
 import Logout from "./components/Logout"; // odjava
-import Homepage from './components/Homepage'; // domača stran
 import Map from "./components/Map"; // zemljevid
 import Attractions from './components/Attractions'; // znamenitosti prikazane po karticah
 import Attraction from './components/Attraction'; // prikaz posamične znamenitosti
+import Trips from './components/Trips'; // potovanja uporabnika
+import Trip from './components/Trip'; // podatki potovanja
 
 function App() {
   /**
@@ -49,15 +50,16 @@ function App() {
         <div className="App">
           <Header title="My application"></Header>
           <Routes>
-            <Route path="/" exact element={<Homepage />}></Route>
+            <Route path="/" exact element={<Map />}></Route>
             <Route path="/login" exact element={<Login />}></Route>
             <Route path="/register" element={<Register />}></Route>
-            <Route path="/profile" element={<Profile />}></Route>
-            <Route path="/profile/:id" element={<Profile />} /> {/* ogled tujega profila */}
+            <Route path="/profile/:id" element={<Profile />} />
             <Route path="/logout" element={<Logout />}></Route>
             <Route path="/map" element={<Map />}></Route>
             <Route path="/attractions" element={<Attractions />}></Route>
             <Route path="/attractions/:id" element={<Attraction />}></Route>
+            <Route path="/trips" element={<Trips />} />
+            <Route path="/trips/:id" element={<Trip />} />
           </Routes>
         </div>
       </UserContext.Provider>

@@ -1,7 +1,6 @@
 var TripModel = require('../models/tripModel.js');
 var TripAttractionModel = require('../models/tripAttractionModel.js');
 const { AttractionModel } = require('../models/attractionModel.js');
-var RegionModel = require('../models/regionModel.js');
 var AttractionImageModel = require('../models/attractionImageModel.js');
 
 /**
@@ -15,7 +14,7 @@ module.exports = {
      * tripController.list()
      */
     list: function (req, res) {
-        var userId = req.params.userId; //verjetno bo treba spremenit v session
+        var userId = req.session.userId;
 
         TripModel.find({userId: userId},function (err, trips) {
             if (err) {
@@ -42,52 +41,39 @@ module.exports = {
                     error: err
                 });
             }
-
             if (!trip) {
                 return res.status(404).json({
                     message: 'No such trip'
                 });
             }
-
-            TripAttractionModel.find({tripId: id})
-            .populate({
-                path: 'attractionId',
-                model: AttractionModel,
-            })
-            .exec( function (err, tripAttractions) {
-                if (err) {
-                    return res.status(500).json({
-                        message: 'Error when getting trip attractions.',
-                        error: err
-                    });
-                }
-
-                var result = [];
-
-                tripAttractions.forEach(function(tripAttraction) {
-                    AttractionImageModel.find({attractionId: tripAttraction._id}, function (err, images) {
-                        if (err) {
-                            return res.status(500).json({
-                                message: 'Error when getting attraction images.',
-                                error: err
-                            });
-                        }
-    
-                        result.push({
-                            tripAttraction: tripAttraction,
-                            images: images
+            TripAttractionModel.find({ tripId: id })
+                .populate({
+                    path: 'attractionId',
+                    model: AttractionModel,
+                })
+                .exec(async function (err, tripAttractions) {
+                    if (err) {
+                        return res.status(500).json({
+                            message: 'Error when getting trip attractions.',
+                            error: err,
                         });
-                    });
-                
+                    }
+                    const result = await Promise.all(tripAttractions.map(async (ta) => {
+                    const images = await AttractionImageModel.find({ attractionId: ta.attractionId._id });
+
+                    return {
+                        tripAttraction: ta,
+                        attraction: ta.attractionId,
+                        images: images
+                    };
+                    }));
+
                     return res.json({
                         trip: trip,
-                        result: result
+                        attractions: result,
                     });
-                }
-            );
-        
+                });
         });
-    });
     },
     
 
@@ -97,8 +83,8 @@ module.exports = {
     create: function (req, res) {
         var trip = new TripModel({
 			userId : req.body.userId,
-			name : req.body.name,
-			description : req.body.description,
+			tripName : req.body.tripName,
+			tripDescription : req.body.tripDescription,
 			startDate : req.body.startDate,
 			endDate : req.body.endDate,
 			isPublic : req.body.isPublic,
@@ -138,8 +124,8 @@ module.exports = {
             }
 
             trip.userId = req.body.userId ? req.body.userId : trip.userId;
-			trip.name = req.body.name ? req.body.name : trip.name;
-			trip.description = req.body.description ? req.body.description : trip.description;
+			trip.tripName = req.body.tripName ? req.body.tripName : trip.tripName;
+			trip.tripDescription = req.body.tripDescription ? req.body.tripDescription : trip.tripDescription;
 			trip.startDate = req.body.startDate ? req.body.startDate : trip.startDate;
 			trip.endDate = req.body.endDate ? req.body.endDate : trip.endDate;
 			trip.isPublic = req.body.isPublic ? req.body.isPublic : trip.isPublic;
@@ -183,7 +169,43 @@ module.exports = {
 
             return res.status(204).json();
         });
+    },
+
+    tripsByUser: async function (req, res, next) {
+        const userId = req.params.userId;
+
+        try {
+            const trips = await TripModel.find({ userId });
+
+            const tripsWithAttractions = await Promise.all(
+            trips.map(async (trip) => {
+
+                // pridobim vse tripAttractions za dano potovanje, sortirane po 'order' naraščajoče
+                const tripAttractions = await TripAttractionModel.find({ tripId: trip._id })
+                    .sort({ order: 1 })  // sortiranje po order
+                    .populate('attractionId');
+
+                    // pridobim prvo sliko znamenitosti (če obstaja)
+                    let firstImageUrl = null;
+
+                    if (tripAttractions.length > 0) {
+                        const firstAttractionId = tripAttractions[0].attractionId._id;
+                        const image = await AttractionImageModel.findOne({ attractionId: firstAttractionId });
+                        firstImageUrl = image ? image.url : null;
+                    }
+                    return {
+                        ...trip.toObject(),
+                        attractions: tripAttractions,
+                        firstImageUrl,
+                    };
+                })
+            );
+
+            res.status(200).json(tripsWithAttractions);
+        }
+        catch (err) {
+            console.error("Error getting trips with attractions: ", err);
+            next(err);
+        }
     }
 };
-
-// trip attraction
