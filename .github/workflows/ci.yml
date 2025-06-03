@@ -1,4 +1,4 @@
-name: CI - Build and Test
+name: CI/CD
 
 on:
   push:
@@ -14,24 +14,25 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
+    - name: Login to Docker Hub
+      run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-    - name: Install dependencies
+    - name: Build and push backend
       run: |
         cd backend
-        npm install
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/sloventure-backend:latest .
+        docker push ${{ secrets.DOCKER_USERNAME }}/sloventure-backend:latest
+
+    - name: Build and push frontend
+      run: |
         cd ../frontend
-        npm install
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/sloventure-frontend:latest .
+        docker push ${{ secrets.DOCKER_USERNAME }}/sloventure-frontend:latest
 
-    - name: Run backend tests
-      run: |
-        cd backend
-        npm run test
-
-    - name: Run frontend tests
-      run: |
-        cd frontend
-        npm run test
+    - name: Trigger webhook on Azure
+      uses: distributhor/webhook-action@v2
+      with:
+        url: ${{ secrets.WEBHOOK_URL }}
+        method: POST
+        body: '{"event":"new_release"}'
+        headers: 'Content-Type: application/json'
