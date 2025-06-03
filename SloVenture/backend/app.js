@@ -69,12 +69,17 @@ const uri = process.env.MONGODB_URI;
 
 const clientOptions = { serverApi: { version: '1', strict: true, deprecationErrors: true } };
 
-mongoose.connect(uri, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('Connected to MongoDB Atlas'))
-.catch((err) => console.error('Connection error:', err));
+async function run() {
+  try {
+    await mongoose.connect(uri, clientOptions);
+    await mongoose.connection.db.admin().command({ ping: 1 });
+    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+  }
+  catch (error) {
+    console.error("Database connection error:", error);
+  }
+}
+run().catch(console.dir);
 
 // test za session
 var session = require('express-session');
