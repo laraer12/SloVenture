@@ -48,8 +48,8 @@ const Trips = () => {
     }, [user]);
 
     const getImageUrl = (url) => {
-        if (!url) return
-            null;
+        if (!url) 
+        return null;
 
         if (url.startsWith('http://') || url.startsWith('https://'))
         return url;

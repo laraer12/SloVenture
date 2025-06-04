@@ -81,7 +81,7 @@ module.exports = {
      * userController.create()
      */
     create: function (req, res) {
-        var { username, email, password, captchaToken } = req.body;
+        var { username, email, password, captchaToken, isFakeData } = req.body;
 
         if (!username || !email || !password || !captchaToken)
             return res.status(400).json({ message: 'Vsa polja morajo biti izpolnjena!' });
@@ -105,7 +105,8 @@ module.exports = {
                     username: req.body.username,
                     email: req.body.email,
                     password: req.body.password,
-                    isAdmin: false
+                    isAdmin: false,
+                    isFakeData: isFakeData || false,
                 });
 
                 user.save(function (err, savedUser) {
@@ -122,7 +123,7 @@ module.exports = {
     },
 
     createKotlin: function (req, res) {
-        const { username, email, password, isAdmin, profilePicture } = req.body;
+        const { username, email, password, isAdmin, profilePicture, isFakeData } = req.body;
 
         if (!username || !email || !password) {
             return res.status(400).json({ message: 'All fields are required!' });
@@ -140,7 +141,8 @@ module.exports = {
                 email,
                 password,
                 isAdmin,
-                profilePicture
+                profilePicture,
+                isFakeData
             });
 
             user.save(function (err, savedUser) {
@@ -172,6 +174,8 @@ module.exports = {
             user.password = req.body.password || user.password;
             user.isAdmin = req.body.isAdmin;
             user.profilePicture = req.body.profilePicture || user.profilePicture;
+            user.isFakeData = req.body.isFakeData !== undefined ? req.body.isFakeData : user.isFakeData;
+
 
             user.save(function (err, updatedUser) {
                 if (err)

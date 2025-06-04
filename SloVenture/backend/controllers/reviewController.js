@@ -77,7 +77,8 @@ module.exports = {
                 ratingFamilyFriendly: req.body.ratingFamilyFriendly,
                 ratingElderlyFriendly: req.body.ratingElderlyFriendly,
                 ratingAccessible: req.body.ratingAccessible,
-                createdAt: req.body.createdAt
+                createdAt: req.body.createdAt,
+                isFakeData: req.body.isFakeData || false // privzeto je isFakeData false, če ni podano
             },
             
             /*
@@ -128,7 +129,8 @@ module.exports = {
 			review.ratingElderlyFriendly = req.body.ratingElderlyFriendly ? req.body.ratingElderlyFriendly : review.ratingElderlyFriendly;
 			review.ratingAccessible = req.body.ratingAccessible ? req.body.ratingAccessible : review.ratingAccessible;
 			review.createdAt = req.body.createdAt ? req.body.createdAt : review.createdAt;
-			
+			review.isFakeData = req.body.isFakeData !== undefined ? req.body.isFakeData : review.isFakeData;
+
             review.save(function (err, review) {
                 if (err) {
                     return res.status(500).json({

@@ -48,6 +48,12 @@ fun MainScreen() {
             ) {
                 Text("Uvoz vremena")
             }
+            Button(
+                onClick = { selectedScreen = "Generiranje podatkov" },
+                enabled = selectedScreen != "Generiranje podatkov"
+            ) {
+                Text("Generiranje podatkov")
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -57,6 +63,7 @@ fun MainScreen() {
             "Pregled uporabnikov" -> UserListScreen()
             "Uvoz znamenitosti" -> AttractionImportScreen()
             "Uvoz vremena" -> WeatherImportScreen()
+            "Generiranje podatkov" -> FakeDataScreen()
         }
     }
 }

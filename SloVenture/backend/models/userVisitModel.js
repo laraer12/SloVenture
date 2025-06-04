@@ -10,7 +10,8 @@ var userVisitSchema = new Schema({
 	 	type: Schema.Types.ObjectId,
 	 	ref: 'attraction'
 	},
-	'visitDate' : Date
+	'visitDate' : Date,
+	'isFakeData': Boolean
 });
 
 module.exports = mongoose.model('userVisit', userVisitSchema);

@@ -52,7 +52,7 @@ module.exports = {
      * userVisitController.create()
      */
     create: function (req, res) {
-        const { userId, attractionId, visitDate } = req.body;
+        const { userId, attractionId, visitDate, isFakeData } = req.body;
 
         // preverim, ali zapis že obstaja
         UservisitModel.findOne({ userId, attractionId, visitDate }, function (err, existingVisit) {
@@ -69,7 +69,8 @@ module.exports = {
             const userVisit = new UservisitModel({
                 userId,
                 attractionId,
-                visitDate
+                visitDate,
+                isFakeData: isFakeData || false // privzeto je isFakeData false, če ni podano
             });
 
             userVisit.save(function (err, savedVisit) {
@@ -107,6 +108,7 @@ module.exports = {
             userVisit.userId = req.body.userId ? req.body.userId : userVisit.userId;
 			userVisit.attractionId = req.body.attractionId ? req.body.attractionId : userVisit.attractionId;
 			userVisit.visitDate = req.body.visitDate ? req.body.visitDate : userVisit.visitDate;
+            userVisit.isFakeData = req.body.isFakeData !== undefined ? req.body.isFakeData : userVisit.isFakeData;
 			
             userVisit.save(function (err, userVisit) {
                 if (err) {

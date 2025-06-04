@@ -3,6 +3,9 @@ var router = express.Router();
 var userVisitController = require('../controllers/userVisitController.js');
 
 function requiresLogin(req, res, next) {
+    if (process.env.NODE_ENV === 'development' && req.body && req.body.isFakeData)
+        return next();
+
     if (req.session && req.session.userId)
         return next();
     

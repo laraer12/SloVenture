@@ -8,7 +8,8 @@ var userSchema = new Schema({
 	'password' : String,
 	'profilePicture' : { type: String, default: 'default-profile-picture.jpg' }, // če uporabnik še ni dodal svoje profilne slike se prikaže privzeta
 	'isAdmin': { type: Boolean, default: false }, // privzeto uporabnik ni admin
-	'createdAt' : Date
+	'createdAt' : Date,
+	'isFakeData': Boolean
 });
 
 userSchema.pre('save', function (next) {

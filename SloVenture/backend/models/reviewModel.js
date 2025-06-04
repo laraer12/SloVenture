@@ -14,7 +14,8 @@ var reviewSchema = new Schema({
 	'ratingFamilyFriendly' : Number,
 	'ratingElderlyFriendly' : Number,
 	'ratingAccessible' : Number,
-	'createdAt' : Date
+	'createdAt' : Date,
+	'isFakeData': Boolean
 });
 
 module.exports = mongoose.model('review', reviewSchema);
