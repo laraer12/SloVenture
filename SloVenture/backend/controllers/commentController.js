@@ -93,6 +93,10 @@ module.exports = {
                     error: err
                 });
             }
+
+            const io = req.app.get('io');
+            io.emit("commentAdded", savedComment);
+
             savedComment.populate('userId', 'username')
                 .then(populated => {
                     res.status(201).json(populated);
@@ -136,7 +140,7 @@ module.exports = {
                         error: err
                     });
                 }
-
+                
                 return res.json(comment);
             });
         });
@@ -183,6 +187,10 @@ module.exports = {
                             error: err
                         });
                     }
+
+                    const io = req.app.get('io');
+                    io.emit("commentDeleted", comment._id);
+                    
                     return res.status(204).send();
                 });
             });
