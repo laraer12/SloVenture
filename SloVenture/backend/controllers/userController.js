@@ -250,10 +250,9 @@ module.exports = {
      */
     login: function (req, res) {
         UserModel.authenticate(req.body.username, req.body.password, function (err, user) {
-            if (err || !user) {
-                console.error("Login error:", err ? err.message : "Invalid credentials");
+            if (err || !user)
                 return res.status(401).json({ message: err ? err.message : "Invalid credentials" });
-            }
+            
             req.session.userId = user._id;
             return res.json(user);
         });

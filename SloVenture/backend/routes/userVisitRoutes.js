@@ -10,7 +10,7 @@ function requiresLogin(req, res, next) {
         return next();
     
     else {
-        var err = new Error("Za objavo slik moraš biti prijavljen");
+        var err = new Error("Morate biti prijavljeni");
         err.status = 401;
         return next(err);
     }

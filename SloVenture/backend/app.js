@@ -21,7 +21,6 @@ var regionRouter = require('./routes/regionRoutes');
 var reviewRouter = require('./routes/reviewRoutes');
 var tripAttractionRouter = require('./routes/tripAttractionRoutes');
 var tripRouter = require('./routes/tripRoutes');
-var userSavedRouter = require('./routes/userSavedRoutes');
 var userVisitRouter=require('./routes/userVisitRoutes');
 var weatherDataRouter = require('./routes/weatherDataRoutes');
 
@@ -55,6 +54,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// sprememba glede na development in test okolje
 const mongoose = require('mongoose');
 const uri = process.env.NODE_ENV === 'test'
   ? 'mongodb://localhost:27017/testdb'
@@ -66,6 +66,7 @@ async function run() {
   try {
     await mongoose.connect(uri, clientOptions);
     await mongoose.connection.db.admin().command({ ping: 1 });
+
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   }
   catch (error) {
@@ -73,6 +74,8 @@ async function run() {
   }
 }
 run().catch(console.dir);
+
+console.log("Povezujem se na bazo:", uri);
 
 // test za session
 var session = require('express-session');
@@ -92,9 +95,16 @@ if (process.env.NODE_ENV !== 'test')
 app.use(session(sessionOptions));
 
 // pridobim csrf token
-app.get('/csrf-token', csrfProtection, (req, res) => {
-  res.json({ csrfToken: req.csrfToken() });
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.get('/csrf-token', csrfProtection, (req, res) => {
+    res.json({ csrfToken: req.csrfToken() });
+  });
+}
+else {
+  app.get('/csrf-token', (req, res) => { // v testnem okolju pošljem prazen token ali pa to pot kar ignoriram
+    res.json({ csrfToken: '' });
+  });
+}
 
 app.use(function (req, res, next) {
   res.locals.session = req.session;
@@ -111,7 +121,6 @@ app.use('/regions', regionRouter);
 app.use('/reviews', reviewRouter);
 app.use('/trip-attractions', tripAttractionRouter);
 app.use('/trips', tripRouter);
-app.use('/user-saved', userSavedRouter);
 app.use('/user-visit', userVisitRouter);
 app.use('/weather-data', weatherDataRouter);
 

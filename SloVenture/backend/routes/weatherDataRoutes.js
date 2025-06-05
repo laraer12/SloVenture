@@ -7,7 +7,7 @@ za lat, lon in cnt
 router.get('/', weatherDataController.getWeatherByCoordinates);
 */
 
-router.get('/findByAttractionId/:attractionId', weatherDataController.findByAttractionId);
+// router.get('/findByAttractionId/:attractionId', weatherDataController.findByAttractionId);
 /*
  * GET
  */

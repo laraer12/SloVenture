@@ -11,6 +11,7 @@ module.exports = {
     /**
      * weatherDataController.findByAttractionId()
      */
+    /*
     findByAttractionId: async function (req, res) {
         const { attractionId } = req.params;
 
@@ -27,7 +28,7 @@ module.exports = {
             });
         }
     },
-
+    */
 
     /**
      * weatherDataController.list()
@@ -75,7 +76,17 @@ module.exports = {
     create: async function (req, res) {
         console.log('Received body:', req.body);
 
-
+        if (
+            !req.body.attractionId ||
+            !req.body.currentWeather ||
+            !req.body.forecast ||
+            !req.body.lastUpdated ||
+            !req.body.location ||
+            req.body.location.lat === undefined ||
+            req.body.location.lon === undefined
+        ) {
+            return res.status(400).json({ message: 'Missing required fields' });
+        }
         const weatherData = new WeatherdataModel({
             attractionId: req.body.attractionId,
             currentWeather: req.body.currentWeather,
@@ -136,7 +147,11 @@ module.exports = {
         const id = req.params.id;
 
         try {
-            await WeatherdataModel.findByIdAndRemove(id);
+            const deletedWeatherData = await WeatherdataModel.findByIdAndRemove(id);
+
+            if (!deletedWeatherData)
+                return res.status(404).json({ message: 'WeatherData not found' });
+
             return res.status(204).json();
         }
         catch (err) {
