@@ -24,8 +24,9 @@ jobs:
         docker build -t ${{ secrets.DOCKER_USERNAME }}/sloventure-backend:latest .
         docker push ${{ secrets.DOCKER_USERNAME }}/sloventure-backend:latest
 
-    - name: Use production .env for frontend
-      run: cp SloVenture/frontend/.env.production SloVenture/frontend/.env
+    - name: Generate .env.production file
+      run: |
+        echo "${{ secrets.FRONTEND_ENV_PRODUCTION }}" > frontend/.env
     
     - name: Build and push frontend
       run: |
