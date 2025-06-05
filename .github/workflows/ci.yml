@@ -20,7 +20,7 @@ jobs:
 
     - name: Build and push backend
       run: |
-        cd backend
+        cd SloVenture/backend
         docker build -t ${{ secrets.DOCKER_USERNAME }}/sloventure-backend:latest .
         docker push ${{ secrets.DOCKER_USERNAME }}/sloventure-backend:latest
 
