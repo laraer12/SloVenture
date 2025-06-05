@@ -30,7 +30,7 @@ jobs:
     
     - name: Build and push frontend
       run: |
-        cd ../frontend
+        cd SloVenture/frontend
         docker build -t ${{ secrets.DOCKER_USERNAME }}/sloventure-frontend:latest .
         docker push ${{ secrets.DOCKER_USERNAME }}/sloventure-frontend:latest
 
