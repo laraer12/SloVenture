@@ -3,17 +3,17 @@ name: Test Frontend
 on:
   push:
     paths:
-      - 'frontend/**'
+      - 'SloVenture/frontend/**'
   pull_request:
     paths:
-      - 'frontend/**'
+      - 'SloVenture/frontend/**'
 
 jobs:
   test:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: frontend
+        working-directory: SloVenture/frontend
 
     steps:
     - name: Checkout code

@@ -18,13 +18,17 @@ jobs:
     - name: Login to Docker Hub
       run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
+    - name: Generate .env.production file for backend
+      run: |
+        echo "${{ secrets.BACKEND_ENV_PRODUCTION }}" > SloVenture/backend/.env
+
     - name: Build and push backend
       run: |
         cd SloVenture/backend
         docker build -t ${{ secrets.DOCKER_USERNAME }}/sloventure-backend:latest .
         docker push ${{ secrets.DOCKER_USERNAME }}/sloventure-backend:latest
 
-    - name: Generate .env.production file
+    - name: Generate .env.production file for frontend
       run: |
         echo "${{ secrets.FRONTEND_ENV_PRODUCTION }}" > SloVenture/frontend/.env
     
