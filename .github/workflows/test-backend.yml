@@ -26,6 +26,10 @@ jobs:
 
     - name: Install dependencies
       run: npm install
+      
+    - name: Generate .env.production file for backend
+      run: |
+        echo "${{ secrets.BACKEND_ENV_PRODUCTION }}" > SloVenture/backend/.env
 
     - name: Run tests
       run: npm test
