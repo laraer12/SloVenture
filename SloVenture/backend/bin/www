@@ -25,7 +25,10 @@ var server = http.createServer(app);
 //ustvari Socket.IO server in ga poveže s HTTP strežnikom
 const io = new Server(server, {
   cors: {
-    origin: ['http://localhost:3000', 'http://localhost:3001'],
+    origin: ['http://localhost:3000', 'http://localhost:3001', 
+      "http://40.68.129.50:3000",
+      "http://40.68.129.50:3001",
+      "http://40.68.129.50"],
     methods: ['GET', 'POST'],
     credentials: true
   }
