@@ -58,7 +58,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 const mongoose = require('mongoose');
 const uri = process.env.NODE_ENV === 'test'
   ? 'mongodb://localhost:27017/testdb'
-  : process.env.MONGO_ATLAS_URI;
+  : process.env.MONGODB_URI;
 
 const clientOptions = { serverApi: { version: '1', strict: true, deprecationErrors: true } };
 
