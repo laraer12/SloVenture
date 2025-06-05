@@ -37,9 +37,7 @@ jobs:
     - name: Trigger webhook on Azure
       uses: distributhor/workflow-webhook@v3
       with:
-        url: ${{ secrets.WEBHOOK_URL }}
-        method: POST
-        body: '{"event":"new_release"}'
-        headers: |
-          Content-Type: application/json
-          X-Hook-Secret: ${{ secrets.WEBHOOK_SECRET }}
+        webhook_url: ${{ secrets.WEBHOOK_URL }}
+        webhook_secret: ${{ secrets.WEBHOOK_SECRET }}
+        event_name: new_release
+        data: '{"message":"Deployment triggered"}'
