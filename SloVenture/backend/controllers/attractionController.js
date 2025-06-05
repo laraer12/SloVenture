@@ -607,6 +607,11 @@ update: function (req, res) {
                     error: err
                 });
             }
+            if (!attraction) {
+                return res.status(404).json({
+                    message: 'No such attraction'
+                });
+            }
             AttractionImageModel.deleteMany({ attractionId: id }, function (err) {
                 if (err) {
                     return res.status(500).json({
@@ -635,11 +640,12 @@ update: function (req, res) {
                                     error: err
                                 });
                             }
+
+                            return res.status(204).json();
                         });
                     });
                 });
             });
-            return res.status(204).json();
         });
     }
 

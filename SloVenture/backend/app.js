@@ -65,7 +65,9 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 const mongoose = require('mongoose');
-const uri = "mongodb+srv://ime:geslo@sloventure.4djf5rv.mongodb.net/SloVentureDB?retryWrites=true&w=majority&appName=SloVenture";
+const uri = process.env.NODE_ENV === 'test'
+  ? 'mongodb://localhost:27017/testdb'
+  : process.env.MONGO_ATLAS_URI;
 
 const clientOptions = { serverApi: { version: '1', strict: true, deprecationErrors: true } };
 
@@ -84,12 +86,19 @@ run().catch(console.dir);
 // test za session
 var session = require('express-session');
 var MongoStore = require('connect-mongo');
-app.use(session({
+
+const sessionOptions = {
   secret: 'work hard',
   resave: true,
   saveUninitialized: false,
-  store: MongoStore.create({mongoUrl: uri})
-}));
+};
+
+// uporabim MongoStore samo, če ni testno okolje
+if (process.env.NODE_ENV !== 'test')
+  sessionOptions.store = MongoStore.create({ mongoUrl: uri });
+
+// vedno uporabim session middleware
+app.use(session(sessionOptions));
 
 // pridobim csrf token
 app.get('/csrf-token', csrfProtection, (req, res) => {
