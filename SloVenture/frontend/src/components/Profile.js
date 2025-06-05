@@ -21,7 +21,7 @@ function Profile() {
 
         const fetchProfile = async () => {
             try {
-                const resMe = await fetch('http://localhost:3001/users/profile', { // pridobim trenutnega uporabnika
+                const resMe = await fetch(`${process.env.REACT_APP_BACKEND_URL}/users/profile`, { // pridobim trenutnega uporabnika
                     credentials: 'include'
                 });
 
@@ -33,7 +33,7 @@ function Profile() {
                 setCurrentUser(me);
 
                 // če pa obstaja id v URL-ju, prikažem profil drugega uporabnika
-                const profileUrl = id ? `http://localhost:3001/users/${id}` : 'http://localhost:3001/users/profile';
+                const profileUrl = id ? `${process.env.REACT_APP_BACKEND_URL}/users/${id}` : `${process.env.REACT_APP_BACKEND_URL}/users/profile`;
 
                 const resProfile = await fetch(profileUrl, {
                     credentials: 'include'
@@ -68,7 +68,7 @@ function Profile() {
         const formData = new FormData();
         formData.append('profilePicture', file);
 
-        const res = await fetch('http://localhost:3001/users/upload-profile-picture', {
+        const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/users/upload-profile-picture`, {
             method: 'POST',
             body: formData,
             credentials: 'include',
@@ -89,7 +89,7 @@ function Profile() {
             
         const userId = id || profile._id;
 
-        const res = await fetch(`http://localhost:3001/users/${userId}/remove-profile-picture`, {
+        const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/users/${userId}/remove-profile-picture`, {
             method: 'PUT',
             credentials: 'include',
         });
@@ -114,7 +114,7 @@ function Profile() {
 
             setVisitedLoading(true);
             try {
-                const res = await axios.get(`http://localhost:3001/user-visit/user/${profile._id}`);
+                const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/user-visit/user/${profile._id}`);
                 setVisitedAttractions(res.data);
             } catch (err) {
                 console.error('Napaka pri nalaganju obiskov:', err);
@@ -160,16 +160,16 @@ function Profile() {
         const index = imageIndexes[visit._id] || 0;
 
         if (images.length === 0)
-            return 'http://localhost:3001/images/ni_slike.jpg';
+            return `${process.env.REACT_APP_BACKEND_URL}/images/ni_slike.jpg`;
 
         const url = images[index]?.url || images[index];
 
         if (!url)
-            return 'http://localhost:3001/images/ni_slike.jpg';
+            return `${process.env.REACT_APP_BACKEND_URL}/images/ni_slike.jpg`;
 
         return url.startsWith('http://') || url.startsWith('https://')
             ? url
-            : `http://localhost:3001${url}`;
+            : `${process.env.REACT_APP_BACKEND_URL}${url}`;
     };
 
     const isOwnProfile = currentUser && profile && currentUser.username === profile.username;
@@ -190,13 +190,14 @@ function Profile() {
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                 <div>
-                    <img src={`http://localhost:3001/images/${profile.profilePicture}`} alt="Profilna slika" width="100" height="100" className="profile-picture-profile" />
+                    <img src={`${process.env.REACT_APP_BACKEND_URL}/images/${profile.profilePicture}`} alt="Profilna slika" width="100" height="100" className="profile-picture-profile" />
                 </div>
 
                 <div>
                     {isOwnProfile && (
                         <div>
                             <p>Spremeni profilno sliko:</p>
+                            <p>TESTTTTTTTTTTTTTTTTTTTT IZBRISI TOOOOOOO</p>
                             
                             <form onSubmit={handleProfilePictureUpload}>
                                 <input type="file" name="profilePicture" ref={fileInputRef} accept="image/*" style={{ marginRight: '15px' }} />

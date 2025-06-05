@@ -18,7 +18,7 @@ function Register() {
     useEffect(() => {
         document.title = "Registracija"; // naslov zavihka
 
-        fetch('http://localhost:3001/csrf-token', { // pridobim csrf token
+        fetch(`${process.env.REACT_APP_BACKEND_URL}/csrf-token`, { // pridobim csrf token
             credentials: 'include'
         })
         .then(res => res.json())
@@ -34,7 +34,7 @@ function Register() {
             setError("Prosim potrdite da niste robot");
             return;
         }
-        const res = await fetch("http://localhost:3001/users", {
+        const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/users`, {
             method: 'POST',
             credentials: 'include',
             headers: {

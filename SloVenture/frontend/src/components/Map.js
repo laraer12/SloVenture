@@ -72,9 +72,9 @@ function Map() {
     const fetchData = async () => {
       try {
         const [attractionsRes, imagesRes, regionsRes] = await Promise.all([
-          fetch('http://localhost:3001/attractions'),
-          fetch('http://localhost:3001/attraction-images'),
-          fetch('http://localhost:3001/regions'), // pridobim še regije
+          fetch(`${process.env.REACT_APP_BACKEND_URL}/attractions`),
+          fetch(`${process.env.REACT_APP_BACKEND_URL}/attraction-images`),
+          fetch(`${process.env.REACT_APP_BACKEND_URL}/regions`), // pridobim še regije
         ]);
 
         const attractionsData = await attractionsRes.json();

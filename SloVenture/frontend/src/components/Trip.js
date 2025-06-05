@@ -23,13 +23,13 @@ const Trip = () => {
         if (url.startsWith('http://') || url.startsWith('https://'))
             return url;
 
-        return `http://localhost:3001${url}`;
+        return `${process.env.REACT_APP_BACKEND_URL}${url}`;
     };
 
   useEffect(() => {
     const fetchTrip = async () => {
         try {
-            const res = await axios.get(`http://localhost:3001/trips/${id}`);
+            const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/trips/${id}`);
             setTrip(res.data.trip);
             setAttractions(res.data.attractions);
 
@@ -82,7 +82,7 @@ const Trip = () => {
             return;
         }
         try {
-            await axios.put(`http://localhost:3001/trips/${id}`, formData);
+            await axios.put(`${process.env.REACT_APP_BACKEND_URL}/trips/${id}`, formData);
             alert('Potovanje posodobljeno!');
             navigate('/trips');
         }
@@ -120,7 +120,7 @@ const Trip = () => {
                                 src={
                                     attractions[0].images.length > 0
                                     ? getImageUrl(attractions[0].images[0].url)
-                                    : 'http://localhost:3001/images/ni_slike.jpg'
+                                    : `${process.env.REACT_APP_BACKEND_URL}/images/ni_slike.jpg`
                                 }
                                 className="card-img-top"
                                 alt={attractions[0].attraction.name}

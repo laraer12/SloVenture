@@ -1,0 +1,35 @@
+name: Test Backend
+
+on:
+  push:
+    paths:
+      - 'SloVenture/backend/**'
+  pull_request:
+    paths:
+      - 'SloVenture/backend/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: SloVenture/backend
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18
+
+    - name: Install dependencies
+      run: npm install
+      
+    - name: Generate .env.production file for backend
+      run: |
+        echo "${{ secrets.BACKEND_ENV_TEST }}" > .env
+
+    - name: Run tests
+      run: npm test

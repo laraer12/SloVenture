@@ -1,4 +1,4 @@
-require('dotenv').config(); // s tem lahko uporabim ključe iz .env kjerkoli
+require('dotenv').config(); 
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
@@ -9,16 +9,7 @@ var logger = require('morgan');
 const csrf = require('csurf');
 const csrfProtection = csrf({ cookie: true });
 
-/*
-// lokalna povezava z bazo
-var mongoose = require('mongoose');
-var mongoDB='mongodb://127.0.0.1:27017/SloVentureDB';
-mongoose.set('strictQuery', true);
-mongoose.connect(mongoDB);
-mongoose.Promise = global.Promise;
-var db = mongoose.connection;
-db.on('error', console.error.bind(console, 'MongoDB connection error:'));
-*/
+//test
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/userRoutes');
@@ -38,7 +29,7 @@ var app = express();
 
 var cors = require('cors');
 
-var allowedOrigins = ['http://localhost:3000', 'http://localhost:3001'];
+var allowedOrigins = ['http://localhost:3000', 'http://localhost:3001', 'http://40.68.129.50:3000', 'http://40.68.129.50:3001', 'http://40.68.129.50'];
 
 app.use(cors({
   credentials: true,

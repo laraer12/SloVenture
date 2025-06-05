@@ -21,8 +21,8 @@ function Attractions() {
     const fetchData = async () => {
       try {
         const [regionsRes, attractionsRes] = await Promise.all([
-          axios.get('http://localhost:3001/regions'),
-          axios.get('http://localhost:3001/attractions'),
+          axios.get(`${process.env.REACT_APP_BACKEND_URL}/regions`),
+          axios.get(`${process.env.REACT_APP_BACKEND_URL}/attractions`),
         ]);
 
         setRegions(regionsRes.data);
@@ -93,16 +93,16 @@ function Attractions() {
     const index = imageIndexes[attractionId] || 0;
 
     if (images.length === 0)
-      return 'http://localhost:3001/images/ni_slike.jpg';
+      return `${process.env.REACT_APP_BACKEND_URL}/images/ni_slike.jpg`;
 
     const url = images[index]?.url;
 
     if (!url)
-      return 'http://localhost:3001/images/ni_slike.jpg';
+      return `${process.env.REACT_APP_BACKEND_URL}/images/ni_slike.jpg`;
 
     return url.startsWith('http://') || url.startsWith('https://')
       ? url
-      : `http://localhost:3001${url}`;
+      : `${process.env.REACT_APP_BACKEND_URL}${url}`;
   };
 
   if (loading)

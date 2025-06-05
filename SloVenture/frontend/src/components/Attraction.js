@@ -15,7 +15,7 @@ import { Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 
 //za realnočasovne komentarje in ocene
 import io from 'socket.io-client';
-const socket = io('http://localhost:3001',{
+const socket = io(`${process.env.REACT_APP_BACKEND_URL}`,{
   withCredentials: true,
 }); // povezava na backend za real-time komentarje
 
@@ -72,7 +72,7 @@ function Attraction() {
     // za pridobivanje znamenitosti
     const fetchAttraction = async () => {
       try {
-        const response = await axios.get(`http://localhost:3001/attractions/${id}`);
+        const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/attractions/${id}`);
         const data = response.data;
         const fullAttraction = data.attraction || data;
         const images = data.images || fullAttraction.images || [];
@@ -112,7 +112,7 @@ function Attraction() {
     // za pridobivanje vremena
     const fetchWeather = async () => {
       try {
-        const res = await axios.get(`http://localhost:3001/weather-data/by-attraction/${id}`);
+        const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/weather-data/by-attraction/${id}`);
         const forecast = res.data.forecast;
 
         if (!forecast || forecast.length === 0)
@@ -176,7 +176,7 @@ function Attraction() {
     if (url.startsWith('http://') || url.startsWith('https://'))
       return url; // že popoln URL
 
-    return `http://localhost:3001${url}`;
+    return `${process.env.REACT_APP_BACKEND_URL}${url}`;
   };
 
   //pridobivanje slik bližnjih znamenitosti iz baze
@@ -186,23 +186,23 @@ function Attraction() {
   const index = imageIndexes[attractionId] || 0;
 
   if (images.length === 0)
-    return 'http://localhost:3001/images/ni_slike.jpg';
+    return `${process.env.REACT_APP_BACKEND_URL}/images/ni_slike.jpg`;
 
   const url = images[index]?.url;
 
   if (!url)
-    return 'http://localhost:3001/images/ni_slike.jpg';
+    return `${process.env.REACT_APP_BACKEND_URL}/images/ni_slike.jpg`;
 
   return url.startsWith('http://') || url.startsWith('https://')
     ? url
-    : `http://localhost:3001${url}`;
+    : `${process.env.REACT_APP_BACKEND_URL}${url}`;
 };
 
   // za pridobivanje komentarjev
   useEffect(() => {
     const fetchComments = async () => {
       try {
-        const res = await axios.get(`http://localhost:3001/comments/attraction/${id}`);
+        const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/comments/attraction/${id}`);
         setComments(res.data);
       }
       catch (err) {
@@ -253,12 +253,12 @@ function Attraction() {
     e.preventDefault();
 
     axios.post(
-      `http://localhost:3001/comments/attraction/${id}`, // pridobim komentarje za določeno znamenitost
+      `${process.env.REACT_APP_BACKEND_URL}/comments/attraction/${id}`, // pridobim komentarje za določeno znamenitost
       { text: newComment },
       { withCredentials: true }
     )
     .then(() => {
-      return axios.get(`http://localhost:3001/comments/attraction/${id}`);
+      return axios.get(`${process.env.REACT_APP_BACKEND_URL}/comments/attraction/${id}`);
     })
     .then((res) => {
       setComments(res.data);
@@ -275,9 +275,9 @@ function Attraction() {
     if (!window.confirm("Ali ste prepričani, da želite izbrisati ta komentar?")) // če si uporabnik premisli lahko komentar obdrži
       return;
 
-    axios.delete(`http://localhost:3001/comments/${commentId}`, { withCredentials: true }) // pridobim komentarje za določeno znamenitost
+    axios.delete(`${process.env.REACT_APP_BACKEND_URL}/comments/${commentId}`, { withCredentials: true }) // pridobim komentarje za določeno znamenitost
       .then(() => {
-        return axios.get(`http://localhost:3001/comments/attraction/${id}`);
+        return axios.get(`${process.env.REACT_APP_BACKEND_URL}/comments/attraction/${id}`);
       })
       .then(res => {
         setComments(res.data);
@@ -292,7 +292,7 @@ function Attraction() {
   useEffect(() => {
     const fetchAverages = async () => {
       try {
-        const res = await axios.get(`http://localhost:3001/reviews/averages/${id}`); // pridobim povprečne ocene (in ocene) za določeno znamenitost
+        const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/reviews/averages/${id}`); // pridobim povprečne ocene (in ocene) za določeno znamenitost
         setRatingAverages(res.data);
       }
       catch (err) {
@@ -321,7 +321,7 @@ function Attraction() {
     };
 
     axios
-      .post('http://localhost:3001/reviews', reviewData, { withCredentials: true }) // oddam oceno
+      .post(`${process.env.REACT_APP_BACKEND_URL}/reviews`, reviewData, { withCredentials: true }) // oddam oceno
       .then(() => {
         alert('Hvala za vašo oceno!');
 
@@ -346,7 +346,7 @@ function Attraction() {
   // funkcija, da se lahko prikažejo brez osvežitve nove povprečne ocene iz izrisi grafov
   const fetchUpdatedAverages = async () => {
     try {
-      const res = await axios.get(`http://localhost:3001/reviews/averages/${id}`);
+      const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/reviews/averages/${id}`);
       setRatingAverages(res.data);
     }
     catch (err) {
@@ -414,7 +414,7 @@ function Attraction() {
     setError(null);
 
     try {
-      const res = await fetch('http://localhost:3001/attraction-images/upload-attraction-image', { // api za dodajanje slike
+      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/attraction-images/upload-attraction-image`, { // api za dodajanje slike
         method: 'POST',
         body: formData,
         credentials: 'include',
@@ -457,7 +457,7 @@ function Attraction() {
       return;
     }
     try {
-      const res = await fetch(`http://localhost:3001/attraction-images/${imageToDelete._id}`, {
+      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/attraction-images/${imageToDelete._id}`, {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -482,7 +482,7 @@ function Attraction() {
   useEffect(() => {
     const fetchUserVisits = async () => {
       try {
-        const res = await axios.get(`http://localhost:3001/user-visit/user/${user._id}`, {
+        const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/user-visit/user/${user._id}`, {
           withCredentials: true,
         });
 
@@ -519,7 +519,7 @@ function Attraction() {
     // drugače shranim
     try {
       await axios.post(
-        'http://localhost:3001/user-visit',
+        `${process.env.REACT_APP_BACKEND_URL}/user-visit`,
         {
           userId: user._id,
           attractionId: attraction._id,
@@ -574,7 +574,7 @@ function Attraction() {
 
     try {
       const tripRes = await axios.post(
-        'http://localhost:3001/trips',
+        `${process.env.REACT_APP_BACKEND_URL}/trips`,
         {
           userId: user._id,
           tripName,
@@ -590,7 +590,7 @@ function Attraction() {
       const newTripId = tripRes.data._id;
 
       await axios.post(
-        'http://localhost:3001/trip-attractions',
+        `${process.env.REACT_APP_BACKEND_URL}/trip-attractions`,
         {
           tripId: newTripId,
           attractionId: attraction._id,
@@ -876,7 +876,7 @@ function Attraction() {
 
                 {/* profilna slika in vsebina komentarja */}
                 <div className="d-flex" style={{ gap: '10px', flex: 1 }}>
-                  <img src={`http://localhost:3001/images/${comment.userId?.profilePicture}`} alt="Profilna slika" width="40" height="40" className="profile-picture-comment" onError={(e) => { e.target.onerror = null; e.target.src = 'http://localhost:3001/images/default-profile-picture.jpg'; }} />
+                  <img src={`${process.env.REACT_APP_BACKEND_URL}/images/${comment.userId?.profilePicture}`} alt="Profilna slika" width="40" height="40" className="profile-picture-comment" onError={(e) => { e.target.onerror = null; e.target.src = `${process.env.REACT_APP_BACKEND_URL}/images/default-profile-picture.jpg`; }} />
 
                   <div>
                     <strong>
