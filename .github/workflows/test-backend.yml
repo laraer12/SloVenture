@@ -29,7 +29,7 @@ jobs:
       
     - name: Generate .env.production file for backend
       run: |
-        echo "${{ secrets.BACKEND_ENV_PRODUCTION }}" > SloVenture/backend/.env
+        echo "${{ secrets.BACKEND_ENV_PRODUCTION }}" > .env
 
     - name: Run tests
       run: npm test
