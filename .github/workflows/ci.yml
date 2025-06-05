@@ -34,7 +34,7 @@ jobs:
         docker push ${{ secrets.DOCKER_USERNAME }}/sloventure-frontend:latest
 
     - name: Trigger webhook on Azure
-      uses: distributhor/webhook-action@v2.0.0
+      uses: distributhor/webhook-action@v3
       with:
         url: ${{ secrets.WEBHOOK_URL }}
         method: POST
