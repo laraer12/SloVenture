@@ -115,7 +115,7 @@ describe('User API testi:', () => {
         });
 
         // ne ustvari uporabnika, če tak že obstaja
-        it('ne ustvari uporabnika, če uporabnik z istim username ali email že obstaja', async () => {
+        it('ne ustvari uporabnika, če uporabnik z istim uporabniškim imenom ali elektronskim naslovom že obstaja', async () => {
             const res = await request(app).post('/users').send({
                 username: 'testniUporabnik',
                 email: 'testni@uporabnik.com',

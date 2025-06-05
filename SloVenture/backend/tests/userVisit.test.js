@@ -135,7 +135,7 @@ describe('UserVisit API testi', () => {
 
     // mora vrniti obiske uporabnika z vsemi potrebnimi podatki (če so prisotni)
     describe('GET /user-visit/user/:userId', () => {
-        it('vrne obiske uporabnika z pripetimi znamenitostmi in slikami (če obstajajo)', async () => {
+        it('vrne obiske uporabnika s pripetimi znamenitostmi in slikami (če obstajajo)', async () => {
             const attractionId = testAttraction._id;
 
             await AttractionImageModel.create([
