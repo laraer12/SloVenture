@@ -3,8 +3,9 @@ name: CI/CD
 on:
   push:
     branches:
-      - devel
+      - develop
       - release
+      - SCRUM-93-Neprekinjena-integracija-in-neprekinjena-dostava
 
 jobs:
   build-and-test:
