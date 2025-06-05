@@ -23,6 +23,9 @@ jobs:
         docker build -t ${{ secrets.DOCKER_USERNAME }}/sloventure-backend:latest .
         docker push ${{ secrets.DOCKER_USERNAME }}/sloventure-backend:latest
 
+    - name: Use production .env for frontend
+      run: cp frontend/.env.production frontend/.env
+    
     - name: Build and push frontend
       run: |
         cd ../frontend
@@ -35,4 +38,6 @@ jobs:
         url: ${{ secrets.WEBHOOK_URL }}
         method: POST
         body: '{"event":"new_release"}'
-        headers: 'Content-Type: application/json'
+        headers: |
+          Content-Type: application/json
+          X-Hook-Secret: ${{ secrets.WEBHOOK_SECRET }}

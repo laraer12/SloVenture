@@ -38,7 +38,7 @@ var app = express();
 
 var cors = require('cors');
 
-var allowedOrigins = ['http://localhost:3000', 'http://localhost:3001', 'http://40.68.129.50:3000', 'http://40.68.129.50:3001'];
+var allowedOrigins = ['http://localhost:3000', 'http://localhost:3001', 'http://40.68.129.50:3000', 'http://40.68.129.50:3001', 'http://40.68.129.50'];
 
 app.use(cors({
   credentials: true,
