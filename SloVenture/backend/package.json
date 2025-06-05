@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "node ./bin/www",
-    "test": "jest --detectOpenHandles --runInBand"
+    "test": "jest --detectOpenHandles --runInBand --forceExit"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
