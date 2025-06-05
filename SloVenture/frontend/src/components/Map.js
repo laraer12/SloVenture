@@ -14,14 +14,36 @@ function Map() {
   const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
   const [popupPos, setPopupPos] = useState({ left: 0, top: 0 });
   const popupRef = useRef(null);
-
+  
   // barve pikic po regijah
   const [regionColors, setRegionColors] = useState({});
   const [uniqueRegionIds, setUniqueRegionIds] = useState([]);
   const [regionIdToName, setRegionIdToName] = useState({});
 
+  // filtri za klasifikacije
+  const [selectedClassification, setSelectedClassification] = useState('');
+  const [classifications, setClassifications] = useState([]);
+
+  // pridobim klasifikacije
+  useEffect(() => {
+    const fetchClassifications = async () => {
+      try {
+        const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/attractions/classifications`);
+        const data = await res.json();
+
+        setClassifications(data);
+      }
+      catch (err) {
+        console.error("Napaka pri pridobivanju klasifikacij:", err);
+      }
+    };
+
+    fetchClassifications();
+  }, []);
+
   useEffect(() => {
     document.title = "Zemljevid"; // naslov zavihka
+    d3.select(mapRef.current).selectAll('*').remove(); // da lahko prikazujem za posamezne klasifikacije pike
 
     // velikost zemljevida
     const width = window.innerWidth;
@@ -34,12 +56,6 @@ function Map() {
       .attr('height', '100%')
       .attr('viewBox', `0 0 ${width} ${height}`)
       .attr('preserveAspectRatio', 'xMidYMid meet');
-
-    // kvader kjer se nahaja zemljevid slovenije
-    svg.append('rect')
-      .attr('width', width)
-      .attr('height', height)
-      .attr('fill', '#E0F7FA');
 
     // približno sredina slovenije, da bo prikazana na sredini kvadrata
     const projection = d3.geoMercator()
@@ -67,27 +83,40 @@ function Map() {
       .on('zoom', (event) => {
         g.attr('transform', event.transform);
       });
+    
     svg.call(zoom);
-
+    
     const fetchData = async () => {
       try {
-        const [attractionsRes, imagesRes, regionsRes] = await Promise.all([
-          fetch(`${process.env.REACT_APP_BACKEND_URL}/attractions`),
-          fetch(`${process.env.REACT_APP_BACKEND_URL}/attraction-images`),
-          fetch(`${process.env.REACT_APP_BACKEND_URL}/regions`), // pridobim še regije
-        ]);
+        const attractionsRes = await fetch(
+          selectedClassification
+            ? `${process.env.REACT_APP_BACKEND_URL}/attractions/classification/${encodeURIComponent(selectedClassification)}` // klasifikacije
+            : `${process.env.REACT_APP_BACKEND_URL}/attractions` // znamenitosti
+        );
+        const imagesRes = await fetch(`${process.env.REACT_APP_BACKEND_URL}/attraction-images`); // slike znamenitosti
+        const regionsRes = await fetch(`${process.env.REACT_APP_BACKEND_URL}/regions`); // pridobim še regije
 
         const attractionsData = await attractionsRes.json();
         const imagesData = await imagesRes.json();
         const regionsData = await regionsRes.json();
-        
+
         // da se na legendi izpiše ime regije, ne pa njen ID
         const regionIdToName = {};
-          regionsData.forEach(region => {
-            const id = region._id?.$oid || region._id || region.id;
-            const name = region.name || region.naziv || "Nepoznana regija";
-            regionIdToName[id] = name;
-          });
+        regionsData.forEach(region => {
+          const extractId = (val) => {
+            if (!val)
+              return null;
+
+            if (typeof val === 'object')
+              return val.$oid || val._id || null;
+            
+            return val;
+          };
+
+          const id = extractId(region._id || region.id);
+          const name = region.name || region.naziv || "Nepoznana regija";
+          regionIdToName[id] = name;
+        });
 
         // slike
         const imageMap = {};
@@ -134,8 +163,8 @@ function Map() {
             }
             return val;
           };
-          
-          const regionId = extractId(attraction.regionId);
+
+          const regionId = extractId(attraction.regionId)?.toString();
           const firstImage = imageMap[id]?.[0] || null;
 
           return {
@@ -157,7 +186,7 @@ function Map() {
 
         const regionColors = Object.fromEntries(uniqueRegionIds.map(id => [id, colorScale(id)]));
         setRegionColors(regionColors);
-        
+
         setRegionIdToName(regionIdToName);
         setLoading(false);
 
@@ -172,13 +201,11 @@ function Map() {
           .attr('r', 4)
 
           // vsaki regiji dodam svojo barvo, če slučajno nima podane regije se pika obarva črno
-          .attr('fill', d => {
-            const color = regionColors[d.regionId];
-            return color || 'black';
-          })
+          .attr('fill', d => regionColors[d.regionId] || 'black')
           .style('cursor', 'pointer')
           .on('mouseover', (event, d) => {
             const [x, y] = d3.pointer(event);
+
             setHoverPosition({ x, y });
             setHoveredAttraction(d);
 
@@ -198,7 +225,7 @@ function Map() {
 
                 if (top < 0)
                   top = 0;
-                
+
                 if (top + popupRect.height > viewportHeight)
                   top = viewportHeight - popupRect.height;
 
@@ -212,8 +239,8 @@ function Map() {
           .on('click', (event, d) => {
             navigate(`/attractions/${d.id}`); // uporabnika preusmerim na stran, kjer si lahko ogleda podrobnosti znamenitosti
           });
-
-      } catch (err) {
+      }
+      catch (err) {
         console.error("Napaka pri fetchanju podatkov:", err);
         setLoading(false);
       }
@@ -221,20 +248,14 @@ function Map() {
 
     fetchData();
 
-    const handleResize = () => {
-      window.location.reload(); // ali prilagodi SVG dinamiko
-    };
-
-    // ker trenutno želim imeti sliko zemljevida v ozadju samo tu, returnam za ostale strani null, da tega več ne bo
     return () => {
       d3.select(mapRef.current).selectAll('*').remove();
-      window.removeEventListener('resize', handleResize);
     };
-  }, []);
+  }, [selectedClassification]);
 
   return (
     <div id="map">
-      <div ref={mapRef} style={{ width: '100%', height: '100%', }} />
+      <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
 
       {/* Legenda */}
       <div id="legenda">
@@ -255,7 +276,18 @@ function Map() {
           </ul>
         )}
       </div>
-
+      
+      {/* Filtri */}
+      <div id="filtri">
+        <span style={{ fontWeight: 'bold', marginBottom: '5px' }}>Filtriraj po klasifikaciji:</span>
+        <select value={selectedClassification} onChange={(e) => setSelectedClassification(e.target.value)} style={{ width: '100%' }}>
+          <option value="">Vse</option>
+          {classifications.map(c => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+      </div>
+      
       {/* S tem prikažem ob piki ime ter sliko znamenitosti */}
       {hoveredAttraction && (
         <div id="attraction-info" ref={popupRef} style={{ left: popupPos.left, top: popupPos.top }}>

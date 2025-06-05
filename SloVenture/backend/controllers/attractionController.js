@@ -160,14 +160,30 @@ module.exports = {
             });
     },
 
+    listClassifications: function(req, res) {
+        AttractionModel.find({}, 'classification')
+            .then(attractions => {
+                const uniqueClassifications = [...new Set(attractions
+                    .map(a => a.classification)
+                    .filter(c => c && c.trim() !== ''))];
+
+                // Vrni array stringov
+                res.json(uniqueClassifications);
+            })
+            .catch(err => {
+                console.error("Napaka pri pridobivanju klasifikacij:", err);
+                res.status(500).json({ message: "Napaka pri pridobivanju klasifikacij" });
+            });
+    },
+    
     /**
      * attractionController.listByClassification()
      */
     //TODO CHANGE
     listByClassification: function (req, res) {
-        var classification = req.params.classification;
+        const classification = req.params.classificationName;
 
-        AttractionModel.find({ classification: classification })
+        AttractionModel.find({ classification: classification })  // ← tukaj iščeš po stringu
             .populate('regionId')
             .exec(function (err, attractions) {
                 if (err) {
@@ -176,10 +192,11 @@ module.exports = {
                         error: err
                     });
                 }
+
                 if (attractions.length === 0)
                     return res.json([]);
 
-                var promises = attractions.map(function (attraction) {
+                const promises = attractions.map(function (attraction) {
                     return AttractionImageModel.find({ attractionId: attraction._id })
                         .then(function (images) {
                             return {
