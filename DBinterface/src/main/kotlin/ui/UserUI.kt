@@ -303,7 +303,8 @@ fun AddUserScreen(onBack: () -> Unit) {
                             username = username,
                             email = email,
                             password = password,
-                            isAdmin = isAdmin
+                            isAdmin = isAdmin,
+                            isFakeData = false
                         )
                         val success = postUser(newUser)
                         if (success) onBack()

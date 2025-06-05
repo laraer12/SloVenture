@@ -9,8 +9,9 @@ data class UserVisit(
     val id: String? = null,
     val userId: String,
     val attractionId: String,
-    val visitDate: String? = null
+    val visitDate: String? = null,
+    val isFakeData: Boolean
 ) : DatabaseClass
 
-suspend fun postUserVisit(userVisit: UserVisit): Boolean =
+fun postUserVisit(userVisit: UserVisit): Boolean =
     postToDatabase(userVisit, "user-visit", UserVisit.serializer())

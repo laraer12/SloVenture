@@ -37,6 +37,8 @@ dependencies {
 
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
+    implementation("io.github.serpro69:kotlin-faker:1.13.0")
+
     //implementation("media.kamel:kamel-image-default:1.0.0")
 
     implementation(compose.materialIconsExtended)

@@ -29,7 +29,8 @@ data class User(
     val password: String,
     val profilePicture: String? = null,
     val isAdmin: Boolean = false,
-    val createdAt: String? = null
+    val createdAt: String? = null,
+    val isFakeData: Boolean
 ) : DatabaseClass
 
 fun postUser(user: User): Boolean =

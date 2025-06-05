@@ -13,7 +13,8 @@ data class Review(
     val ratingFamilyFriendly: Int,
     val ratingElderlyFriendly: Int,
     val ratingAccessible: Int,
-    val createdAt: String? = null
+    val createdAt: String? = null,
+    val isFakeData: Boolean
 ) : DatabaseClass
 
 suspend fun postReview(review: Review): Boolean =
