@@ -26,7 +26,7 @@ jobs:
 
     - name: Generate .env.production file
       run: |
-        echo "${{ secrets.FRONTEND_ENV_PRODUCTION }}" > frontend/.env
+        echo "${{ secrets.FRONTEND_ENV_PRODUCTION }}" > SloVenture/frontend/.env
     
     - name: Build and push frontend
       run: |
