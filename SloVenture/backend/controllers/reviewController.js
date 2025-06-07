@@ -67,11 +67,11 @@ module.exports = {
         // če obstaja ocena, posodobi, če ne, ustvari novo
         ReviewModel.findOneAndUpdate(
             // poiščem oceno, ki ustreza uporabniku in znamenitosti
-            { userId: req.body.userId, attractionId: req.body.attractionId },
+            { userId: req.user.userId, attractionId: req.body.attractionId },
             
             // podatki za posodobitev ali vnos, če ocena še ne obstaja
             {
-                userId: req.body.userId,
+                userId: req.user.userId,
                 attractionId: req.body.attractionId,
                 rating: req.body.rating,
                 ratingFamilyFriendly: req.body.ratingFamilyFriendly,

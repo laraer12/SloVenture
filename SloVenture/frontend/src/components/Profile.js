@@ -22,7 +22,9 @@ function Profile() {
         const fetchProfile = async () => {
             try {
                 const resMe = await fetch(`${process.env.REACT_APP_BACKEND_URL}/users/profile`, { // pridobim trenutnega uporabnika
-                    credentials: 'include'
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem('token')}`
+                    }
                 });
 
                 let me = null;
@@ -36,7 +38,9 @@ function Profile() {
                 const profileUrl = id ? `${process.env.REACT_APP_BACKEND_URL}/users/${id}` : `${process.env.REACT_APP_BACKEND_URL}/users/profile`;
 
                 const resProfile = await fetch(profileUrl, {
-                    credentials: 'include'
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem('token')}`
+                    }
                 });
 
                 if (resProfile.ok) {
@@ -71,7 +75,9 @@ function Profile() {
         const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/users/upload-profile-picture`, {
             method: 'POST',
             body: formData,
-            credentials: 'include',
+            headers: {
+                Authorization: `Bearer ${localStorage.getItem('token')}`
+            }
         });
 
         if (res.ok) {
@@ -91,7 +97,7 @@ function Profile() {
 
         const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/users/${userId}/remove-profile-picture`, {
             method: 'PUT',
-            credentials: 'include',
+            Authorization: `Bearer ${localStorage.getItem('token')}`
         });
 
         if (res.ok) {

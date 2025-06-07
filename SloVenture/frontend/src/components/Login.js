@@ -17,7 +17,6 @@ function Login(){
 
         const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/users/login`, {
             method: "POST",
-            credentials: "include",
             headers: { 'Content-Type': 'application/json'},
             body: JSON.stringify({
                 username: username,
@@ -27,9 +26,10 @@ function Login(){
 
         const data = await res.json();
 
-        if (data._id !== undefined)
-            userContext.setUserContext(data);
-        
+        if(data.token && data.user){
+            localStorage.setItem("token", data.token);
+            userContext.setUserContext(data.user);
+        }
         else {
             setUsername("");
             setPassword("");
