@@ -57,7 +57,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // sprememba glede na development in test okolje
 const mongoose = require('mongoose');
 const uri = process.env.NODE_ENV === 'test'
-  ? 'mongodb://localhost:27017/testdb'
+  ? process.env.MONGODB_TEST_URI
   : process.env.MONGODB_URI;
 
 const clientOptions = { serverApi: { version: '1', strict: true, deprecationErrors: true } };

@@ -14,6 +14,9 @@ function Attractions() {
   const [selectedRegionIds, setSelectedRegionIds] = useState([]);
   const [filteredAttractions, setFilteredAttractions] = useState([]);
 
+  // za iskanje znamenitosti po imenu
+  const [searchTerm, setSearchTerm] = useState('');
+
   useEffect(() => {
     document.title = "Znamenitosti"; // naslov zavihka
 
@@ -50,18 +53,25 @@ function Attractions() {
     fetchData();
   }, []);
 
-  // filtriranje na podlagi izbranih regij
+
   useEffect(() => {
-    if (selectedRegionIds.length === 0)
-      setFilteredAttractions(attractions);
-    
-    else {
-      const filtered = attractions.filter((item) =>
+    let filtered = attractions;
+
+    // filtriranje po regijah
+    if (selectedRegionIds.length > 0) {
+      filtered = filtered.filter((item) =>
         selectedRegionIds.includes(item.attraction?.regionId?._id)
       );
-      setFilteredAttractions(filtered);
     }
-  }, [selectedRegionIds, attractions]);
+
+    // filtriranje po imenu znamenitosti
+    if (searchTerm.trim() !== '') {
+      filtered = filtered.filter((item) =>
+        item.attraction?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    setFilteredAttractions(filtered);
+  }, [selectedRegionIds, attractions, searchTerm]);
 
   const handleRegionToggle = (regionId) => {
     setSelectedRegionIds((prev) =>
@@ -113,6 +123,23 @@ function Attractions() {
 
   return (
     <>
+      {/* iskanje znamenitosti po imenu */}
+      <div className="search-bar" style={{ padding: '1rem 2rem' }}>
+        <h3>Išči po imenu:</h3>
+        <input
+          type="text"
+          placeholder="Išči znamenitosti po imenu..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{
+            padding: '0.5rem',
+            width: '100%',
+            maxWidth: 'auto',
+            fontSize: '1rem'
+          }}
+        />
+      </div>
+
       {/* filter po regijah */}
       <div className="region-filter">
         <h3>Išči po regijah:</h3>
@@ -134,7 +161,7 @@ function Attractions() {
       {/* znamenitosti */}
       <div className="attractions-container" style={{ padding: '2rem' }}>
         {filteredAttractions.length === 0 ? (
-          <div>Ni znamenitosti za izbrane regije.</div>
+          <div>Ni znamenitosti.</div>
         ) : (
           filteredAttractions.map((item) => {
             const attraction = item.attraction;
