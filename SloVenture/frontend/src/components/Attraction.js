@@ -15,9 +15,15 @@ import { Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 
 //za realnočasovne komentarje in ocene
 import io from 'socket.io-client';
-const socket = io(`${process.env.REACT_APP_BACKEND_URL}`,{
-  withCredentials: true,
-}); // povezava na backend za real-time komentarje
+const socket = io(`${process.env.REACT_APP_BACKEND_URL}`,
+  /*
+  {
+    headers: {
+      Authorization: `Bearer ${token}` // pošljem JWT token
+    },
+  }
+    */
+); // povezava na backend za real-time komentarje
 
 function Attraction() {
   const { id } = useParams();
@@ -213,7 +219,7 @@ function Attraction() {
     fetchComments();
   }, [id]);
 
-  //realnoičasovni komentarji in ocene
+  //realnočasovni komentarji in ocene
   useEffect(() => {
     socket.connect();
 
@@ -252,10 +258,16 @@ function Attraction() {
   function handleCommentSubmit(e) {
     e.preventDefault();
 
+    const token = localStorage.getItem('token');
+
     axios.post(
       `${process.env.REACT_APP_BACKEND_URL}/comments/attraction/${id}`, // pridobim komentarje za določeno znamenitost
       { text: newComment },
-      { withCredentials: true }
+      {
+        headers: {
+          Authorization: `Bearer ${token}` 
+        },
+      }
     )
     .then(() => {
       return axios.get(`${process.env.REACT_APP_BACKEND_URL}/comments/attraction/${id}`);
@@ -275,7 +287,12 @@ function Attraction() {
     if (!window.confirm("Ali ste prepričani, da želite izbrisati ta komentar?")) // če si uporabnik premisli lahko komentar obdrži
       return;
 
-    axios.delete(`${process.env.REACT_APP_BACKEND_URL}/comments/${commentId}`, { withCredentials: true }) // pridobim komentarje za določeno znamenitost
+    axios.delete(`${process.env.REACT_APP_BACKEND_URL}/comments/${commentId}`, 
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        },
+      })
       .then(() => {
         return axios.get(`${process.env.REACT_APP_BACKEND_URL}/comments/attraction/${id}`);
       })
@@ -321,7 +338,12 @@ function Attraction() {
     };
 
     axios
-      .post(`${process.env.REACT_APP_BACKEND_URL}/reviews`, reviewData, { withCredentials: true }) // oddam oceno
+      .post(`${process.env.REACT_APP_BACKEND_URL}/reviews`, reviewData,
+        {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}` 
+        },
+      })
       .then(() => {
         alert('Hvala za vašo oceno!');
 
@@ -417,7 +439,9 @@ function Attraction() {
       const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/attraction-images/upload-attraction-image`, { // api za dodajanje slike
         method: 'POST',
         body: formData,
-        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+         }
       });
 
       if (!res.ok)
@@ -459,7 +483,9 @@ function Attraction() {
     try {
       const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/attraction-images/${imageToDelete._id}`, {
         method: 'DELETE',
-        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        } 
       });
 
       if (!res.ok) {
@@ -482,9 +508,12 @@ function Attraction() {
   useEffect(() => {
     const fetchUserVisits = async () => {
       try {
-        const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/user-visit/user/${user._id}`, {
-          withCredentials: true,
-        });
+        const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/user-visit/user/${user._id}`,
+           {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('token')}` 
+            },
+          });
 
         setUserVisits(res.data);
       }
@@ -525,7 +554,11 @@ function Attraction() {
           attractionId: attraction._id,
           visitDate: visitDate,
         },
-        { withCredentials: true }
+        {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        },
+      }
       );
 
       alert('Obisk uspešno shranjen!');
@@ -584,7 +617,11 @@ function Attraction() {
           isPublic: false,
           createdAt: new Date(),
         },
-        {withCredentials: true }
+        {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        },
+      }
       );
 
       const newTripId = tripRes.data._id;
@@ -598,7 +635,11 @@ function Attraction() {
           tripDescription,
           plannedVisitTime
         },
-        { withCredentials: true }
+        {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}` 
+        },
+      }
       );
 
       alert("Izlet uspešno shranjen!");

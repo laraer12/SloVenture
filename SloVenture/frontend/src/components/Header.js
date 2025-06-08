@@ -18,6 +18,9 @@ function Header(props) {
                             <li className="nav-item">
                                 <Link className="nav-link" to='/attractions'>Znamenitosti</Link>
                             </li>
+                            <li className="nav-item">
+                                <Link className="nav-link" to='/statistics'>Statistika</Link>
+                            </li>
                             <UserContext.Consumer>
                                 {context => (
                                     context.user ?

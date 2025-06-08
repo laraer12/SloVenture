@@ -24,6 +24,7 @@
     "express-session": "^1.18.1",
     "hbs": "^4.2.0",
     "http-errors": "~1.6.3",
+    "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.511.0",
     "mongoose": "^6.9.0",
     "morgan": "~1.9.1",
