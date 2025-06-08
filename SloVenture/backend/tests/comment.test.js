@@ -10,7 +10,7 @@ const { AttractionModel } = require('../models/attractionModel');
 describe('Comment API testi:', () => {
     let testUser;
     let testAttraction;
-    let cookie;
+    let token;
 
     beforeAll(async () => {
         if (mongoose.connection.readyState !== 1)
@@ -44,7 +44,8 @@ describe('Comment API testi:', () => {
             username: 'uporabnikKomentar',
             password: 'komentarGeslo'
         });
-        cookie = res.headers['set-cookie'];
+
+        token = res.body.token;
     });
 
     afterAll(async () => {
@@ -91,7 +92,7 @@ describe('Comment API testi:', () => {
         it('doda komentar, če je uporabnik prijavljen', async () => {
             const res = await request(app)
                 .post(`/comments/attraction/${testAttraction._id}`)
-                .set('Cookie', cookie)
+                .set('Authorization', `Bearer ${token}`)
                 .send({ text: 'Avtenticiran komentar' });
 
             expect(res.statusCode).toBe(201);
@@ -115,7 +116,7 @@ describe('Comment API testi:', () => {
             const comment = await CommentModel.create({ text: 'Za izbris', userId: testUser._id, attractionId: testAttraction._id });
             const res = await request(app)
                 .delete(`/comments/${comment._id}`)
-                .set('Cookie', cookie);
+                .set('Authorization', `Bearer ${token}`);
 
             expect(res.statusCode).toBe(204);
         });
@@ -127,7 +128,7 @@ describe('Comment API testi:', () => {
 
             const res = await request(app)
                 .delete(`/comments/${comment._id}`)
-                .set('Cookie', cookie);
+                .set('Authorization', `Bearer ${token}`);
 
             expect(res.statusCode).toBe(403);
         });

@@ -23,7 +23,7 @@ function requiresLogin(req, res, next) {
 
 router.get('/user/:userId', tripController.tripsByUser); // potovanja glede na uporabnikov id
 
-router.get('/', tripController.list);
+router.get('/', requiresLogin, tripController.list);
 router.get('/:id', tripController.show);
 router.post('/', requiresLogin, tripController.create);
 router.put('/:id', tripController.update);

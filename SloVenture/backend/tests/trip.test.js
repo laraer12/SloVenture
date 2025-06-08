@@ -13,7 +13,7 @@ describe('Trip API testi:', () => {
     let testUser;
     let testAttraction;
     let testTrip;
-    let cookie;
+    let token;
 
     beforeAll(async () => {
         if (mongoose.connection.readyState !== 1)
@@ -36,7 +36,7 @@ describe('Trip API testi:', () => {
             .post('/users/login')
             .send({ username: 'izletUporabnik', password: 'izletGeslo' });
 
-        cookie = loginRes.headers['set-cookie'];
+        token = loginRes.body.token;
 
         // testna znamenitost
         testAttraction = await AttractionModel.create({
@@ -78,7 +78,7 @@ describe('Trip API testi:', () => {
     // mora vrniti vse izlete prijavljenega uporabnika
     describe('GET /trips', () => {
         it('vrne vse izlete za prijavljenega uporabnika', async () => {
-            const res = await request(app).get('/trips').set('Cookie', cookie);
+            const res = (await request(app).get('/trips').set('Authorization', `Bearer ${token}`));
 
             expect(res.statusCode).toBe(200);
             expect(Array.isArray(res.body)).toBe(true);
@@ -92,7 +92,7 @@ describe('Trip API testi:', () => {
         it('vrne podrobnosti izleta in pripadajoče znamenitosti', async () => {
             const res = await request(app)
                 .get(`/trips/${testTrip._id}`)
-                .set('Cookie', cookie);
+                .set('Authorization', `Bearer ${token}`);
 
             expect(res.statusCode).toBe(200);
             expect(res.body).toHaveProperty('trip');
@@ -103,7 +103,7 @@ describe('Trip API testi:', () => {
         // mora vrniti napako če izlet ne obstaja
         it('vrne 404 če izlet ne obstaja', async () => {
             const fakeId = new mongoose.Types.ObjectId();
-            const res = await request(app).get(`/trips/${fakeId}`).set('Cookie', cookie);
+            const res = await request(app).get(`/trips/${fakeId}`).set('Authorization', `Bearer ${token}`);
 
             expect(res.statusCode).toBe(404);
         });
@@ -125,7 +125,7 @@ describe('Trip API testi:', () => {
 
             const res = await request(app)
                 .post('/trips')
-                .set('Cookie', cookie)
+                .set('Authorization', `Bearer ${token}`)
                 .send(newTrip);
 
             expect(res.statusCode).toBe(201);
@@ -134,7 +134,7 @@ describe('Trip API testi:', () => {
 
         // mora vrniti napako, če podatki manjkajo
         it('vrne napako, če manjkajo podatki', async () => {
-            const res = await request(app).post('/trips').set('Cookie', cookie).send({});
+            const res = await request(app).post('/trips').set('Authorization', `Bearer ${token}`).send({});
 
             expect(res.statusCode).toBe(400);
         });
@@ -146,7 +146,7 @@ describe('Trip API testi:', () => {
         it('posodobi izlet', async () => {
             const res = await request(app)
                 .put(`/trips/${testTrip._id}`)
-                .set('Cookie', cookie)
+                .set('Authorization', `Bearer ${token}`)
                 .send({ tripName: 'Posodobljen izlet' });
 
             expect(res.statusCode).toBe(200);
@@ -158,7 +158,7 @@ describe('Trip API testi:', () => {
             const fakeId = new mongoose.Types.ObjectId();
             const res = await request(app)
                 .put(`/trips/${fakeId}`)
-                .set('Cookie', cookie)
+                .set('Authorization', `Bearer ${token}`)
                 .send({ tripName: 'Ne obstaja' });
                 
             expect(res.statusCode).toBe(404);
@@ -180,7 +180,7 @@ describe('Trip API testi:', () => {
 
             const res = await request(app)
                 .delete(`/trips/${newTrip._id}`)
-                .set('Cookie', cookie);
+                .set('Authorization', `Bearer ${token}`);
 
             expect(res.statusCode).toBe(204);
         });
@@ -191,7 +191,7 @@ describe('Trip API testi:', () => {
         it('vrne vse izlete uporabnika z znamenitostmi in prvo sliko', async () => {
             const res = await request(app)
                 .get(`/trips/user/${testUser._id}`)
-                .set('Cookie', cookie);
+                .set('Authorization', `Bearer ${token}`);
 
             expect(res.statusCode).toBe(200);
             expect(Array.isArray(res.body)).toBe(true);

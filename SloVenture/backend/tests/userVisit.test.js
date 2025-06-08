@@ -11,7 +11,7 @@ const { AttractionModel } = require('../models/attractionModel');
 describe('UserVisit API testi', () => {
     let testVisit;
     let testUser;
-    let cookie;
+    let token;
     let testAttraction;
 
     beforeAll(async () => {
@@ -41,7 +41,7 @@ describe('UserVisit API testi', () => {
             .post('/users/login')
             .send({ username: 'testniUporabnik', password: 'testnoGeslo' });
 
-        cookie = loginRes.headers['set-cookie'];
+        token = loginRes.body.token;
     });
 
     beforeEach(async () => {
@@ -109,7 +109,7 @@ describe('UserVisit API testi', () => {
 
             const res = await request(app)
                 .post('/user-visit')
-                .set('Cookie', cookie)
+                .set('Authorization', `Bearer ${token}`)
                 .send(newVisit);
 
             expect(res.statusCode).toBe(201);
@@ -121,7 +121,7 @@ describe('UserVisit API testi', () => {
         it('ne ustvari obiska, če že obstaja', async () => {
             const res = await request(app)
                 .post('/user-visit')
-                .set('Cookie', cookie)
+                .set('Authorization', `Bearer ${token}`)
                 .send({
                     userId: testVisit.userId.toString(),
                     attractionId: testVisit.attractionId.toString(),

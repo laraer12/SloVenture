@@ -138,7 +138,7 @@ describe('User API testi:', () => {
             });
 
             expect(res.statusCode).toBe(200);
-            expect(res.body).toHaveProperty('username', 'testniUporabnik');
+            expect(res.body.user).toHaveProperty('username', 'testniUporabnik');
         });
 
         // ne sme prijaviti uporabnika z napačnim geslom

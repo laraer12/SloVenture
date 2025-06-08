@@ -11,7 +11,7 @@ describe('Review API testi:', () => {
     let testUser;
     let testAttraction;
     let testReview;
-    let cookie;
+    let token;
 
     beforeAll(async () => {
         if (mongoose.connection.readyState !== 1)
@@ -41,8 +41,8 @@ describe('Review API testi:', () => {
         const loginRes = await request(app)
             .post('/users/login')
             .send({ username: 'testniUporabnik', password: 'testnoGeslo' });
-
-        cookie = loginRes.headers['set-cookie'];
+        
+            token = loginRes.body.token;
     });
 
     beforeEach(async () => {
@@ -105,7 +105,7 @@ describe('Review API testi:', () => {
 
             const res = await request(app)
                 .post('/reviews')
-                .set('Cookie', cookie)
+                .set('Authorization', `Bearer ${token}`)
                 .send(reviewData);
 
             expect(res.statusCode).toBe(200);
@@ -116,7 +116,7 @@ describe('Review API testi:', () => {
         it('ne uspe, če manjkajo ocene', async () => {
             const res = await request(app)
                 .post('/reviews')
-                .set('Cookie', cookie)
+                .set('Authorization', `Bearer ${token}`)
                 .send({
                     userId: testUser._id,
                     attractionId: testAttraction._id
@@ -132,7 +132,7 @@ describe('Review API testi:', () => {
         it('posodobi oceno', async () => {
             const res = await request(app)
                 .put(`/reviews/${testReview._id}`)
-                .set('Cookie', cookie)
+                .set('Authorization', `Bearer ${token}`)
                 .send({ rating: 2 });
 
             expect(res.statusCode).toBe(200);
@@ -144,7 +144,7 @@ describe('Review API testi:', () => {
             const fakeId = new mongoose.Types.ObjectId();
             const res = await request(app)
                 .put(`/reviews/${fakeId}`)
-                .set('Cookie', cookie)
+                .set('Authorization', `Bearer ${token}`)
                 .send({ rating: 3 });
 
             expect(res.statusCode).toBe(404);
@@ -156,7 +156,7 @@ describe('Review API testi:', () => {
         it('izbriše oceno', async () => {
             const res = await request(app)
                 .delete(`/reviews/${testReview._id}`)
-                .set('Cookie', cookie);
+                .set('Authorization', `Bearer ${token}`);
 
             expect(res.statusCode).toBe(204);
         });

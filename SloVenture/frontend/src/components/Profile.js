@@ -203,7 +203,6 @@ function Profile() {
                     {isOwnProfile && (
                         <div>
                             <p>Spremeni profilno sliko:</p>
-                            <p>TESTTTTTTTTTTTTTTTTTTTT IZBRISI TOOOOOOO</p>
                             
                             <form onSubmit={handleProfilePictureUpload}>
                                 <input type="file" name="profilePicture" ref={fileInputRef} accept="image/*" style={{ marginRight: '15px' }} />

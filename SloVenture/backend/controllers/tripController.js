@@ -14,7 +14,7 @@ module.exports = {
      * tripController.list()
      */
     list: function (req, res) {
-        var userId = req.session.userId;
+        var userId = req.user.userId;
 
         TripModel.find({userId: userId},function (err, trips) {
             if (err) {
