@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import axios from 'axios';
+import D3Calendar from './D3Calendar';
 
 function Profile() {
     const { id } = useParams(); // pridobim id iz URL-ja, če obstaja
@@ -163,6 +164,7 @@ function Profile() {
         const images = visit.attractionImages && visit.attractionImages.length > 0
             ? visit.attractionImages
             : (visit.images || []);
+
         const index = imageIndexes[visit._id] || 0;
 
         if (images.length === 0)
@@ -170,12 +172,10 @@ function Profile() {
 
         const url = images[index]?.url || images[index];
 
-        if (!url)
+        if (!url || !(url.startsWith('http://') || url.startsWith('https://')))
             return `${process.env.REACT_APP_BACKEND_URL}/images/ni_slike.jpg`;
 
-        return url.startsWith('http://') || url.startsWith('https://')
-            ? url
-            : `${process.env.REACT_APP_BACKEND_URL}${url}`;
+        return url;
     };
 
     const isOwnProfile = currentUser && profile && currentUser.username === profile.username;
@@ -228,8 +228,19 @@ function Profile() {
                 <p><strong>Email:</strong> {profile.email}</p>
             </div>
             
-            <hr />
+            {/* Koledar obiskov */}
+            {visitedAttractions && visitedAttractions.length > 0 ? (
+                <>
+                    <hr /><br />
+                    <h2>Koledar obiskov</h2>
+                    <br />
+                    <D3Calendar visits={visitedAttractions} />
+                </>
+            ) : null}
 
+            <hr /><br />
+
+            {/* Obiskane znamenitosti */}
             <h2>Obiskane znamenitosti</h2>
 
             <div className="attractions-container" style={{ padding: "2rem" }}>

@@ -49,12 +49,12 @@ const Trips = () => {
 
     const getImageUrl = (url) => {
         if (!url) 
-        return null;
+            return `${process.env.REACT_APP_BACKEND_URL}/images/ni_slike.jpg`;
 
         if (url.startsWith('http://') || url.startsWith('https://'))
-        return url;
-    
-        return `${process.env.REACT_APP_BACKEND_URL}${url}`;
+            return url;
+
+        return `${process.env.REACT_APP_BACKEND_URL}/images/ni_slike.jpg`;
     };
 
     if (loading)

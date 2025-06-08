@@ -68,9 +68,18 @@ function Attraction() {
   const [order, setOrder] = useState('');
   const [plannedVisitTime, setPlannedVisitTime] = useState('');
   const [trips, setTrips] = useState([]);
+
   //bližnje znamenitosti (nearbySttractions)
   const [nearbyAttractions, setNearbyAttractions] = useState([]);
-  const [imageIndexes, setImageIndexes] = useState({}); // za slike bližnjih znamenitosti 
+  const [imageIndexes, setImageIndexes] = useState({}); // za slike bližnjih znamenitosti
+
+  // slike uporabnikov
+  const [userImageStartIndex, setUserImageStartIndex] = useState(0);
+  const userImages = images.filter(img => !img.url.startsWith('http://') && !img.url.startsWith('https://'));
+  const IMAGES_PER_PAGE = 3;
+  const userImageEndIndex = userImageStartIndex + IMAGES_PER_PAGE;
+  const visibleUserImages = userImages.slice(userImageStartIndex, userImageEndIndex);
+  const [selectedUserImageIndex, setSelectedUserImageIndex] = useState(null);
 
   useEffect(() => {
     document.title = "Nalaganje znamenitosti..."; // naslov zavihka, dokler se znamenitost ne naloži
@@ -87,11 +96,9 @@ function Attraction() {
 
         nearbyAttractions.forEach((item) => {
           console.log("slike bližnjih znamenitosti:", item.images);
-          if (item._id) {
+          if (item._id)
             imageIndexes[item._id] = 0; // nastavim začetni indeks slike za vsako bližnjo znamenitost
-          }
         });
-
 
         setAttraction(fullAttraction);
         setImages(images);  // shranim vse slike
@@ -171,38 +178,65 @@ function Attraction() {
     }));
   };
 
+  // puščice za slike uporabnikov
+  const handleUserPrev = () => {
+    setUserImageStartIndex((prev) => Math.max(prev - IMAGES_PER_PAGE, 0));
+  };
+
+  const handleUserNext = () => {
+    setUserImageStartIndex((prev) =>
+      Math.min(prev + IMAGES_PER_PAGE, userImages.length - IMAGES_PER_PAGE)
+    );
+  };
+
+  const handleUserImageClick = (index) => {
+    setSelectedUserImageIndex(prevIndex => prevIndex === index ? null : index);
+  };
+
   // pridobim slike iz baze
-  const getImageUrl = () => {
-    if (images.length === 0) return null;
+  const getImageUrl = (onlyDefault = false) => {
+    if (images.length === 0)
+      return null;
 
-    const url = images[currentImageIndex]?.url;
+    const filteredImages = onlyDefault
+      ? images.filter(img => img.url.startsWith('http://') || img.url.startsWith('https://'))
+      : images;
 
-    if (!url) return null;
+    if (filteredImages.length === 0)
+      return null;
+
+    const index = currentImageIndex % filteredImages.length;
+    const url = filteredImages[index]?.url;
+
+    if (!url)
+      return null;
 
     if (url.startsWith('http://') || url.startsWith('https://'))
-      return url; // že popoln URL
+      return url;
 
     return `${process.env.REACT_APP_BACKEND_URL}${url}`;
   };
 
   //pridobivanje slik bližnjih znamenitosti iz baze
- const getNearbyImageUrl = (item) => {
-  const attractionId = item?._id;
-  const images = item?.images || [];
-  const index = imageIndexes[attractionId] || 0;
+  const getNearbyImageUrl = (item) => {
+    const attractionId = item?._id;
+    const images = item?.images || [];
+    const index = imageIndexes[attractionId] || 0;
 
-  if (images.length === 0)
-    return `${process.env.REACT_APP_BACKEND_URL}/images/ni_slike.jpg`;
+    const validImages = images.filter(img => 
+      img.url && (img.url.startsWith('http://') || img.url.startsWith('https://'))
+    );
 
-  const url = images[index]?.url;
+    if (validImages.length === 0)
+      return `${process.env.REACT_APP_BACKEND_URL}/images/ni_slike.jpg`;
 
-  if (!url)
-    return `${process.env.REACT_APP_BACKEND_URL}/images/ni_slike.jpg`;
+    const url = validImages[index]?.url;
 
-  return url.startsWith('http://') || url.startsWith('https://')
-    ? url
-    : `${process.env.REACT_APP_BACKEND_URL}${url}`;
-};
+    if (!url)
+      return `${process.env.REACT_APP_BACKEND_URL}/images/ni_slike.jpg`;
+
+    return url;
+  };
 
   // za pridobivanje komentarjev
   useEffect(() => {
@@ -471,15 +505,22 @@ function Attraction() {
       setError('Nimate dovoljenja za brisanje slike.');
       return;
     }
-    if (!window.confirm("Ali ste prepričani, da želite izbrisati to sliko?"))
+
+    if (selectedUserImageIndex === null || !userImages[selectedUserImageIndex]) {
+      setError('Izberite sliko, ki jo želite izbrisati.');
+      return;
+    }
+
+    if (!window.confirm('Ali ste prepričani, da želite izbrisati to sliko?'))
       return;
 
-    const imageToDelete = images[currentImageIndex];
+    const imageToDelete = userImages[selectedUserImageIndex];
 
     if (!imageToDelete || !imageToDelete._id) {
       setError('Slika ni veljavna.');
       return;
     }
+
     try {
       const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/attraction-images/${imageToDelete._id}`, {
         method: 'DELETE',
@@ -492,11 +533,10 @@ function Attraction() {
         const errData = await res.json();
         throw new Error(errData.message || 'Napaka pri brisanju slike.');
       }
-      const newImages = images.filter((_, i) => i !== currentImageIndex);
-      setImages(newImages);
-      setCurrentImageIndex((prev) =>
-        newImages.length === 0 ? 0 : Math.max(0, prev - 1)
-      );
+
+      const updatedImages = images.filter(img => img._id !== imageToDelete._id);
+      setImages(updatedImages);
+      setSelectedUserImageIndex(null);
     }
     catch (err) {
       console.error(err);
@@ -671,12 +711,17 @@ function Attraction() {
 
         {/* Slike */}
         <div className="image-wrapper relative">
-          {getImageUrl() && (
-            <img key={getImageUrl()} src={getImageUrl()} alt={attraction.name || 'Znamenitost'} className="attraction-images fade-image" />
+          {getImageUrl(true) && (
+            <img
+              key={getImageUrl(true)}
+              src={getImageUrl(true)}
+              alt={attraction.name || 'Znamenitost'}
+              className="attraction-images fade-image"
+            />
           )}
 
           {/* Puščici */}
-          {images.length > 1 && (
+          {images.filter(img => img.url.startsWith('http://') || img.url.startsWith('https://')).length > 1 && (
             <>
               <button className="nav-button left" onClick={handlePrev}>
                 <ChevronLeft />
@@ -685,16 +730,6 @@ function Attraction() {
                 <ChevronRight />
               </button>
             </>
-          )}
-
-          <br />
-          {/* gumb za izbris slike, ki se prikaže samo adminu */}
-          {user && user.isAdmin && images.length > 0 && (
-            <div className="delete-button">
-              <button className="btn btn-danger" onClick={handleDeleteImage}>
-                Izbriši trenutno prikazano sliko
-              </button>
-            </div>
           )}
         </div>
 
@@ -880,12 +915,72 @@ function Attraction() {
 
             {error && <p style={{ color: 'red' }}>{error}</p>}
 
-            <hr />
+            <br /><br />
           </div>
         )}
 
+        {/* Slike uporabnikov */}
+        <h3>Slike uporabnikov</h3>
+
+        <div className="user-uploaded-images">
+          {userImages.length === 0 ? (
+            <p>Trenutno še nihče ni objavil nobenih slik.</p>
+          ) : (
+            <>
+              <div className="user-image-slider-wrapper">
+                {/* Leva puščica */}
+                {userImageStartIndex > 0 && (
+                  <button className="nav-button left" onClick={handleUserPrev}>
+                    <ChevronLeft />
+                  </button>
+                )}
+
+                {/* Slike */}
+                <div className="user-image-slider">
+                  {visibleUserImages.map((img, index) => {
+                    const clickedIndex = userImageStartIndex + index;
+                    return (
+                      <img
+                        key={clickedIndex}
+                        src={`${process.env.REACT_APP_BACKEND_URL}${img.url}`}
+                        alt={`Slika uporabnika ${clickedIndex + 1}`}
+                        className={`user-image ${selectedUserImageIndex === clickedIndex ? 'selected' : ''}`}
+                        onClick={() =>
+                          setSelectedUserImageIndex(prevIndex => (prevIndex === clickedIndex ? null : clickedIndex))
+                        }
+                      />
+                    );
+                  })}
+                </div>
+
+                {/* Desna puščica */}
+                {userImageEndIndex < userImages.length && (
+                  <button className="nav-button right" onClick={handleUserNext}>
+                    <ChevronRight />
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Gumb za brisanje slike – samo admin */}
+          {user && user.isAdmin && selectedUserImageIndex !== null && (
+            <>
+              <br />
+
+              <div className="delete-button">
+                <button className="btn btn-danger" onClick={handleDeleteImage}>
+                  Izbriši izbrano sliko
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+
         {/* del za komentarje */}
         <div>
+          <hr />
+
           <h3>Komentarji</h3>
 
           <br />
@@ -1029,10 +1124,14 @@ function Attraction() {
         ) : (
           nearbyAttractions.map((nearby) => {
             if (!nearby) return null;
-          
-            const images = nearby.images || [];
+
+            // filter validnih slik za http(s)
+            const validImages = (nearby.images || []).filter(img =>
+              img.url && (img.url.startsWith('http://') || img.url.startsWith('https://'))
+            );
+
             const imageUrl = getNearbyImageUrl(nearby);
-          
+
             return (
               <Link
                 to={`/attractions/${nearby._id}`}
@@ -1047,13 +1146,14 @@ function Attraction() {
                       className="attraction-image fade-image"
                       key={imageUrl}
                     />
-                    {images.length > 1 && (
+                    {/* puščice samo če imamo več kot 1 validno sliko */}
+                    {validImages.length > 1 && (
                       <>
                         <button
                           className="nav-button left"
                           onClick={(e) => {
                             e.preventDefault();
-                            handlePrevNearby(nearby._id, images.length);
+                            handlePrevNearby(nearby._id, validImages.length);
                           }}
                         >
                           <ChevronLeft />
@@ -1062,7 +1162,7 @@ function Attraction() {
                           className="nav-button right"
                           onClick={(e) => {
                             e.preventDefault();
-                            handleNextNearby(nearby._id, images.length);
+                            handleNextNearby(nearby._id, validImages.length);
                           }}
                         >
                           <ChevronRight />
@@ -1070,7 +1170,7 @@ function Attraction() {
                       </>
                     )}
                   </div>
-                  
+
                   <div className="attraction-details">
                     <h3 className="attraction-name">{nearby.name || 'Neznano ime'}</h3>
                     <p className="attraction-locationType">{nearby.locationType || 'Neznan tip lokacije'}</p>
