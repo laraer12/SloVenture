@@ -98,6 +98,9 @@ function Map() {
           if (!id)
             return;
 
+          if (!img.url || !(img.url.startsWith('http://') || img.url.startsWith('https://')))
+            return;
+
           if (!imageMap[id])
             imageMap[id] = [];
 

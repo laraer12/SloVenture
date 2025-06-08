@@ -352,3 +352,36 @@ code {
 .region-label.checked span {
   color: white;
 }
+
+/* slike uporabnikov */
+
+.user-uploaded-images {
+  margin-top: 1rem;
+  position: relative;
+}
+
+.user-image-slider-wrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.user-image-slider {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.user-image {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.user-image.selected {
+  border: 3px solid red;
+  opacity: 0.9;
+}

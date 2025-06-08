@@ -157,6 +157,7 @@ function Profile() {
         const images = visit.attractionImages && visit.attractionImages.length > 0
             ? visit.attractionImages
             : (visit.images || []);
+
         const index = imageIndexes[visit._id] || 0;
 
         if (images.length === 0)
@@ -164,12 +165,10 @@ function Profile() {
 
         const url = images[index]?.url || images[index];
 
-        if (!url)
+        if (!url || !(url.startsWith('http://') || url.startsWith('https://')))
             return `${process.env.REACT_APP_BACKEND_URL}/images/ni_slike.jpg`;
 
-        return url.startsWith('http://') || url.startsWith('https://')
-            ? url
-            : `${process.env.REACT_APP_BACKEND_URL}${url}`;
+        return url;
     };
 
     const isOwnProfile = currentUser && profile && currentUser.username === profile.username;

@@ -96,23 +96,20 @@ function Attractions() {
     }));
   };
 
-  // prilagojena funkcija prikazu slik, da se prikažejo tudi slike, dodane od uporabnikov
+  // funkcija za prikaz slik
   const getImageUrl = (item) => {
     const attractionId = item.attraction?._id;
     const images = item?.images || [];
+    const validImages = images.filter(img => img.url.startsWith('http://') || img.url.startsWith('https://'));
+
+    if (validImages.length === 0)
+      return `${process.env.REACT_APP_BACKEND_URL}/images/ni_slike.jpg`;
+
     const index = imageIndexes[attractionId] || 0;
+    const validIndex = index % validImages.length;
+    const url = validImages[validIndex]?.url;
 
-    if (images.length === 0)
-      return `${process.env.REACT_APP_BACKEND_URL}/images/ni_slike.jpg`;
-
-    const url = images[index]?.url;
-
-    if (!url)
-      return `${process.env.REACT_APP_BACKEND_URL}/images/ni_slike.jpg`;
-
-    return url.startsWith('http://') || url.startsWith('https://')
-      ? url
-      : `${process.env.REACT_APP_BACKEND_URL}${url}`;
+    return url;
   };
 
   if (loading)
@@ -171,19 +168,20 @@ function Attractions() {
 
             const images = item?.images || [];
             const imageUrl = getImageUrl(item);
+            const validImages = images.filter(img => img.url.startsWith('http://') || img.url.startsWith('https://'));
+            const showArrows = validImages.length > 1;
 
             return (
               <Link to={`/attractions/${attraction._id}`} key={attraction._id} className="attraction-card-link">
                 <div className="attraction-card">
                   <div className="image-wrapper">
                     <img src={imageUrl} alt={attraction.name || 'Znamenitost'} className="attraction-image fade-image" key={imageUrl} />
-                    {images.length > 1 && (
+                    {showArrows && (
                       <>
-                        {/* Prikaz puščic */}
-                        <button className="nav-button left" onClick={(e) => { e.preventDefault(); handlePrev(attraction._id, images.length); }}>
+                        <button className="nav-button left" onClick={() => handlePrev(attraction._id, validImages.length)}>
                           <ChevronLeft />
                         </button>
-                        <button className="nav-button right" onClick={(e) => { e.preventDefault(); handleNext(attraction._id, images.length); }}>
+                        <button className="nav-button right" onClick={() => handleNext(attraction._id, validImages.length)}>
                           <ChevronRight />
                         </button>
                       </>
