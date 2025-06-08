@@ -184,30 +184,6 @@ function Map() {
             const [x, y] = d3.pointer(event);
             setHoverPosition({ x, y });
             setHoveredAttraction(d);
-
-            // da se okvirček vedno prikaže znotraj ekrana in ne izven, odvisno kje hoveramo
-            setTimeout(() => {
-              if (popupRef.current) {
-                const popupRect = popupRef.current.getBoundingClientRect();
-                const padding = 5;
-                const viewportWidth = window.innerWidth;
-                const viewportHeight = window.innerHeight;
-
-                let left = x + padding;
-                let top = y - popupRect.height / 2;
-
-                if (left + popupRect.width > viewportWidth)
-                  left = x - popupRect.width - padding;
-
-                if (top < 0)
-                  top = 0;
-                
-                if (top + popupRect.height > viewportHeight)
-                  top = viewportHeight - popupRect.height;
-
-                setPopupPos({ left, top });
-              }
-            }, 0);
           })
           .on('mouseout', () => {
             setHoveredAttraction(null); // da ni prikazana prejšnja znamenitost, kjer je uporabnik šel čez z miško
@@ -261,7 +237,10 @@ function Map() {
 
       {/* S tem prikažem ob piki ime ter sliko znamenitosti */}
       {hoveredAttraction && (
-        <div id="attraction-info" ref={popupRef} style={{ left: popupPos.left, top: popupPos.top }}>
+        <div id="attraction-info"
+          ref={popupRef}
+          style={{ left: hoverPosition.x + 10, top: hoverPosition.y - 20, }}
+        >
           <strong>{hoveredAttraction.name}</strong>
           {hoveredAttraction.image && (
             <img id="attraction-info-image" src={hoveredAttraction.image} alt={hoveredAttraction.name} />
