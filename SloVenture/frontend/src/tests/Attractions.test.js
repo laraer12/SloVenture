@@ -1,7 +1,7 @@
 import React, { act } from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import Attractions from '../src/components/Attractions';
+import Attractions from '../components/Attractions';
 import axios from 'axios';
 import { MemoryRouter } from 'react-router-dom';
 
