@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import React from 'react';
 
 function Attractions() {
   const [attractions, setAttractions] = useState([]);
