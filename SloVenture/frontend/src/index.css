@@ -367,3 +367,51 @@ code {
 .region-label.checked span {
   color: white;
 }
+
+.attraction-statistics{
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 2rem;
+  align-items: center;
+}
+
+.visits-chart,
+.ratings-chart {
+  border: #555 solid 1px;
+  border-radius: 10px;
+  padding: 1rem;
+}
+
+/* slike uporabnikov */
+
+.user-uploaded-images {
+  margin-top: 1rem;
+  position: relative;
+}
+
+.user-image-slider-wrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.user-image-slider {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.user-image {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.user-image.selected {
+  border: 3px solid red;
+  opacity: 0.9;
+}

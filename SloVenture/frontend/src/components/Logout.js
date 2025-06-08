@@ -11,6 +11,7 @@ function Logout() {
                 credentials: "include"
             });
 
+            localStorage.removeItem("token");
             userContext.setUserContext(null);
         };
         logout();

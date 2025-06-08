@@ -73,14 +73,11 @@ module.exports = {
      * dodajanje komentarja
      */
     create: function (req, res) {
-        if (!req.session || !req.session.userId)
-            return res.status(401).json({ message: 'User has to be logged in' });
-
         const { text } = req.body;
         const { attractionId } = req.params;
 
         var comment = new CommentModel({
-			userId : req.session.userId,
+            userId : req.user.userId,
 			attractionId,
 			text : text.trim(),
 			createdAt : Date.now()
@@ -153,9 +150,6 @@ module.exports = {
     remove: function (req, res) {
         var id = req.params.id;
 
-        if (!req.session || !req.session.userId)
-            return res.status(401).json({ message: 'User not logged in' });
-
         CommentModel.findById(id, function (err, comment) {
             if (err) {
                 return res.status(500).json({
@@ -166,7 +160,7 @@ module.exports = {
             if (!comment)
                 return res.status(404).json({ message: 'Comment was not found' });
 
-            UserModel.findById(req.session.userId, function (err, user) {
+            UserModel.findById(req.user.userId, function (err, user) {
                 if (err || !user) {
                     return res.status(500).json({
                         message: 'Error identifying user',

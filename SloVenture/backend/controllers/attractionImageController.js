@@ -134,7 +134,7 @@ module.exports = {
      * attractionImageController.remove()
      */
     remove: function (req, res) {
-        var id = req.session?.userId;
+        var id = req.user.userId;
 
         if (!id)
             return res.status(401).json({ message: 'User not logged in' });

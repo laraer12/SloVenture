@@ -81,9 +81,9 @@ module.exports = {
      * tripController.create()
      */
     create: function (req, res) {
-        const { userId, tripName, startDate, endDate } = req.body;
+        const { userId, tripName, startDate} = req.body;
 
-        if (!userId || !tripName || !startDate || !endDate) {
+        if (!userId || !tripName || !startDate) {
             return res.status(400).json({
                 message: 'No field should be empty'
             });
@@ -93,7 +93,6 @@ module.exports = {
             tripName: tripName,
             tripDescription: req.body.tripDescription,
             startDate: startDate,
-            endDate: endDate,
             isPublic: req.body.isPublic ?? false,
             createdAt: req.body.createdAt ?? new Date()
         });

@@ -658,7 +658,16 @@ update: function (req, res) {
                                 });
                             }
 
-                            return res.status(204).json();
+                            nearbyAttractionModel.deleteMany({ nearbyAttractionId: id }, function (err) {
+                                if (err) {
+                                    return res.status(500).json({
+                                        message: 'Error when deleting nearby attractions.',
+                                        error: err
+                                    });
+                                }
+
+                                return res.status(204).json();
+                            });
                         });
                     });
                 });
