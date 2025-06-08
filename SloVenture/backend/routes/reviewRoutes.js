@@ -23,6 +23,7 @@ function requiresLogin(req, res, next) {
     });
 }
 
+router.get('/ratings-by-attraction', reviewController.reviewsByAttraction); // pridobim ocene glede na id znamenitosti
 router.get('/', reviewController.list);
 router.get('/:id', reviewController.show);
 router.post('/', requiresLogin, reviewController.create); // oddaja ocene

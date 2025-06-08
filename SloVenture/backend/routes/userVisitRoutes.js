@@ -22,13 +22,16 @@ function requiresLogin(req, res, next) {
         next();
     });
 }
-
+router.get('/visits-by-attraction', userVisitController.visitsByAttraction); // pridobim vse obiske glede na id znamenitosti
 router.get('/', userVisitController.list);
 router.get('/:id', userVisitController.show);
 router.post('/', requiresLogin, userVisitController.create);
 router.put('/:id', userVisitController.update);
 router.delete('/:id', userVisitController.remove);
 
+
 router.get('/user/:userId', userVisitController.findByUserId); // pridobim vse obiske glede na uporabnikov id
+
+
 
 module.exports = router;

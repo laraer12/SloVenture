@@ -16,7 +16,6 @@ import { Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 //za realnočasovne komentarje in ocene
 import io from 'socket.io-client';
 const socket = io(`${process.env.REACT_APP_BACKEND_URL}`,
-  //{withCredentials: true,}
   /*
   {
     headers: {
@@ -259,7 +258,7 @@ function Attraction() {
   function handleCommentSubmit(e) {
     e.preventDefault();
 
-    const token = localStorage.getItem('token'); // pridobim token iz localStorage
+    const token = localStorage.getItem('token');
 
     axios.post(
       `${process.env.REACT_APP_BACKEND_URL}/comments/attraction/${id}`, // pridobim komentarje za določeno znamenitost

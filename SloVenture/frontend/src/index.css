@@ -352,3 +352,18 @@ code {
 .region-label.checked span {
   color: white;
 }
+
+.attraction-statistics{
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 2rem;
+  align-items: center;
+}
+
+.visits-chart,
+.ratings-chart{
+  border: #555 solid 1px;
+  border-radius: 10px;
+  padding: 1rem;
+}
