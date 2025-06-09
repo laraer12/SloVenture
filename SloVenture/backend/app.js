@@ -76,8 +76,6 @@ async function run() {
 }
 run().catch(console.dir);
 
-console.log("Povezujem se na bazo:", uri);
-
 // test za session
 var session = require('express-session');
 var MongoStore = require('connect-mongo');

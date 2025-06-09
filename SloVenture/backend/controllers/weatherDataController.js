@@ -78,7 +78,6 @@ module.exports = {
 
         if (
             !req.body.attractionId ||
-            !req.body.currentWeather ||
             !req.body.forecast ||
             !req.body.lastUpdated ||
             !req.body.location ||

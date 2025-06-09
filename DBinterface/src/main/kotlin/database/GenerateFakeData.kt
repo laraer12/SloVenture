@@ -56,21 +56,23 @@ object FakeDataGenerator {
             )
         }
     }
-
     fun generateFakeReviews(
         count: Int,
         users: List<User>,
         attractions: List<AttractionMinimal>,
-        dateRange: Pair<LocalDate, LocalDate>
+        dateRange: Pair<LocalDate, LocalDate>,
+        minRating: Int,
+        maxRating: Int
     ): List<Review> {
         return List(count) {
+            val user = users.filter { it.id != null }.random()
             Review(
-                userId = users.random().id ?: "",
+                userId = user.id!!,
                 attractionId = attractions.random().id,
-                rating = Random.nextInt(1, 6),
-                ratingFamilyFriendly = Random.nextInt(1, 6),
-                ratingElderlyFriendly = Random.nextInt(1, 6),
-                ratingAccessible = Random.nextInt(1, 6),
+                rating = Random.nextInt(minRating, maxRating + 1),
+                ratingFamilyFriendly = Random.nextInt(minRating, maxRating + 1),
+                ratingElderlyFriendly = Random.nextInt(minRating, maxRating + 1),
+                ratingAccessible = Random.nextInt(minRating, maxRating + 1),
                 createdAt = formatter.format(randomDate(dateRange.first, dateRange.second)),
                 isFakeData = true
             )
@@ -97,7 +99,7 @@ object FakeDataGenerator {
         users: List<User>,
         attractions: List<AttractionMinimal>
     ) {
-        val reviews = generateFakeReviews(options.numReviews, users, attractions, options.dateStart to options.dateEnd)
+        val reviews = generateFakeReviews(options.numReviews, users, attractions, options.dateStart to options.dateEnd, options.minRating, options.maxRating)
         reviews.forEach { postReview(it) }
     }
 

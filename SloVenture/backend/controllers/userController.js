@@ -186,13 +186,10 @@ module.exports = {
             if (!user)
                 return res.status(404).json({ message: 'No such user' });
 
-            if (req.body.isAdmin !== undefined)
-                delete req.body.isAdmin;
-
             user.username = req.body.username || user.username;
             user.email = req.body.email || user.email;
             user.password = req.body.password || user.password;
-            user.isAdmin = req.body.isAdmin;
+            user.isAdmin = req.body.isAdmin || user.isAdmin;
             user.profilePicture = req.body.profilePicture || user.profilePicture;
             user.isFakeData = req.body.isFakeData !== undefined ? req.body.isFakeData : user.isFakeData;
 

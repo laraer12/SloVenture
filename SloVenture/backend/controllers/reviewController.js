@@ -52,61 +52,57 @@ module.exports = {
      * reviewController.create()
      * ustvarim mnenje, podam glasove
      */
-    create: function (req, res) {
+create: function (req, res) {
+    const userId = req.body.isFakeData ? req.body.userId : req.user.userId;
 
-        // preverjam če vse ocene obstajajo in so večje od 1
-        if (!req.body.rating || req.body.rating < 1 ||
-            !req.body.ratingFamilyFriendly || req.body.ratingFamilyFriendly < 1 ||
-            !req.body.ratingElderlyFriendly || req.body.ratingElderlyFriendly < 1 ||
-            !req.body.ratingAccessible || req.body.ratingAccessible < 1) {
-            return res.status(400).json({
-                message: 'Every review has to be set and at least from 1 to 5'
-            });
-        }
+    if (!req.body.rating || req.body.rating < 1 ||
+        !req.body.ratingFamilyFriendly || req.body.ratingFamilyFriendly < 1 ||
+        !req.body.ratingElderlyFriendly || req.body.ratingElderlyFriendly < 1 ||
+        !req.body.ratingAccessible || req.body.ratingAccessible < 1) {
+        return res.status(400).json({
+            message: 'Every review has to be set and at least from 1 to 5'
+        });
+    }
 
-        // če obstaja ocena, posodobi, če ne, ustvari novo
-        ReviewModel.findOneAndUpdate(
-            // poiščem oceno, ki ustreza uporabniku in znamenitosti
-            { userId: req.user.userId, attractionId: req.body.attractionId },
-            
-            // podatki za posodobitev ali vnos, če ocena še ne obstaja
-            {
-                userId: req.user.userId,
-                attractionId: req.body.attractionId,
-                rating: req.body.rating,
-                ratingFamilyFriendly: req.body.ratingFamilyFriendly,
-                ratingElderlyFriendly: req.body.ratingElderlyFriendly,
-                ratingAccessible: req.body.ratingAccessible,
-                createdAt: req.body.createdAt,
-                isFakeData: req.body.isFakeData || false // privzeto je isFakeData false, če ni podano
-            },
-            
-            /*
-            Opcije metode:
-            - upsert: če ocena ne obstaja, jo ustvarim
-            - new: vrnem novo ali posodobljeno oceno
-            - setDefaultsOnInsert: če se ustvari nova ocena, nastavim privzete vrednosti iz modela
-            */
-            { upsert: true, new: true, setDefaultsOnInsert: true },
+    ReviewModel.findOneAndUpdate(
+        // filter
+        { userId: userId, attractionId: req.body.attractionId },
 
-            function (err, review) {
-                if (err) {
-                    return res.status(500).json({
-                        message: 'Error creating or updating review',
-                        error: err
-                    });
-                }
+        // update
+        {
+            userId: userId,
+            attractionId: req.body.attractionId,
+            rating: req.body.rating,
+            ratingFamilyFriendly: req.body.ratingFamilyFriendly,
+            ratingElderlyFriendly: req.body.ratingElderlyFriendly,
+            ratingAccessible: req.body.ratingAccessible,
+            createdAt: req.body.createdAt,
+            isFakeData: req.body.isFakeData || false
+        },
 
-                const io = req.app.get('io');
-                io.emit("reviewAdded", review);
+        // options
+        { upsert: true, new: true, setDefaultsOnInsert: true },
 
-                return res.status(200).json({
-                    message: 'Review successfully given',
-                    review: review
+        function (err, review) {
+            if (err) {
+                console.error('Review creation/updating error:', err);
+                return res.status(500).json({
+                    message: 'Error creating or updating review',
+                    error: err.message || err
                 });
             }
-        );
-    },
+
+            const io = req.app.get('io');
+            io.emit("reviewAdded", review);
+
+            return res.status(200).json({
+                message: 'Review successfully given',
+                review: review
+            });
+        }
+    );
+},
+
 
     /**
      * reviewController.update()

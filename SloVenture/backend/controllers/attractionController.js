@@ -631,7 +631,7 @@ module.exports = {
                     attractions.forEach(function (attr) {
                         var distance = approximateDistance(attr.location.lat, attr.location.lon, attraction.location.lat, attraction.location.lon);
 
-                        if (distance < 2000 && attr._id.toString() !== attraction._id.toString()) {
+                        if (distance < 8000 && attr._id.toString() !== attraction._id.toString()) {
                             const nearbyAttraction = new nearbyAttractionModel({
                                 attractionId: attraction._id,
                                 nearbyAttractionId: attr._id,

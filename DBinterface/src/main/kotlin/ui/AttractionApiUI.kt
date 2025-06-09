@@ -14,9 +14,11 @@ import api.retrieveAllAttractions
 import database.data.*
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.window.Dialog
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
@@ -224,7 +226,7 @@ fun AttractionImportScreen() {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(200.dp)
+                .height(200.dp)
                 .background(color = Color.White)
                 .border(
                     width = 1.dp,
@@ -441,12 +443,15 @@ fun AttractionAPIDetailScreen(
                 RatingItem("Dostopno", data.attraction.ratingAccessible)
 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                    Button(onClick = { showEditDialog = true }) {
+                    Button(
+                        onClick = { showEditDialog = true },
+                        colors = ButtonDefaults.buttonColors(backgroundColor = AppColors.Lavender)
+                    ) {
                         Text("Uredi")
                     }
                     Button(
                         onClick = { showDeleteConfirmation = true },
-                        colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.error)
+                        colors = ButtonDefaults.buttonColors(backgroundColor = AppColors.Red)
                     ) {
                         Text("Izbriši", color = Color.White)
                     }
@@ -466,7 +471,7 @@ fun AttractionAPIDetailScreen(
             try {
                 regions = getAllRegions()
             } catch (ex: Exception) {
-            }//TODO AAAAAAAAAAAAA
+            }
             isLoadingRegions = false
         }
     }
@@ -533,42 +538,93 @@ fun EditAttractionAPIDialog(
             shape = RoundedCornerShape(12.dp),
             elevation = 8.dp,
             modifier = Modifier
-                .width(600.dp)
-                .height(600.dp)
+                .widthIn(min = 400.dp, max = 600.dp)
+                .heightIn(min = 500.dp, max = 700.dp)
+                .padding(16.dp)
         ) {
             Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-                Text("Uredi znamenitost", style = MaterialTheme.typography.h6)
-
-                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    "Uredi znamenitost",
+                    style = MaterialTheme.typography.h6,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
 
                 Column(
                     modifier = Modifier
                         .weight(1f)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Ime") })
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text("Ime") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = TextFieldDefaults.outlinedTextFieldColors(
+                            unfocusedBorderColor = AppColors.Navy,
+                            focusedBorderColor = AppColors.Lavender,
+                            cursorColor = AppColors.Lavender
+                        )
+                    )
                     OutlinedTextField(
                         value = description,
                         onValueChange = { description = it },
-                        label = { Text("Opis") })
+                        label = { Text("Opis") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = TextFieldDefaults.outlinedTextFieldColors(
+                            unfocusedBorderColor = AppColors.Navy,
+                            focusedBorderColor = AppColors.Lavender,
+                            cursorColor = AppColors.Lavender
+                        ),
+                        maxLines = 4
+                    )
+
                     OutlinedTextField(
                         value = classification,
                         onValueChange = { classification = it },
-                        label = { Text("Klasifikacija") })
+                        label = { Text("Klasifikacija") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = TextFieldDefaults.outlinedTextFieldColors(
+                            unfocusedBorderColor = AppColors.Navy,
+                            focusedBorderColor = AppColors.Lavender,
+                            cursorColor = AppColors.Lavender
+                        )
+                    )
                     OutlinedTextField(
                         value = locationType,
                         onValueChange = { locationType = it },
-                        label = { Text("Tip lokacije") })
+                        label = { Text("Tip lokacije") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = TextFieldDefaults.outlinedTextFieldColors(
+                            unfocusedBorderColor = AppColors.Navy,
+                            focusedBorderColor = AppColors.Lavender,
+                            cursorColor = AppColors.Lavender
+                        )
+                    )
                     OutlinedTextField(
                         value = elevation,
                         onValueChange = { elevation = it },
-                        label = { Text("Nadmorska višina (m)") })
+                        label = { Text("Nadmorska višina (m)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = TextFieldDefaults.outlinedTextFieldColors(
+                            unfocusedBorderColor = AppColors.Navy,
+                            focusedBorderColor = AppColors.Lavender,
+                            cursorColor = AppColors.Lavender
+                        ),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
                     OutlinedTextField(
                         value = accessibilityOptions,
                         onValueChange = { accessibilityOptions = it },
-                        label = { Text("Dostopnost") })
+                        label = { Text("Dostopnost") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = TextFieldDefaults.outlinedTextFieldColors(
+                            unfocusedBorderColor = AppColors.Navy,
+                            focusedBorderColor = AppColors.Lavender,
+                            cursorColor = AppColors.Lavender
+                        )
+                    )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     RegionDropdown(
                         regions = regions,
@@ -593,10 +649,6 @@ fun EditAttractionAPIDialog(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
-                        Button(onClick = onDismiss) {
-                            Text("Prekliči")
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
                         Button(onClick = {
                             try {
                                 onSave(
@@ -611,9 +663,16 @@ fun EditAttractionAPIDialog(
                                 )
                             } catch (_: Exception) {
                             }
-                        }) {
+                        }, colors = ButtonDefaults.buttonColors(backgroundColor = AppColors.Green)) {
                             Text("Shrani")
                         }
+                        Button(
+                            onClick = onDismiss,
+                            colors = ButtonDefaults.buttonColors(backgroundColor = AppColors.Red)
+                        ) {
+                            Text("Prekliči")
+                        }
+
                     }
                 }
             }

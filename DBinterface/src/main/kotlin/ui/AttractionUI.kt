@@ -509,10 +509,6 @@ fun EditAttractionDialog(
                         .weight(1f)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    val textFieldModifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 12.dp)
-
                     OutlinedTextField(
                         value = name,
                         onValueChange = { name = it },
@@ -711,7 +707,7 @@ fun AddAttractionDialog(
     LaunchedEffect(Unit) {
         try {
             regions = getAllRegions()
-        } catch (ex: Exception) { //TODO AAAAAAAAAAAAAAAAAAAAAA
+        } catch (ex: Exception) {
         }
     }
 
@@ -856,7 +852,6 @@ fun AddAttractionDialog(
                                     ratingFamilyFriendly = 0.0,
                                     googleMapsLink = "https://maps.google.com/?q=${coordinates.lat},${coordinates.lon}"
                                 )
-
                                 val generatedId = postAttractionFromApi(newAttraction)
                                 if (generatedId != null) {
                                     val savedAttraction = newAttraction.copy(id = generatedId)
