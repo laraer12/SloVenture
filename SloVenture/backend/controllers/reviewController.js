@@ -67,11 +67,11 @@ module.exports = {
         // če obstaja ocena, posodobi, če ne, ustvari novo
         ReviewModel.findOneAndUpdate(
             // poiščem oceno, ki ustreza uporabniku in znamenitosti
-            { userId: req.body.userId, attractionId: req.body.attractionId },
+            { userId: req.user.userId, attractionId: req.body.attractionId },
             
             // podatki za posodobitev ali vnos, če ocena še ne obstaja
             {
-                userId: req.body.userId,
+                userId: req.user.userId,
                 attractionId: req.body.attractionId,
                 rating: req.body.rating,
                 ratingFamilyFriendly: req.body.ratingFamilyFriendly,
@@ -234,5 +234,120 @@ module.exports = {
             console.error('Full error:', err);
             res.status(500).json({ message: 'Error getting averages', error: err });
         }
+    },
+/*
+    reviewsByAttraction: async function (req, res) {
+    try {
+        const results = await ReviewModel.aggregate([
+        {
+            $group: {
+                _id: "$attractionId",
+                avgRating: { $avg: "$rating" },
+                avgFamilyFriendly: { $avg: "$ratingFamilyFriendly" },
+                avgElderlyFriendly: { $avg: "$ratingElderlyFriendly" },
+                avgAccessible: { $avg: "$ratingAccessible" }
+            }
+        },
+        {
+            $project: {
+                attractionId: "$_id",
+                avgRatingAll: {
+                $avg: ["$avgRating", "$avgFamilyFriendly", "$avgElderlyFriendly", "$avgAccessible"]
+                }
+            }
+        },
+        {
+            $sort: { avgRatingAll: -1 }
+        },
+        {
+            $limit: 15
+        },
+        {
+            $lookup: {
+                from: "attractions", 
+                localField: "attractionId",
+                foreignField: "_id",
+                as: "attraction"
+            }
+        },
+        {
+            $unwind: "$attraction"
+        },
+        {
+            $project: {
+                attractionId: 1,
+                avgRatingAll: 1,
+                attractionName: "$attraction.name"
+            }
+        }
+        ]);
+
+        return res.json(results);
+    } catch (error) {
+        console.error("Napaka pri pridobivanju najbolj ocenjenih znamenitosti:", error);
+        return res.status(500).json({ message: "Napaka pri pridobivanju podatkov." });
     }
+  }
+    */
+   reviewsByAttraction: async function (req, res) {
+    try {
+        const allReviews = await ReviewModel.find({})
+            .populate('attractionId', 'name')
+            .lean();
+
+        const ratingData = {};
+
+        for (const review of allReviews) {
+            const attr = review.attractionId;
+            if (!attr || !attr._id) {
+                continue;
+            }
+
+            const id = attr._id.toString();
+
+            if (!ratingData[id]) {
+                ratingData[id] = {
+                    attractionId: attr._id,
+                    attractionName: attr.name,
+                    totalRatings: 0,
+                    sumRating: 0,
+                    sumFamilyFriendly: 0,
+                    sumElderlyFriendly: 0,
+                    sumAccessible: 0
+                };
+            }
+
+            ratingData[id].totalRatings += 1;
+            ratingData[id].sumRating += review.rating || 0;
+            ratingData[id].sumFamilyFriendly += review.ratingFamilyFriendly || 0;
+            ratingData[id].sumElderlyFriendly += review.ratingElderlyFriendly || 0;
+            ratingData[id].sumAccessible += review.ratingAccessible || 0;
+        }
+
+        const results = Object.values(ratingData).map(entry => {
+            const avgRating = entry.sumRating / entry.totalRatings;
+            const avgFamily = entry.sumFamilyFriendly / entry.totalRatings;
+            const avgElderly = entry.sumElderlyFriendly / entry.totalRatings;
+            const avgAccessible = entry.sumAccessible / entry.totalRatings;
+            const avgRatingAll = (avgRating + avgFamily + avgElderly + avgAccessible) / 4;
+
+            return {
+                attractionId: entry.attractionId,
+                attractionName: entry.attractionName,
+                avgRatingAll: +avgRatingAll.toFixed(2)
+            };
+        });
+
+        const sortedTop = results
+            .sort((a, b) => b.avgRatingAll - a.avgRatingAll)
+            .slice(0, 15);
+
+        res.json(sortedTop);
+    } catch (error) {
+        console.error("Napaka pri pridobivanju ocen znamenitosti:", error);
+        res.status(500).json({ message: "Napaka pri pridobivanju podatkov", error: error.message || error });
+    }
+}
+
+
 };

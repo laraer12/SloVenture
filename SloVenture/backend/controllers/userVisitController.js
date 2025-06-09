@@ -175,5 +175,45 @@ module.exports = {
                 error: err
             });
         }
-    }
+    },
+
+    //vrne 15 najbolj priljubljenih znamenitosti glede na število obiskov
+    visitsByAttraction: async function (req, res) {
+        try {
+          const allVisits = await UservisitModel.find({})
+            .populate('attractionId', 'name') 
+            .lean();
+        
+          const visitCounts = {};
+        
+          for (const visit of allVisits) {
+            const attr = visit.attractionId;
+            if (!attr || !attr._id) {
+              continue;
+            }
+        
+            const id = attr._id.toString();
+        
+            if (!visitCounts[id]) {
+              visitCounts[id] = {
+                attractionId: attr._id,
+                attractionName: attr.name,
+                totalVisits: 0
+              };
+            }
+        
+            visitCounts[id].totalVisits += 1;
+          }
+      
+          const sortedResults = Object.values(visitCounts)
+            .sort((a, b) => b.totalVisits - a.totalVisits)
+            .slice(0, 15);
+      
+          res.json(sortedResults);
+        } catch (err) {
+          console.error("Napaka pri pridobivanju obiskov:", err);
+          res.status(500).json({ message: "Napaka pri pridobivanju podatkov", error: err.message || err });
+        }
+    }       
+
 };

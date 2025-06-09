@@ -1,4 +1,4 @@
-require('dotenv').config(); // s tem lahko uporabim ključe iz .env kjerkoli
+require('dotenv').config(); 
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
@@ -9,16 +9,7 @@ var logger = require('morgan');
 const csrf = require('csurf');
 const csrfProtection = csrf({ cookie: true });
 
-/*
-// lokalna povezava z bazo
-var mongoose = require('mongoose');
-var mongoDB='mongodb://127.0.0.1:27017/SloVentureDB';
-mongoose.set('strictQuery', true);
-mongoose.connect(mongoDB);
-mongoose.Promise = global.Promise;
-var db = mongoose.connection;
-db.on('error', console.error.bind(console, 'MongoDB connection error:'));
-*/
+//test
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/userRoutes');
@@ -30,7 +21,6 @@ var regionRouter = require('./routes/regionRoutes');
 var reviewRouter = require('./routes/reviewRoutes');
 var tripAttractionRouter = require('./routes/tripAttractionRoutes');
 var tripRouter = require('./routes/tripRoutes');
-var userSavedRouter = require('./routes/userSavedRoutes');
 var userVisitRouter=require('./routes/userVisitRoutes');
 var weatherDataRouter = require('./routes/weatherDataRoutes');
 
@@ -38,7 +28,7 @@ var app = express();
 
 var cors = require('cors');
 
-var allowedOrigins = ['http://localhost:3000', 'http://localhost:3001'];
+var allowedOrigins = ['http://localhost:3000', 'http://localhost:3001', 'http://40.68.129.50:3000', 'http://40.68.129.50:3001', 'http://40.68.129.50'];
 
 app.use(cors({
   credentials: true,
@@ -64,8 +54,12 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// sprememba glede na development in test okolje
+
 const mongoose = require('mongoose');
-const uri = "mongodb+srv://ime:geslo@sloventure.4djf5rv.mongodb.net/SloVentureDB?retryWrites=true&w=majority&appName=SloVenture";
+const uri = process.env.NODE_ENV === 'test'
+  ? process.env.MONGODB_TEST_URI
+  : process.env.MONGODB_URI;
 
 const clientOptions = { serverApi: { version: '1', strict: true, deprecationErrors: true } };
 
@@ -73,6 +67,7 @@ async function run() {
   try {
     await mongoose.connect(uri, clientOptions);
     await mongoose.connection.db.admin().command({ ping: 1 });
+
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   }
   catch (error) {
@@ -81,20 +76,36 @@ async function run() {
 }
 run().catch(console.dir);
 
+console.log("Povezujem se na bazo:", uri);
+
 // test za session
 var session = require('express-session');
 var MongoStore = require('connect-mongo');
-app.use(session({
+
+const sessionOptions = {
   secret: 'work hard',
   resave: true,
   saveUninitialized: false,
-  store: MongoStore.create({mongoUrl: uri})
-}));
+};
+
+// uporabim MongoStore samo, če ni testno okolje
+if (process.env.NODE_ENV !== 'test')
+  sessionOptions.store = MongoStore.create({ mongoUrl: uri });
+
+// vedno uporabim session middleware
+app.use(session(sessionOptions));
 
 // pridobim csrf token
-app.get('/csrf-token', csrfProtection, (req, res) => {
-  res.json({ csrfToken: req.csrfToken() });
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.get('/csrf-token', csrfProtection, (req, res) => {
+    res.json({ csrfToken: req.csrfToken() });
+  });
+}
+else {
+  app.get('/csrf-token', (req, res) => { // v testnem okolju pošljem prazen token ali pa to pot kar ignoriram
+    res.json({ csrfToken: '' });
+  });
+}
 
 app.use(function (req, res, next) {
   res.locals.session = req.session;
@@ -111,7 +122,6 @@ app.use('/regions', regionRouter);
 app.use('/reviews', reviewRouter);
 app.use('/trip-attractions', tripAttractionRouter);
 app.use('/trips', tripRouter);
-app.use('/user-saved', userSavedRouter);
 app.use('/user-visit', userVisitRouter);
 app.use('/weather-data', weatherDataRouter);
 

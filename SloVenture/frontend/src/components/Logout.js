@@ -7,10 +7,11 @@ function Logout() {
 
     useEffect(() => {
         const logout = async () => {
-            await fetch("http://localhost:3001/users/logout", {
+            await fetch(`${process.env.REACT_APP_BACKEND_URL}/users/logout`, {
                 credentials: "include"
             });
 
+            localStorage.removeItem("token");
             userContext.setUserContext(null);
         };
         logout();

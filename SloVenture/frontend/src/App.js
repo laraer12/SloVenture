@@ -11,6 +11,7 @@ import Attractions from './components/Attractions'; // znamenitosti prikazane po
 import Attraction from './components/Attraction'; // prikaz posamične znamenitosti
 import Trips from './components/Trips'; // potovanja uporabnika
 import Trip from './components/Trip'; // podatki potovanja
+import AttractionStatistics from './components/AttractionStatistics'; // statistika znamenitosti
 
 function App() {
   /**
@@ -60,6 +61,7 @@ function App() {
             <Route path="/attractions/:id" element={<Attraction />}></Route>
             <Route path="/trips" element={<Trips />} />
             <Route path="/trips/:id" element={<Trip />} />
+            <Route path="/statistics" element={<AttractionStatistics/>} />
           </Routes>
         </div>
       </UserContext.Provider>

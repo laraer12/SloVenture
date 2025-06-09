@@ -49,12 +49,12 @@ const Trips = () => {
 
     const getImageUrl = (url) => {
         if (!url) 
-        return null;
+            return `${process.env.REACT_APP_BACKEND_URL}/images/ni_slike.jpg`;
 
         if (url.startsWith('http://') || url.startsWith('https://'))
-        return url;
-    
-        return `http://localhost:3001${url}`;
+            return url;
+
+        return `${process.env.REACT_APP_BACKEND_URL}/images/ni_slike.jpg`;
     };
 
     if (loading)
@@ -86,14 +86,14 @@ const Trips = () => {
                             <div className="col-md-4">
                                 {trip.firstImageUrl ? (
                                     <img
-                                        src={getImageUrl(trip.firstImageUrl) || 'http://localhost:3001/images/ni_slike.jpg'}
+                                        src={getImageUrl(trip.firstImageUrl) || `${process.env.REACT_APP_BACKEND_URL}/images/ni_slike.jpg`}
                                         alt="Slika potovanja"
                                         className="img-fluid rounded-end"
                                         style={{ objectFit: 'cover', height: '100%', maxHeight: '200px', width: '100%' }}
                                     />
                                 ) : (
                                     <img
-                                        src='http://localhost:3001/images/ni_slike.jpg'
+                                        src={`${process.env.REACT_APP_BACKEND_URL}/images/ni_slike.jpg`}
                                         alt="Ni slike"
                                         className="img-fluid rounded-end"
                                         style={{ objectFit: 'cover', height: '100%', maxHeight: '200px', width: '100%' }}

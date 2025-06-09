@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import React from 'react';
 
 function Attractions() {
   const [attractions, setAttractions] = useState([]);
@@ -14,6 +15,9 @@ function Attractions() {
   const [selectedRegionIds, setSelectedRegionIds] = useState([]);
   const [filteredAttractions, setFilteredAttractions] = useState([]);
 
+  // za iskanje znamenitosti po imenu
+  const [searchTerm, setSearchTerm] = useState('');
+
   useEffect(() => {
     document.title = "Znamenitosti"; // naslov zavihka
 
@@ -21,8 +25,8 @@ function Attractions() {
     const fetchData = async () => {
       try {
         const [regionsRes, attractionsRes] = await Promise.all([
-          axios.get('http://localhost:3001/regions'),
-          axios.get('http://localhost:3001/attractions'),
+          axios.get(`${process.env.REACT_APP_BACKEND_URL}/regions`),
+          axios.get(`${process.env.REACT_APP_BACKEND_URL}/attractions`),
         ]);
 
         setRegions(regionsRes.data);
@@ -50,18 +54,25 @@ function Attractions() {
     fetchData();
   }, []);
 
-  // filtriranje na podlagi izbranih regij
+
   useEffect(() => {
-    if (selectedRegionIds.length === 0)
-      setFilteredAttractions(attractions);
-    
-    else {
-      const filtered = attractions.filter((item) =>
+    let filtered = attractions;
+
+    // filtriranje po regijah
+    if (selectedRegionIds.length > 0) {
+      filtered = filtered.filter((item) =>
         selectedRegionIds.includes(item.attraction?.regionId?._id)
       );
-      setFilteredAttractions(filtered);
     }
-  }, [selectedRegionIds, attractions]);
+
+    // filtriranje po imenu znamenitosti
+    if (searchTerm.trim() !== '') {
+      filtered = filtered.filter((item) =>
+        item.attraction?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    setFilteredAttractions(filtered);
+  }, [selectedRegionIds, attractions, searchTerm]);
 
   const handleRegionToggle = (regionId) => {
     setSelectedRegionIds((prev) =>
@@ -86,23 +97,20 @@ function Attractions() {
     }));
   };
 
-  // prilagojena funkcija prikazu slik, da se prikažejo tudi slike, dodane od uporabnikov
+  // funkcija za prikaz slik
   const getImageUrl = (item) => {
     const attractionId = item.attraction?._id;
     const images = item?.images || [];
+    const validImages = images.filter(img => img.url.startsWith('http://') || img.url.startsWith('https://'));
+
+    if (validImages.length === 0)
+      return `${process.env.REACT_APP_BACKEND_URL}/images/ni_slike.jpg`;
+
     const index = imageIndexes[attractionId] || 0;
+    const validIndex = index % validImages.length;
+    const url = validImages[validIndex]?.url;
 
-    if (images.length === 0)
-      return 'http://localhost:3001/images/ni_slike.jpg';
-
-    const url = images[index]?.url;
-
-    if (!url)
-      return 'http://localhost:3001/images/ni_slike.jpg';
-
-    return url.startsWith('http://') || url.startsWith('https://')
-      ? url
-      : `http://localhost:3001${url}`;
+    return url;
   };
 
   if (loading)
@@ -113,6 +121,23 @@ function Attractions() {
 
   return (
     <>
+      {/* iskanje znamenitosti po imenu */}
+      <div className="search-bar" style={{ padding: '1rem 2rem' }}>
+        <h3>Išči po imenu:</h3>
+        <input
+          type="text"
+          placeholder="Išči znamenitosti po imenu..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{
+            padding: '0.5rem',
+            width: '100%',
+            maxWidth: 'auto',
+            fontSize: '1rem'
+          }}
+        />
+      </div>
+
       {/* filter po regijah */}
       <div className="region-filter">
         <h3>Išči po regijah:</h3>
@@ -134,7 +159,7 @@ function Attractions() {
       {/* znamenitosti */}
       <div className="attractions-container" style={{ padding: '2rem' }}>
         {filteredAttractions.length === 0 ? (
-          <div>Ni znamenitosti za izbrane regije.</div>
+          <div>Ni znamenitosti.</div>
         ) : (
           filteredAttractions.map((item) => {
             const attraction = item.attraction;
@@ -144,19 +169,20 @@ function Attractions() {
 
             const images = item?.images || [];
             const imageUrl = getImageUrl(item);
+            const validImages = images.filter(img => img.url.startsWith('http://') || img.url.startsWith('https://'));
+            const showArrows = validImages.length > 1;
 
             return (
               <Link to={`/attractions/${attraction._id}`} key={attraction._id} className="attraction-card-link">
                 <div className="attraction-card">
                   <div className="image-wrapper">
                     <img src={imageUrl} alt={attraction.name || 'Znamenitost'} className="attraction-image fade-image" key={imageUrl} />
-                    {images.length > 1 && (
+                    {showArrows && (
                       <>
-                        {/* Prikaz puščic */}
-                        <button className="nav-button left" onClick={(e) => { e.preventDefault(); handlePrev(attraction._id, images.length); }}>
+                        <button className="nav-button left" onClick={() => handlePrev(attraction._id, validImages.length)}>
                           <ChevronLeft />
                         </button>
-                        <button className="nav-button right" onClick={(e) => { e.preventDefault(); handleNext(attraction._id, images.length); }}>
+                        <button className="nav-button right" onClick={() => handleNext(attraction._id, validImages.length)}>
                           <ChevronRight />
                         </button>
                       </>

@@ -7,48 +7,19 @@ var attractionController = require('../controllers/attractionController.js');
 router.get('/search', attractionController.search);
 */
 
-
 router.get('/fullKotlin/:id', attractionController.showFullAttractionKotlin);
 router.get('/listKotlin', attractionController.listKotlin);
 router.get('/getAllAttractionsKotlin', attractionController.getAllAttractionsKotlin);
-/*
- * GET
- */
+
+router.get('/classifications', attractionController.listClassifications);
+router.get('/classification/:classificationName', attractionController.listByClassification);
+
 router.get('/', attractionController.list);
-
-/*
- * GET
- */
 router.get('/:id', attractionController.show);
-
-/*
- * POST
- */
 router.post('/', attractionController.create);
-
-/*
- * PUT
- */
 router.put('/:id', attractionController.update);
-
-/*
- * DELETE
- */
 router.delete('/:id', attractionController.remove);
-
-/*
- * GET_BY_REGION
- */
 router.get('/region/:regionId', attractionController.listByRegion);
-
-/*
- * GET_BY_CLASSIFICATION
- */
-router.get('/classification/:classificationId', attractionController.listByClassification);
-
-/*
- * GET_BY_LOCATION_TYPE
- */
 router.get('/type/:typeId', attractionController.listByLocationType);
 
 module.exports = router;

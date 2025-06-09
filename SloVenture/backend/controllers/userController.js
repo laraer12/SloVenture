@@ -9,6 +9,7 @@ var axios = require('axios');
 
 var multer = require('multer'); // za objavo datotek
 const { getFormLabelUtilityClasses } = require('@mui/material');
+const jwt = require('jsonwebtoken');
 
 var storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -274,12 +275,11 @@ module.exports = {
      */
     login: function (req, res) {
         UserModel.authenticate(req.body.username, req.body.password, function (err, user) {
-            if (err || !user) {
-                console.error("Login error:", err ? err.message : "Invalid credentials");
+            if (err || !user)
                 return res.status(401).json({ message: err ? err.message : "Invalid credentials" });
-            }
-            req.session.userId = user._id;
-            return res.json(user);
+            
+            const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+            return res.json({token: token, user: user});
         });
     },
 
@@ -287,8 +287,8 @@ module.exports = {
      * userController.logout()
      */
     logout: function (req, res, next) {
-        if (req.session) {
-            req.session.destroy(function (err) {
+        if (req.user) {
+            req.user.destroy(function (err) {
                 if (err) return next(err);
                 return res.status(200).json({ message: "Logout successful" });
             });
@@ -301,7 +301,7 @@ module.exports = {
      * userController.profile()
      */
     profile: function (req, res, next) {
-        var userId = req.session.userId;
+        var userId = req.user.userId;
 
         if (!userId)
             return res.status(401).json({ message: 'Not logged in' });
@@ -328,7 +328,7 @@ module.exports = {
      * posodobi profilno sliko
      */
     uploadProfilePicture: function (req, res) {
-        var userId = req.session.userId;
+        var userId = req.user.userId;
         
         UserModel.findById(userId, function (err, user) {
             if (err) {
@@ -359,7 +359,7 @@ module.exports = {
 
     removeProfilePicture: function(req, res) {
         const userId = req.params.id; // ID uporabnika, ki mu resetiram sliko
-        const currentUserId = req.session.userId;
+        const currentUserId = req.user.userId;
 
         if (!currentUserId)
             return res.status(401).json({ message: 'Not logged in' });

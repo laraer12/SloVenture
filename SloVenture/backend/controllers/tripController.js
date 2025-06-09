@@ -14,7 +14,7 @@ module.exports = {
      * tripController.list()
      */
     list: function (req, res) {
-        var userId = req.session.userId;
+        var userId = req.user.userId;
 
         TripModel.find({userId: userId},function (err, trips) {
             if (err) {
@@ -81,24 +81,29 @@ module.exports = {
      * tripController.create()
      */
     create: function (req, res) {
+        const { userId, tripName, startDate} = req.body;
+
+        if (!userId || !tripName || !startDate) {
+            return res.status(400).json({
+                message: 'No field should be empty'
+            });
+        }
         var trip = new TripModel({
-			userId : req.body.userId,
-			tripName : req.body.tripName,
-			tripDescription : req.body.tripDescription,
-			startDate : req.body.startDate,
-			endDate : req.body.endDate,
-			isPublic : req.body.isPublic,
-			createdAt : req.body.createdAt
+            userId: userId,
+            tripName: tripName,
+            tripDescription: req.body.tripDescription,
+            startDate: startDate,
+            isPublic: req.body.isPublic ?? false,
+            createdAt: req.body.createdAt ?? new Date()
         });
 
         trip.save(function (err, trip) {
             if (err) {
                 return res.status(500).json({
-                    message: 'Error when creating trip',
+                    message: 'Error creating trip',
                     error: err
                 });
             }
-
             return res.status(201).json(trip);
         });
     },
