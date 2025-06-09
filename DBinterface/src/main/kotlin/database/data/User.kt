@@ -36,7 +36,7 @@ data class User(
 fun postUser(user: User): Boolean =
     postToDatabase(user, "users/Kotlin", User.serializer())
 
-fun fetchUsersFromApi(): List<User> {
+fun fetchUsers(): List<User> {
     val request = Request.Builder()
         .url("http://localhost:3001/users")
         .build()
@@ -101,3 +101,27 @@ fun getUserIdByUsername(username: String): String? {
         null
     }
 }
+
+@Serializable
+data class AdminUser(val id: String, val username: String)
+fun fetchAdminUsers(): List<AdminUser> {
+    val request = Request.Builder()
+        .url("http://localhost:3001/users/getAdmins")
+        .build()
+
+    val adminUsers: List<AdminUser> = client.newCall(request).execute().use { response ->
+        if (!response.isSuccessful) {
+            throw Exception("Failed to fetch admin users: ${response.code}")
+        }
+
+        val body = response.body?.string() ?: throw Exception("Empty response body")
+
+        println("Raw response body: $body")
+
+        json.decodeFromString(body)
+    }
+
+    println("Parsed admin users: $adminUsers")
+    return adminUsers
+}
+

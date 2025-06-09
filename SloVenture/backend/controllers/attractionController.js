@@ -433,7 +433,7 @@ module.exports = {
     /**
      * attractionController.create()
      */
-    
+    /*
     create: function (req, res) {
 
         function toMeters(lat, lon){
@@ -538,9 +538,115 @@ module.exports = {
 
             return res.status(201).json(saved);
         });
-    },  
+    },  */
+   create: function (req, res) {
+        function toMeters(lat, lon) {
+            const R = 6371e3;
+            const x = toRadians(lon) * R * Math.cos(toRadians(lat));
+            const y = toRadians(lat) * R;
+            return { x: x, y: y };
+        }
 
+        function approximateDistance(lat1, lon1, lat2, lon2) {
+            const { x: x1, y: y1 } = toMeters(lat1, lon1);
+            const { x: x2, y: y2 } = toMeters(lat2, lon2);
+            return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+        }
 
+        function toRadians(degrees) {
+            return degrees * (Math.PI / 180);
+        }
+
+        console.log("Incoming request body:", req.body);
+
+        AttractionModel.findOne({ name: req.body.name }, function (err, existingAttraction) {
+            if (err) {
+                return res.status(500).json({
+                    message: 'Error when checking for existing attraction',
+                    error: err
+                });
+            }
+
+            if (existingAttraction) {
+                return res.status(409).json({
+                    message: 'Attraction with the same name already exists'
+                });
+            }
+
+            const attraction = new AttractionModel({
+                name: req.body.name,
+                regionId: req.body.regionId,
+                location: {
+                    lat: req.body.location.lat,
+                    lon: req.body.location.lon
+                },
+                address: req.body.address,
+                description: req.body.description,
+                classification: req.body.classification,
+                locationType: req.body.locationType,
+                elevation: req.body.elevation,
+                accessibilityOptions: req.body.accessibilityOptions,
+                ratingFamilyFriendly: req.body.ratingFamilyFriendly,
+                ratingElderlyFriendly: req.body.ratingElderlyFriendly,
+                ratingAccessible: req.body.ratingAccessible,
+                rating: req.body.rating,
+                googleMapsLink: req.body.googleMapsLink,
+                createdAt: Date.now(),
+                verified: req.body.verified
+            });
+
+            attraction.save(function (err, saved) {
+                if (err) {
+                    return res.status(500).json({
+                        message: 'Error when creating attraction',
+                        error: err
+                    });
+                }
+
+                AttractionModel.find(function (err, attractions) {
+                    if (err) {
+                        return res.status(500).json({
+                            message: 'Error when getting attractions.',
+                            error: err
+                        });
+                    }
+
+                    attractions.forEach(function (attr) {
+                        var distance = approximateDistance(attr.location.lat, attr.location.lon, attraction.location.lat, attraction.location.lon);
+
+                        if (distance < 2000 && attr._id.toString() !== attraction._id.toString()) {
+                            const nearbyAttraction = new nearbyAttractionModel({
+                                attractionId: attraction._id,
+                                nearbyAttractionId: attr._id,
+                                distance: distance
+                            });
+
+                            nearbyAttraction.save(err => {
+                                if (err && err.code !== 11000) {
+                                    console.error('Error saving nearby attraction:', err);
+                                }
+                            });
+
+                            const nearbyAttraction2 = new nearbyAttractionModel({
+                                attractionId: attr._id,
+                                nearbyAttractionId: attraction._id,
+                                distance: distance
+                            });
+
+                            nearbyAttraction2.save(err => {
+                                if (err && err.code !== 11000) {
+                                    console.error('Error saving nearby attraction:', err);
+                                }
+                            });
+                        }
+                    });
+                });
+
+                return res.status(201).json(saved);
+            });
+        });
+    },
+ 
     /**
      * attractionController.update()
      */

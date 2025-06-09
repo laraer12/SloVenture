@@ -1,51 +1,51 @@
 package ui
 
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import database.data.*
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
+import androidx.compose.ui.window.Dialog
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.OkHttpClient
-import okhttp3.Request
 
 
 val json = Json { ignoreUnknownKeys = true }
 val client = OkHttpClient()
+
 
 @Composable
 fun UserListScreen() {
     val coroutineScope = rememberCoroutineScope()
 
     var users by remember { mutableStateOf<List<User>>(emptyList()) }
+    var filteredUsers by remember { mutableStateOf<List<User>>(emptyList()) }
     var selectedUser by remember { mutableStateOf<User?>(null) }
-    var showAddUser by remember { mutableStateOf(false) }
+    var showAddDialog by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var searchQuery by remember { mutableStateOf("") }
-    var refreshTrigger by remember { mutableStateOf(0) }
 
-    LaunchedEffect(refreshTrigger) {
+    fun fetchUsersAndUpdateList() {
         coroutineScope.launch {
             isLoading = true
             try {
-                users = fetchUsersFromApi()
+                val fetched = fetchUsers()
+                users = fetched
+                filteredUsers = if (searchQuery.isBlank()) fetched
+                else fetched.filter { it.username.contains(searchQuery, ignoreCase = true) }
             } catch (e: Exception) {
                 errorMessage = e.message
             } finally {
@@ -54,91 +54,112 @@ fun UserListScreen() {
         }
     }
 
-    when {
-        selectedUser != null -> {
-            UserDetailScreen(
-                user = selectedUser!!,
-                onBack = {
-                    selectedUser = null
-                    refreshTrigger++
-                }
+    LaunchedEffect(Unit) {
+        fetchUsersAndUpdateList()
+    }
+
+    if (selectedUser != null) {
+        UserDetailScreen(
+            user = selectedUser!!,
+            onBack = {
+                selectedUser = null
+                fetchUsersAndUpdateList()
+            }
+        )
+        return
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .background(AppColors.Beige)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "Uporabniki",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = AppColors.Navy
             )
-        }
-        showAddUser -> {
-            AddUserScreen(onBack = {
-                showAddUser = false
-                refreshTrigger++
-            })
-        }
-        else -> {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { fetchUsersAndUpdateList() }) {
+                    Icon(Icons.Default.Refresh, contentDescription = "Osveži", tint = AppColors.Navy)
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(
+                    onClick = { showAddDialog = true },
+                    colors = ButtonDefaults.buttonColors(backgroundColor = AppColors.Lavender)
                 ) {
-                    Text(
-                        "Uporabniki",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = { refreshTrigger++ }) {
-                            Icon(Icons.Default.Refresh, contentDescription = "Osveži")
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Button(onClick = { showAddUser = true }) {
-                            Text("Dodaj uporabnika")
-                        }
-                    }
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = {
-                        searchQuery = it
-                        users = users.filter { user ->
-                            user.username.contains(it, ignoreCase = true)
-                        }
-                    },
-                    label = { Text("Išči znamenitost...") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                if (isLoading) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
-                } else {
-                    LazyColumn(modifier = Modifier.fillMaxSize()) {
-                        items(users) { user ->
-                            Card(
-                                modifier = Modifier
-                                    .padding(vertical = 6.dp)
-                                    .fillMaxWidth()
-                                    .clickable { selectedUser = user },
-                                elevation = 4.dp
-                            ) {
-                                Column(modifier = Modifier.padding(16.dp)) {
-                                    Text(user.username, fontSize = 18.sp, fontWeight = FontWeight.Medium)
-                                    Text(user.email, fontSize = 14.sp)
-                                    Text(if (user.isAdmin) "Admin" else "Uporabnik", fontSize = 14.sp)
-                                }
-                            }
-                        }
-                    }
-                }
-
-                errorMessage?.let {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Napaka: $it", color = MaterialTheme.colors.error)
+                    Text("Dodaj uporabnika", color = AppColors.Navy)
                 }
             }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = {
+                searchQuery = it
+                filteredUsers = users.filter { user ->
+                    user.username.contains(it, ignoreCase = true)
+                }
+            },
+            label = { Text("Išči uporabnika...") },
+            modifier = Modifier.fillMaxWidth(),
+            colors = TextFieldDefaults.outlinedTextFieldColors(
+                unfocusedBorderColor = AppColors.Navy,
+                focusedBorderColor = AppColors.Lavender,
+                cursorColor = AppColors.Lavender
+            )
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        if (isLoading) {
+            CircularProgressIndicator(modifier = Modifier.padding(top = 16.dp))
+        } else {
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                items(filteredUsers) { user ->
+                    Card(
+                        modifier = Modifier
+                            .padding(vertical = 6.dp)
+                            .fillMaxWidth()
+                            .border(width = 1.dp, color = AppColors.Navy)
+                            .clickable { selectedUser = user },
+                        elevation = 4.dp
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                user.username,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = AppColors.Navy
+                            )
+                            Text(user.email, fontSize = 14.sp)
+                            Text(if (user.isAdmin) "Admin" else "Uporabnik", fontSize = 14.sp)
+                        }
+                    }
+                }
+            }
+        }
+
+        if (showAddDialog) {
+            AddUserDialog(
+                onDismiss = { showAddDialog = false },
+                onSave = { _ ->
+                    showAddDialog = false
+                    fetchUsersAndUpdateList()
+                })
+        }
+
+        errorMessage?.let {
+            Text("Error: $it", color = AppColors.Red)
         }
     }
 }
@@ -166,7 +187,12 @@ fun UserDetailScreen(user: User, onBack: () -> Unit) {
             value = username,
             onValueChange = { username = it },
             label = { Text("Uporabniško ime") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = TextFieldDefaults.outlinedTextFieldColors(
+                unfocusedBorderColor = AppColors.Navy,
+                focusedBorderColor = AppColors.Lavender,
+                cursorColor = AppColors.Lavender
+            )
         )
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -174,7 +200,12 @@ fun UserDetailScreen(user: User, onBack: () -> Unit) {
             value = email,
             onValueChange = { email = it },
             label = { Text("Elektronska pošta") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = TextFieldDefaults.outlinedTextFieldColors(
+                unfocusedBorderColor = AppColors.Navy,
+                focusedBorderColor = AppColors.Lavender,
+                cursorColor = AppColors.Lavender
+            )
         )
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -182,20 +213,30 @@ fun UserDetailScreen(user: User, onBack: () -> Unit) {
             value = password,
             onValueChange = { password = it },
             label = { Text("Geslo") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = TextFieldDefaults.outlinedTextFieldColors(
+                unfocusedBorderColor = AppColors.Navy,
+                focusedBorderColor = AppColors.Lavender,
+                cursorColor = AppColors.Lavender
+            )
         )
         Spacer(modifier = Modifier.height(12.dp))
 
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(checked = isAdmin, onCheckedChange = { isAdmin = it })
+            Checkbox(checked = isAdmin, onCheckedChange = { isAdmin = it },
+                colors = CheckboxDefaults.colors(
+                checkedColor = AppColors.Lavender,
+                uncheckedColor = AppColors.Lavender,
+                checkmarkColor = Color.White
+            ))
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Je Admin")
+            Text("Je admin", color = AppColors.Navy)
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Button(onClick = onBack) {
+            Button(onClick = onBack, colors = ButtonDefaults.buttonColors(backgroundColor = AppColors.Lavender)) {
                 Text("Nazaj")
             }
 
@@ -211,9 +252,13 @@ fun UserDetailScreen(user: User, onBack: () -> Unit) {
                                     isAdmin = isAdmin
                                 )
                             )
-                            message = if (success) "Uporabnik posodobljen!" else "Urejanje neuspešno."
+                            if (success) {
+                                onBack()
+                            } else {
+                                message = "Urejanje neuspešno."
+                            }
                         }
-                    }
+                    }, colors = ButtonDefaults.buttonColors(backgroundColor = AppColors.Green)
                 ) {
                     Text("Shrani")
                 }
@@ -227,98 +272,139 @@ fun UserDetailScreen(user: User, onBack: () -> Unit) {
                             if (success) onBack() else message = "Brisanje neuspešno."
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.error)
+                    colors = ButtonDefaults.buttonColors(backgroundColor = AppColors.Red)
                 ) {
-                    Text("Izbriši", color = MaterialTheme.colors.onError)
+                    Text("Izbriši", color = Color.Black)
                 }
             }
         }
-
         message?.let {
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(it, color = MaterialTheme.colors.primary)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(it, color = AppColors.Red)
         }
     }
 }
 
 @Composable
-fun AddUserScreen(onBack: () -> Unit) {
-    val coroutineScope = rememberCoroutineScope()
+fun AddUserDialog(
+    onDismiss: () -> Unit,
+    onSave: (User) -> Unit
+) {
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isAdmin by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState())
-    ) {
-        Text("Dodaj uporabnika", fontSize = 22.sp, fontWeight = FontWeight.Bold)
-        Spacer(modifier = Modifier.height(16.dp))
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            elevation = 8.dp,
+            modifier = Modifier
+                .width(600.dp)
+                .height(375.dp)
+                .border(width = 1.dp, color = AppColors.Navy)
+                .background(color = AppColors.Beige)
+        ) {
 
-        OutlinedTextField(
-            value = username,
-            onValueChange = { username = it },
-            label = { Text("Uporabniško ime") },
-            modifier = Modifier.fillMaxWidth()
-        )
-        Spacer(modifier = Modifier.height(8.dp))
+            Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                Text("Dodaj uporabnika", style = MaterialTheme.typography.h6, color = AppColors.Navy)
 
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Elektronska pošta") },
-            modifier = Modifier.fillMaxWidth()
-        )
-        Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Geslo") },
-            modifier = Modifier.fillMaxWidth()
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(checked = isAdmin, onCheckedChange = { isAdmin = it })
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Je Admin")
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Button(onClick = onBack) {
-                Text("Nazaj")
-            }
-
-            Button(
-                onClick = {
-                    coroutineScope.launch {
-                        val newUser = User(
-                            username = username,
-                            email = email,
-                            password = password,
-                            isAdmin = isAdmin,
-                            isFakeData = false
+                Column(
+                    modifier = Modifier
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    OutlinedTextField(
+                        value = username,
+                        onValueChange = { username = it },
+                        label = { Text("Uporabniško ime") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = TextFieldDefaults.outlinedTextFieldColors(
+                            unfocusedBorderColor = AppColors.Navy,
+                            focusedBorderColor = AppColors.Lavender,
+                            cursorColor = AppColors.Lavender
                         )
-                        val success = postUser(newUser)
-                        if (success) onBack()
-                        else message = "Neuspešno dodajanje."
+                    )
+
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("Elektronska pošta") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = TextFieldDefaults.outlinedTextFieldColors(
+                            unfocusedBorderColor = AppColors.Navy,
+                            focusedBorderColor = AppColors.Lavender,
+                            cursorColor = AppColors.Lavender
+                        )
+                    )
+
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("Geslo") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = TextFieldDefaults.outlinedTextFieldColors(
+                            unfocusedBorderColor = AppColors.Navy,
+                            focusedBorderColor = AppColors.Lavender,
+                            cursorColor = AppColors.Lavender
+                        )
+                    )
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(
+                            checked = isAdmin, onCheckedChange = { isAdmin = it },
+                            colors = CheckboxDefaults.colors(
+                                checkedColor = AppColors.Lavender,
+                                uncheckedColor = AppColors.Lavender,
+                                checkmarkColor = Color.White
+                            )
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Je admin")
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(
+                            onClick = {
+                                try {
+                                    val newUser = User(
+                                        username = username,
+                                        email = email,
+                                        password = password,
+                                        isAdmin = isAdmin,
+                                        isFakeData = false
+                                    )
+                                    val success = postUser(newUser)
+                                    if (success) {
+                                        onSave(newUser)
+                                    } else {
+                                        message = "Napaka pri shranjevanju uporabnika."
+                                    }
+                                } catch (e: Exception) {
+                                    message = "Napaka: ${e.message}"
+                                }
+                            }, colors = ButtonDefaults.buttonColors(backgroundColor = AppColors.Green)
+                        ) {
+                            Text("Ustvari")
+                        }
+                        Button(
+                            onClick = onDismiss,
+                            colors = ButtonDefaults.buttonColors(backgroundColor = AppColors.Red)
+                        ) {
+                            Text("Nazaj")
+                        }
+                    }
+                    message?.let {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(it, color = AppColors.Red)
                     }
                 }
-            ) {
-                Text("Ustvari")
             }
-        }
-
-        message?.let {
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(it, color = MaterialTheme.colors.error)
         }
     }
 }

@@ -17,6 +17,6 @@ data class Review(
     val isFakeData: Boolean
 ) : DatabaseClass
 
-suspend fun postReview(review: Review): Boolean =
+fun postReview(review: Review): Boolean =
     postToDatabase(review, "reviews", Review.serializer())
 

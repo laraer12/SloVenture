@@ -21,12 +21,31 @@ var storage = multer.diskStorage({
 
 var upload = multer({ storage: storage }); // inicializacija multer-ja
 
+
 /**
  * userController.js
  *
  * @description :: Server-side logic for managing users.
  */
 module.exports = {
+
+    getAdmins: function (req, res) {
+        UserModel.find({ isAdmin: true }, 'username _id', function (err, users) {
+            if (err) {
+                return res.status(500).json({
+                    message: 'Error when getting admin usernames.',
+                    error: err
+                });
+            }
+
+            const result = users.map(user => ({
+                id: user._id,
+                username: user.username
+            }));
+
+            return res.json(result);
+        });
+    },
 
     getIdByUsername: function (req, res) {
         UserModel.findOne({ username: req.params.username }, function (err, user) {
@@ -186,30 +205,18 @@ module.exports = {
         });
     },
 
-    /**
-     * userController.remove()
-     */
     remove: function (req, res) {
-        const currentUserId = req.session.userId;
         const targetUserId = req.params.id;
 
-        UserModel.findById(currentUserId, function (err, currentUser) {
-            if (err || !currentUser)
-                return res.status(500).json({ message: 'Error verifying user identity' });
+        UserModel.findByIdAndRemove(targetUserId, function (err, deletedUser) {
+            if (err) {
+                return res.status(500).json({
+                    message: 'Error when deleting the user.',
+                    error: err
+                });
+            }
 
-            // Če trenutni uporabnik ni admin in želi izbrisati nekoga drugega – zavrni
-            if (!currentUser.isAdmin && currentUserId !== targetUserId)
-                return res.status(403).json({ message: "Cannot delete another user" });
-
-            UserModel.findByIdAndRemove(targetUserId, function (err, user) {
-                if (err) {
-                    return res.status(500).json({
-                        message: 'Error when deleting the user.',
-                        error: err
-                    });
-                }
-
-            TripModel.find({userId: id}, function (err, trips) {
+            TripModel.find({ userId: targetUserId }, function (err, trips) {
                 if (err) {
                     return res.status(500).json({
                         message: 'Error when getting the user\'s trips.',
@@ -217,33 +224,50 @@ module.exports = {
                     });
                 }
 
-                trips.forEach(function (trip) {
-                    TripAttractionModel.deleteMany({tripId: trip._id}, function (err) {
+                if (trips.length === 0) {
+                    return TripModel.deleteMany({ userId: targetUserId }, function (err) {
                         if (err) {
                             return res.status(500).json({
-                                message: 'Error when deleting the trip attractions.',
+                                message: 'Error when deleting trips.',
                                 error: err
                             });
                         }
-                    });
-                   
-                });
-
-            });
-
-            TripModel.deleteMany({userId: id}, function (err) {
-                if (err) {
-                    return res.status(500).json({
-                        message: 'Error when deleting the user\'s trips.',
-                        error: err
+                        return res.sendStatus(204);
                     });
                 }
-            });
 
-            return res.status(204).json();
+                let deletedAttractionsCount = 0;
+                let hasError = false;
+
+                trips.forEach(function (trip) {
+                    TripAttractionModel.deleteMany({ tripId: trip._id }, function (err) {
+                        if (err && !hasError) {
+                            hasError = true;
+                            return res.status(500).json({
+                                message: 'Error when deleting trip attractions.',
+                                error: err
+                            });
+                        }
+
+                        deletedAttractionsCount++;
+                        if (deletedAttractionsCount === trips.length && !hasError) {
+                            TripModel.deleteMany({ userId: targetUserId }, function (err) {
+                                if (err) {
+                                    return res.status(500).json({
+                                        message: 'Error when deleting user\'s trips.',
+                                        error: err
+                                    });
+                                }
+                                return res.sendStatus(204);
+                            });
+                        }
+                    });
+                });
             });
         });
     },
+
+
 
     /**
      * userController.login()

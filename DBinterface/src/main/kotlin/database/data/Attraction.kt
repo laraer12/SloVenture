@@ -76,7 +76,7 @@ fun fetchFullAttractionData(id: String): FullAttractionData {
     }
     return response
 }
-
+/*
 fun postAttractionFromApi(attraction: Attraction): String? { //vraca svoj id v bazi
     val jsonAttraction = json.encodeToString(Attraction.serializer(), attraction)
     val mediaType = "application/json".toMediaType()
@@ -99,7 +99,36 @@ fun postAttractionFromApi(attraction: Attraction): String? { //vraca svoj id v b
         val responseJson = Json.parseToJsonElement(responseBody).jsonObject
         return responseJson["_id"]?.jsonPrimitive?.content
     }
-}
+}*/
+fun postAttractionFromApi(attraction: Attraction): String? { //vraca svoj id v bazi
+    val jsonAttraction = json.encodeToString(Attraction.serializer(), attraction)
+    val mediaType = "application/json".toMediaType()
+    val body = jsonAttraction.toRequestBody(mediaType)
+
+    println("JSON payload being sent:\n$jsonAttraction")
+
+    val request = Request.Builder()
+        .url("http://localhost:3001/attractions")
+        .post(body)
+        .build()
+
+    val response = client.newCall(request).execute()
+    response.use {
+        if (!response.isSuccessful) {
+            if (response.code == 409) {
+                println("Duplicate attraction name, not saving.")
+            } else {
+                println("POST failed: ${response.code}")
+            }
+            return null
+        }
+
+        val responseBody = response.body?.string() ?: return null
+        val responseJson = Json.parseToJsonElement(responseBody).jsonObject
+        return responseJson["_id"]?.jsonPrimitive?.content
+    }}
+
+
 
 fun updateAttraction(attraction: Attraction): Boolean {
     val jsonAttraction = json.encodeToString(Attraction.serializer(), attraction)

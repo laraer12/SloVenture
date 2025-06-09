@@ -14,7 +14,9 @@ import api.retrieveAllAttractions
 import database.data.*
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.window.Dialog
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
@@ -34,18 +36,31 @@ fun AttractionImportScreen() {
     var searchQuery by remember { mutableStateOf("") }
 
     var numToFetch by remember { mutableStateOf("10") }
-    var userUsername by remember { mutableStateOf("Uporaniško ime") }
-    var userId by remember { mutableStateOf<String?>(null) }
+    var admins by remember { mutableStateOf<List<AdminUser>>(emptyList()) }
+    var selectedAdminId by remember { mutableStateOf("") }
 
     var showSaveDialog by remember { mutableStateOf(false) }
     var isSaving by remember { mutableStateOf(false) }
 
+    val logScrollState = rememberScrollState()
     val logOutput = remember { mutableStateListOf<String>() }
-
     fun log(message: String, level: String = "INFO") {
         val timestamp = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
         logOutput.add("[$timestamp] $level: $message")
     }
+
+    LaunchedEffect(logOutput.size) {
+        logScrollState.animateScrollTo(logScrollState.maxValue)
+    }
+
+    LaunchedEffect(Unit) {
+        try {
+            admins = fetchAdminUsers()
+        } catch (e: Exception) {
+            errorMessage = "Napaka pri nalaganju adminov: ${e.message}"
+        }
+    }
+
 
     fun logInfo(message: String) = log(message, "INFO")
     fun logError(message: String) = log(message, "ERROR")
@@ -56,15 +71,8 @@ fun AttractionImportScreen() {
             logOutput.clear()
 
             val count = numToFetch.toIntOrNull() ?: 0
-            if (count <= 0 || userUsername.isBlank()) {
-                logError("Napaka: Neveljaven vnos. Število: $count, Uporabnik: '$userUsername'")
-                isLoading = false
-                return@launch
-            }
-
-            userId = getUserIdByUsername(userUsername)
-            if (userId == null) {
-                logError("Napaka: Uporabnik '$userUsername' ne obstaja.")
+            if (count <= 0 || selectedAdminId.isBlank()) {
+                logError("Napaka: Neveljaven vnos. Število: $count, Uporabnik: '$selectedAdminId'")
                 isLoading = false
                 return@launch
             }
@@ -73,7 +81,6 @@ fun AttractionImportScreen() {
 
             try {
                 logInfo("Začenjam uvoz $count znamenitosti...")
-
                 val fetched = retrieveAllAttractions(count) { attraction ->
                     results.add(attraction)
                     attractions = results.toList()
@@ -106,22 +113,17 @@ fun AttractionImportScreen() {
 
                 val savedId = postAttractionFromApi(attraction)
                 if (savedId != null) {
-                    logInfo("($index) Shrani: ${attraction.name} (ID: $savedId)")
+                    logInfo("($index) Shranjeno: ${attraction.name} (ID: $savedId)")
                     successCount++
 
                     for (image in attraction.images) {
                         delay(5)
-                        val saved = postAttractionImage(
+                        postAttractionImage(
                             image.copy(
                                 attractionId = savedId,
-                                uploadedBy = userId
+                                uploadedBy = selectedAdminId
                             )
                         )
-                        if (saved) {
-                            logInfo("Slika shranjena: ${image.url}")
-                        } else {
-                            logError("Napaka pri sliki: ${image.url}")
-                        }
                     }
                 } else {
                     logError("($index) Napaka pri shranjevanju: ${attraction.name}")
@@ -158,7 +160,7 @@ fun AttractionImportScreen() {
     }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Text("Uvoz znamenitosti", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+        Text("Uvoz znamenitosti", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = AppColors.Navy)
 
         Spacer(Modifier.height(8.dp))
 
@@ -166,28 +168,36 @@ fun AttractionImportScreen() {
             value = numToFetch,
             onValueChange = { numToFetch = it },
             label = { Text("Število znamenitosti za uvoz") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = TextFieldDefaults.outlinedTextFieldColors(
+                unfocusedBorderColor = AppColors.Navy,
+                focusedBorderColor = AppColors.Lavender,
+                cursorColor = AppColors.Lavender
+            )
         )
 
-        OutlinedTextField(
-            value = userUsername,
-            onValueChange = { userUsername = it },
-            label = { Text("Uporabniško ime") },
-            modifier = Modifier.fillMaxWidth()
+        AdminDropdown(
+            admins = admins,
+            selectedAdminId = selectedAdminId,
+            onAdminSelected = { selectedAdminId = it.id.toString() }
         )
 
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Button(onClick = ::fetchAttractionsFromAPI, enabled = !isLoading && !isSaving) {
+            Button(
+                onClick = ::fetchAttractionsFromAPI,
+                enabled = !isLoading && !isSaving,
+                colors = ButtonDefaults.buttonColors(backgroundColor = AppColors.Lavender)
+            ) {
                 Text(if (isLoading) "Uvažanje..." else "Uvozi znamenitosti")
             }
 
             Button(
                 onClick = { showSaveDialog = true },
                 enabled = filteredAttractions.isNotEmpty() && !isSaving,
-                colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFF4CAF50))
+                colors = ButtonDefaults.buttonColors(backgroundColor = AppColors.Lavender)
             ) {
                 Text("Shrani vse v bazo")
             }
@@ -200,7 +210,7 @@ fun AttractionImportScreen() {
                     log("Uvoz preklican.")
                 },
                 enabled = filteredAttractions.isNotEmpty() && !isSaving,
-                colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFFF44336))
+                colors = ButtonDefaults.buttonColors(backgroundColor = AppColors.Lavender)
             ) {
                 Text("Prekliči")
             }
@@ -208,16 +218,61 @@ fun AttractionImportScreen() {
 
         Spacer(Modifier.height(16.dp))
 
-        Text("Log:")
-        LazyColumn(modifier = Modifier.heightIn(max = 150.dp)) {
-            items(logOutput) { line ->
-                val color = when {
-                    line.contains("ERROR") -> Color.Red
-                    else -> Color.Blue
+        Text("Dnevnik dogodkov", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+        Spacer(Modifier.height(4.dp))
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(200.dp)
+                .background(color = Color.White)
+                .border(
+                    width = 1.dp,
+                    color = AppColors.Navy
+                )
+                .padding(12.dp)
+                .verticalScroll(logScrollState)
+        ) {
+            Column {
+                logOutput.forEach { entry ->
+                    val parts = entry.split(" ", limit = 3)
+                    val time = parts.getOrNull(0)?.removeSurrounding("[", "]") ?: ""
+                    val level = parts.getOrNull(1)?.removeSuffix(":") ?: "INFO"
+                    val message = parts.getOrNull(2) ?: ""
+
+                    val levelColor = when (level) {
+                        "ERROR" -> AppColors.Red
+                        "INFO" -> AppColors.Navy
+                        else -> Color.Gray
+                    }
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = time,
+                            fontSize = 12.sp,
+                            color = Color.Gray,
+                            fontFamily = FontFamily.Monospace,
+                            modifier = Modifier.width(60.dp)
+                        )
+                        Text(
+                            text = level,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = levelColor,
+                            fontFamily = FontFamily.Monospace,
+                            modifier = Modifier.width(50.dp)
+                        )
+                        Text(
+                            text = message,
+                            fontSize = 13.sp,
+                            color = Color.Black,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
                 }
-                Text(line, color = color)
             }
         }
+
 
         Spacer(Modifier.height(16.dp))
 
@@ -230,15 +285,21 @@ fun AttractionImportScreen() {
                 }
             },
             label = { Text("Išči znamenitost...") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = TextFieldDefaults.outlinedTextFieldColors(
+                unfocusedBorderColor = AppColors.Navy,
+                focusedBorderColor = AppColors.Lavender,
+                cursorColor = AppColors.Lavender
+            )
         )
 
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             items(filteredAttractions) { attraction ->
                 Card(
                     modifier = Modifier
-                        .padding(8.dp)
+                        .padding(6.dp)
                         .fillMaxWidth()
+                        .border(width = 1.dp, color = AppColors.Navy)
                         .clickable {
                             selectedAttractionData = FullAttractionData(
                                 attraction = attraction,
@@ -246,19 +307,27 @@ fun AttractionImportScreen() {
                                 weatherData = null
                             )
                         },
-                    elevation = 8.dp
+                    elevation = 4.dp
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(attraction.name, fontSize = 18.sp, fontWeight = FontWeight.Medium)
-                        attraction.address?.let { Text(it.city, fontSize = 14.sp) }
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            attraction.name,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = AppColors.Navy
+                        )
+                        attraction.address?.let {
+                            Text(it.city, fontSize = 14.sp)
+                        }
                         Text("Lokacija: lat(${attraction.location.lat}), lon(${attraction.location.lon})")
+                        Text("Ocena: ${"%.1f".format(attraction.rating)}")
                     }
                 }
             }
         }
 
         errorMessage?.let {
-            Text("Napaka: $it", color = MaterialTheme.colors.error)
+            Text("Napaka: $it", color = AppColors.Red)
         }
     }
 
@@ -271,7 +340,6 @@ fun AttractionImportScreen() {
                 TextButton(onClick = {
                     showSaveDialog = false
                     coroutineScope.launch {
-                        // da se zapre popup
                         delay(100)
                         saveFetchedAttractions()
                     }
@@ -287,6 +355,33 @@ fun AttractionImportScreen() {
         )
     }
 }
+
+@Composable
+fun AdminDropdown(
+    admins: List<AdminUser>,
+    selectedAdminId: String?,
+    onAdminSelected: (AdminUser) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val selectedAdminName = admins.find { it.id == selectedAdminId }?.username ?: "Izberi admina"
+
+    Box {
+        TextButton(onClick = { expanded = true }) {
+            Text(selectedAdminName, color = AppColors.Navy)
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            admins.forEach { admin ->
+                DropdownMenuItem(onClick = {
+                    expanded = false
+                    onAdminSelected(admin)
+                }) {
+                    Text(admin.username, color = AppColors.Navy)
+                }
+            }
+        }
+    }
+}
+
 
 @Composable
 fun AttractionAPIDetailScreen(
@@ -307,47 +402,71 @@ fun AttractionAPIDetailScreen(
             .padding(16.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        Button(onClick = onBack, modifier = Modifier.padding(bottom = 16.dp)) {
+        Button(
+            onClick = onBack,
+            colors = ButtonDefaults.buttonColors(backgroundColor = AppColors.Lavender),
+            modifier = Modifier
+                .padding(bottom = 16.dp)
+        ) {
             Text("Nazaj")
         }
 
-        Text(data.attraction.name, fontSize = 26.sp, fontWeight = FontWeight.Bold)
-        Spacer(modifier = Modifier.height(16.dp))
+        Card(
+            modifier = Modifier.fillMaxWidth().border(width = 1.dp, color = AppColors.Navy),
+            elevation = 4.dp,
+            backgroundColor = Color.White
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(data.attraction.name, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = AppColors.Navy)
+                Spacer(modifier = Modifier.height(12.dp))
 
-        Section("Opis", data.attraction.description ?: "Ni opisa")
-        data.attraction.address?.let {
-            Section("Naslov", "${it.street}, ${it.city}, ${it.country}")
-        }
+                Section("Opis", data.attraction.description ?: "Ni opisa")
+                data.attraction.address?.let {
+                    Section("Naslov", "${it.street}, ${it.city}, ${it.country}")
+                }
+                Section("Klasifikacija", data.attraction.classification)
+                Section("Tip lokacije", data.attraction.locationType)
+                Section("Nadmorska višina", "${data.attraction.elevation} m")
+                Section("Dostopnost", data.attraction.accessibilityOptions ?: "Ni podatkov")
 
-        Section("Klasifikacija", data.attraction.classification)
-        Section("Tip lokacije", data.attraction.locationType)
-        Section("Nadmorska višina", "${data.attraction.elevation} m")
-        Section("Dostopnost", data.attraction.accessibilityOptions ?: "Ni podatkov")
+                Spacer(modifier = Modifier.height(12.dp))
+                Divider(color = AppColors.Lavender)
+                Spacer(modifier = Modifier.height(12.dp))
 
-        Divider(modifier = Modifier.padding(vertical = 12.dp))
+                Text("Ocene", fontWeight = FontWeight.SemiBold, fontSize = 18.sp, color = AppColors.Navy)
+                Spacer(modifier = Modifier.height(8.dp))
+                RatingItem("Splošna ocena", data.attraction.rating)
+                RatingItem("Primerno za družine", data.attraction.ratingFamilyFriendly)
+                RatingItem("Primerno za starejše", data.attraction.ratingElderlyFriendly)
+                RatingItem("Dostopno", data.attraction.ratingAccessible)
 
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            Button(onClick = { showEditDialog = true }) {
-                Text("Uredi")
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                    Button(onClick = { showEditDialog = true }) {
+                        Text("Uredi")
+                    }
+                    Button(
+                        onClick = { showDeleteConfirmation = true },
+                        colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.error)
+                    ) {
+                        Text("Izbriši", color = Color.White)
+                    }
+                }
+
+                errorMessage?.let {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Napaka: $it", color = MaterialTheme.colors.error)
+                }
             }
-            Button(
-                onClick = { showDeleteConfirmation = true },
-                colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.error)
-            ) {
-                Text("Izbriši", color = Color.White)
-            }
-        }
-
-        errorMessage?.let {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text("Napaka: $it", color = MaterialTheme.colors.error)
         }
     }
 
     LaunchedEffect(showEditDialog) {
         if (showEditDialog && regions.isEmpty() && !isLoadingRegions) {
             isLoadingRegions = true
-            regions = getAllRegions()
+            try {
+                regions = getAllRegions()
+            } catch (ex: Exception) {
+            }//TODO AAAAAAAAAAAAA
             isLoadingRegions = false
         }
     }
@@ -375,12 +494,16 @@ fun AttractionAPIDetailScreen(
                     onClick = {
                         showDeleteConfirmation = false
                         onDelete(data.attraction.id)
-                    }) {
+                    }, colors = ButtonDefaults.buttonColors(backgroundColor = AppColors.Red)
+                ) {
                     Text("Izbriši")
                 }
             },
             dismissButton = {
-                Button(onClick = { showDeleteConfirmation = false }) {
+                Button(
+                    onClick = { showDeleteConfirmation = false },
+                    colors = ButtonDefaults.buttonColors(backgroundColor = AppColors.Lavender)
+                ) {
                     Text("Prekliči")
                 }
             }

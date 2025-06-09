@@ -142,7 +142,6 @@ fun parseAttraction(json: JsonObject): Attraction {
 
     val googleMapsLink = "https://maps.google.com/?q=$lat,$lon"
     val createdAt = DateTimeFormatter.ISO_INSTANT.format(Instant.now())
-    val verified = false
 
     return Attraction(
         id = id,

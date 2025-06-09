@@ -3,6 +3,7 @@ package database
 import database.data.*
 import io.github.serpro69.kfaker.Faker
 import kotlinx.coroutines.runBlocking
+import java.time.Instant
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import kotlin.random.Random
@@ -19,24 +20,22 @@ data class FakeDataOptions(
     val dateEnd: LocalDate = LocalDate.now()
 )
 
-
 object FakeDataGenerator {
     private val faker = Faker()
     private val formatter = DateTimeFormatter.ISO_DATE
 
-    fun generateFakeUsers(count: Int, options: FakeDataOptions): List<User> {
+    fun generateFakeUsers(count: Int): List<User> {
         return List(count) {
             val firstName = faker.name.firstName()
             val lastName = faker.name.lastName()
             val username = "${firstName.lowercase()}.${lastName.lowercase()}${Random.nextInt(10, 99)}"
-            val isAdmin = Random.nextDouble() < options.adminUserPercent
             User(
                 username = username,
                 email = faker.internet.email(),
                 password = faker.random.randomString(length = 10),
                 profilePicture = "https://i.pravatar.cc/150?img=${Random.nextInt(1, 70)}",
-                isAdmin = isAdmin,
-                createdAt = formatter.format(randomDate(options.dateStart, options.dateEnd)),
+                isAdmin = false,
+                createdAt = DateTimeFormatter.ISO_INSTANT.format(Instant.now()),
                 isFakeData = true
             )
         }
@@ -78,27 +77,28 @@ object FakeDataGenerator {
         }
     }
 
-    fun generateAndPostAll(options: FakeDataOptions) = runBlocking {
-        val attractions = getAllAttractions()
-        if (attractions.isEmpty()) {
-            println("No attractions found.")
-            return@runBlocking
-        }
-
-        val users = generateFakeUsers(options.numUsers, options)
+    fun generateAndPostUsers(count: Int): List<User> {
+        val users = generateFakeUsers(count)
         users.forEach { postUser(it) }
+        return fetchUsers()
+    }
 
-        val updatedUsers = fetchUsersFromApi()
-
-        val visits =
-            generateFakeUserVisits(options.numVisits, updatedUsers, attractions, options.dateStart to options.dateEnd)
+    fun generateAndPostVisits(
+        options: FakeDataOptions,
+        users: List<User>,
+        attractions: List<AttractionMinimal>
+    ) {
+        val visits = generateFakeUserVisits(options.numVisits, users, attractions, options.dateStart to options.dateEnd)
         visits.forEach { postUserVisit(it) }
+    }
 
-        val reviews =
-            generateFakeReviews(options.numReviews, updatedUsers, attractions, options.dateStart to options.dateEnd)
+    fun generateAndPostReviews(
+        options: FakeDataOptions,
+        users: List<User>,
+        attractions: List<AttractionMinimal>
+    ) {
+        val reviews = generateFakeReviews(options.numReviews, users, attractions, options.dateStart to options.dateEnd)
         reviews.forEach { postReview(it) }
-
-        println("Fake data generation complete.")
     }
 
     private fun randomDate(start: LocalDate, end: LocalDate): LocalDate {
