@@ -179,10 +179,25 @@ function Attractions() {
                     <img src={imageUrl} alt={attraction.name || 'Znamenitost'} className="attraction-image fade-image" key={imageUrl} />
                     {showArrows && (
                       <>
-                        <button className="nav-button left" onClick={() => handlePrev(attraction._id, validImages.length)}>
+                        <button
+                          className="nav-button left"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            handlePrev(attraction._id, validImages.length);
+                          }}
+                        >
                           <ChevronLeft />
                         </button>
-                        <button className="nav-button right" onClick={() => handleNext(attraction._id, validImages.length)}>
+
+                        <button
+                          className="nav-button right"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            handleNext(attraction._id, validImages.length);
+                          }}
+                        >
                           <ChevronRight />
                         </button>
                       </>
