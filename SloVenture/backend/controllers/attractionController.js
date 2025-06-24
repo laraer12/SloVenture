@@ -179,7 +179,6 @@ module.exports = {
     /**
      * attractionController.listByClassification()
      */
-    //TODO CHANGE
     listByClassification: function (req, res) {
         const classification = req.params.classificationName;
 
@@ -228,7 +227,6 @@ module.exports = {
     /**
      * attractionController.listByLocationType()
      */
-    //TODO CHANGE
     listByLocationType: function (req, res) {
         var locationType = req.params.locationType;
 

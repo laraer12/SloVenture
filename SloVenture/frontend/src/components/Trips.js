@@ -19,10 +19,18 @@ const Trips = () => {
             setLoading(true);
 
             try {
-                const res = await axios.get(`http://localhost:3001/trips/user/${user._id}`);
+                const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/trips/user/${user._id}`, {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                const filteredTrips = res.data.filter(trip => {
+                    return trip.attractions && trip.attractions.length > 0;
+                });
 
                 // sortiram potovanja po order naraščajoče
-                const sortedTrips = res.data.sort((a, b) => {
+                const sortedTrips = filteredTrips.sort((a, b) => {
                     const minOrderA = a.attractions && a.attractions.length > 0
                         ? Math.min(...a.attractions.map(attr => attr.order ?? Infinity))
                         : Infinity;

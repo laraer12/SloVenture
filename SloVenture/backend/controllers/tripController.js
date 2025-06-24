@@ -59,23 +59,27 @@ module.exports = {
                         });
                     }
                     const result = await Promise.all(tripAttractions.map(async (ta) => {
-                    const images = await AttractionImageModel.find({ attractionId: ta.attractionId._id });
+                        if (!ta.attractionId)
+                            return null;
 
-                    return {
-                        tripAttraction: ta,
-                        attraction: ta.attractionId,
-                        images: images
-                    };
+                        const images = await AttractionImageModel.find({ attractionId: ta.attractionId._id });
+
+                        return {
+                            tripAttraction: ta,
+                            attraction: ta.attractionId,
+                            images: images
+                        };
                     }));
+
+                    const filteredResult = result.filter(item => item !== null); // odstranim vse "null" rezultate iz seznama
 
                     return res.json({
                         trip: trip,
-                        attractions: result,
+                        attractions: filteredResult,
                     });
                 });
         });
     },
-    
 
     /**
      * tripController.create()
@@ -190,17 +194,19 @@ module.exports = {
                     .sort({ order: 1 })  // sortiranje po order
                     .populate('attractionId');
 
+                    const validTripAttractions = tripAttractions.filter(ta => ta.attractionId);
+
                     // pridobim prvo sliko znamenitosti (če obstaja)
                     let firstImageUrl = null;
 
-                    if (tripAttractions.length > 0) {
-                        const firstAttractionId = tripAttractions[0].attractionId._id;
+                    if (validTripAttractions.length > 0) {
+                        const firstAttractionId = validTripAttractions[0].attractionId._id;
                         const image = await AttractionImageModel.findOne({ attractionId: firstAttractionId });
                         firstImageUrl = image ? image.url : null;
                     }
                     return {
                         ...trip.toObject(),
-                        attractions: tripAttractions,
+                        attractions: validTripAttractions,
                         firstImageUrl,
                     };
                 })
