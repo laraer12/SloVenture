@@ -6,54 +6,42 @@ function AttractionStatistics() {
     const [visitsByAttraction, setVisitsByAttraction] = useState([]);
     const [ratingsByAttraction, setRatingsByAttraction] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [loadingVisits, setLoadingVisits] = useState(true);
-    const [loadingRatings, setLoadingRatings] = useState(true);
-
     const [error, setError] = useState(null);
     const visitsChartRef = useRef();
     const ratingsChartRef = useRef();
 
     document.title = "Statistika znamenitosti"; 
 
-    const fetchVisitsByAttraction = async () => {
-        try {
-            const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/user-visit/visits-by-attraction`);
-            setVisitsByAttraction(response.data);
+    const fetchStatistics = async () => {
+        try{
+            const [visitsResponse, ratingsResponse] = await Promise.all([
+                axios.get(`${process.env.REACT_APP_BACKEND_URL}/user-visit/visits-by-attraction`),
+                axios.get(`${process.env.REACT_APP_BACKEND_URL}/reviews/ratings-by-attraction`)
+            ]);
+            setVisitsByAttraction(visitsResponse.data);
+            setRatingsByAttraction(ratingsResponse.data);
         } catch (err) {
             setError('Napaka pri pridobivanju statistike znamenitosti.');
         } finally {
-            setLoadingVisits(false);
-        }
-    };
-
-    const fetchRatingsByAttraction = async () => {
-        try {
-            const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/reviews/ratings-by-attraction`);
-            setRatingsByAttraction(response.data);
-            console.log(response.data);
-        } catch (err) {
-            setError('Napaka pri pridobivanju ocen znamenitosti.');
-        } finally {
-            setLoadingRatings(false);
+            setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchVisitsByAttraction();
-        fetchRatingsByAttraction();
+        fetchStatistics();
     }, []);
 
     useEffect(() => {
-        if(!loadingVisits && visitsByAttraction.length > 0 && visitsChartRef.current){
+        if(!loading && visitsByAttraction.length > 0 && visitsChartRef.current){
             drawVisitsChart();
         }
-    }, [loadingVisits, visitsByAttraction, visitsChartRef.current]);
+    }, [loading, visitsByAttraction, visitsChartRef.current]);
 
     useEffect(() => {
-        if(!loadingRatings && ratingsByAttraction.length > 0 && ratingsChartRef.current){
+        if(!loading && ratingsByAttraction.length > 0 && ratingsChartRef.current){
             drawRatingsChart();
         }
-    }, [loadingRatings, ratingsByAttraction, ratingsChartRef.current]);
+    }, [loading, ratingsByAttraction, ratingsChartRef.current]);
 
     const drawVisitsChart = () => {
         const data = visitsByAttraction; 
@@ -240,7 +228,7 @@ function AttractionStatistics() {
     return (
         <div className="attraction-statistics">
             <h1>Statistika znamenitosti</h1>
-            {(loadingRatings || loadingVisits) ? (
+            {(loading) ? (
                 <p>Nalaganje...</p>
             ) : error ? (
                 <p className="error">{error}</p>
