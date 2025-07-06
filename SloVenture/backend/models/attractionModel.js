@@ -1,0 +1,40 @@
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
+
+const CoordinatesSchema = new Schema({
+  lat: Number,
+  lon: Number
+}, { _id: false });
+
+const AddressSchema = new Schema({
+  street: String,
+  city: String,
+  postalCode: String,
+  country: String
+}, { _id: false });
+
+const attractionSchema = new Schema({
+  name: String,
+  regionId: {
+    type: Schema.Types.ObjectId,
+    ref: 'region'
+  },
+  location: CoordinatesSchema,
+  address: AddressSchema,
+  description: String,
+  classification: String,
+  locationType: String,
+  elevation: Number,
+  accessibilityOptions: String,
+  ratingFamilyFriendly: Number,
+  ratingElderlyFriendly: Number,
+  ratingAccessible: Number,
+  rating: Number,
+  googleMapsLink: String,
+  createdAt: Date
+});
+
+module.exports = {
+  AttractionModel: mongoose.model('attraction', attractionSchema),
+  CoordinatesSchema
+};
