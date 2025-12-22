@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">SloVentureAndroid</string>
+    <string name="btnTestCamera">Take picture</string>
+    <string name="btnSwitchCamera">Switch camera</string>
 </resources>
