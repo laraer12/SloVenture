@@ -1,1 +1,2 @@
 # SloVenture
+SloVenture je študentski projekt, ki ga razvijamo tri študentke z namenom ustvariti sodoben, interaktiven in informativen spletni portal, namenjen raziskovanju kulturnih in naravnih znamenitosti po celotni Sloveniji. Naš cilj je oblikovati digitalni dvojček Slovenije, ki bo obiskovalcem omogočil poglobljeno spoznavanje posameznih regij, znamenitosti in destinacij, bodisi za sprotno načrtovanje izletov, bodisi za navdih in ideje za prihodnje obiske. 
