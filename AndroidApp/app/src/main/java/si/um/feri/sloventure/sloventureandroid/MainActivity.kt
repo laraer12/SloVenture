@@ -1,12 +1,14 @@
 package si.um.feri.sloventure.sloventureandroid
 
 import android.os.Bundle
+import android.os.Handler
 import android.widget.Toast
 import android.content.pm.PackageManager
 import android.Manifest.permission.CAMERA
 import androidx.core.content.ContextCompat
 import androidx.appcompat.app.AppCompatActivity
 
+import si.um.feri.sloventure.sloventureandroid.model.PhotoPayload
 import si.um.feri.sloventure.sloventureandroid.core.SensorDataManager
 import si.um.feri.sloventure.sloventureandroid.camera.CameraController
 import si.um.feri.sloventure.sloventureandroid.weather.WeatherProvider
@@ -44,10 +46,28 @@ class MainActivity : AppCompatActivity() {
             if (allPermissionsGranted()) {
 
                 // zajem slike in shranjevanje v galerijo
-                sensorDataManager.cameraController.capturePhoto("test_photo.jpg") { uri ->
-                    if (uri != null)
-                        Toast.makeText(this, "Image saved: $uri", Toast.LENGTH_SHORT).show()
+                sensorDataManager.cameraController.capturePhoto("test_photo.jpg") { uri, timestamp ->
+                    if (uri != null) {
+                        val photoPayload = PhotoPayload(
+                            imageUri = uri,
+                            timestamp = timestamp,
 
+                            // TODO
+                            latitude = null,
+                            longitude = null,
+                            orientation = null,
+                            temperature = null,
+                            weatherDescription = null
+                        )
+                        Toast.makeText(this, "Image saved: URI-$uri", Toast.LENGTH_SHORT).show()
+
+                        // toast za testiranje, če vse dela, kratek delay da vidim podatke uri in timestamp
+                        val duration = 2000L
+
+                        Handler(mainLooper).postDelayed({
+                            Toast.makeText(this, "Time-${photoPayload.getFormattedTimestamp()}", Toast.LENGTH_SHORT).show()
+                        }, duration)
+                    }
                     else
                         Toast.makeText(this, "Error saving image", Toast.LENGTH_SHORT).show()
                 }

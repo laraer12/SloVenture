@@ -48,9 +48,9 @@ class CameraController(
     }
 
     // zajem in shranjevanje slike v galerijo
-    fun capturePhoto(filename: String = "my_photo.jpg", onSaved: (uri: Uri?) -> Unit) {
+    fun capturePhoto(filename: String = "my_photo.jpg", onSaved: (uri: Uri?, timestamp: Long) -> Unit) {
         val imageCapture = imageCapture ?: run {
-            onSaved(null)
+            onSaved(null, 0L)
             return
         }
 
@@ -70,11 +70,12 @@ class CameraController(
             object : ImageCapture.OnImageSavedCallback {
                 override fun onError(ex: ImageCaptureException) {
                     ex.printStackTrace()
-                    onSaved(null)
+                    onSaved(null, 0L)
                 }
 
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                    onSaved(output.savedUri)
+                    val timestamp = System.currentTimeMillis()
+                    onSaved(output.savedUri, timestamp)
                 }
             }
         )
