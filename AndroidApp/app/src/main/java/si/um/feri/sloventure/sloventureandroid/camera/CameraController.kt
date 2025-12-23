@@ -48,7 +48,10 @@ class CameraController(
     }
 
     // zajem in shranjevanje slike v galerijo
-    fun capturePhoto(filename: String = "my_photo.jpg", onSaved: (uri: Uri?, timestamp: Long) -> Unit) {
+    fun capturePhoto(onSaved: (uri: Uri?, timestamp: Long) -> Unit) {
+        val timestamp = System.currentTimeMillis()
+        val filename = "img_$timestamp.jpg" // sliki se zdaj zgenerira ime s timestampom, torej npr. img_17910274907.jpg"
+
         val imageCapture = imageCapture ?: run {
             onSaved(null, 0L)
             return
@@ -74,7 +77,6 @@ class CameraController(
                 }
 
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                    val timestamp = System.currentTimeMillis()
                     onSaved(output.savedUri, timestamp)
                 }
             }

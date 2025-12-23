@@ -1,12 +1,13 @@
 package si.um.feri.sloventure.sloventureandroid
 
 import android.os.Bundle
-import android.os.Handler
 import android.widget.Toast
 import android.content.pm.PackageManager
 import android.Manifest.permission.CAMERA
 import androidx.core.content.ContextCompat
 import androidx.appcompat.app.AppCompatActivity
+import android.Manifest.permission.ACCESS_FINE_LOCATION
+import android.Manifest.permission.ACCESS_COARSE_LOCATION
 
 import si.um.feri.sloventure.sloventureandroid.model.PhotoPayload
 import si.um.feri.sloventure.sloventureandroid.core.SensorDataManager
@@ -16,21 +17,35 @@ import si.um.feri.sloventure.sloventureandroid.location.LocationProvider
 import si.um.feri.sloventure.sloventureandroid.sensors.OrientationProvider
 import si.um.feri.sloventure.sloventureandroid.databinding.ActivityMainBinding
 
+import timber.log.Timber
+
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var sensorDataManager: SensorDataManager
     private val cameraPermissionCode = 1001 // request code za permission dialog
-    private val requiredPermissions = arrayOf(CAMERA) // seznam zahtevanih permission-ov
+
+    // seznam zahtevanih permission-ov
+    private val requiredPermissions = arrayOf(
+        CAMERA,
+        ACCESS_FINE_LOCATION,
+        ACCESS_COARSE_LOCATION
+    )
+
+    private lateinit var locationProvider: LocationProvider
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        Timber.plant(Timber.DebugTree())
+
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        locationProvider = LocationProvider(this)
+
         sensorDataManager = SensorDataManager(
             cameraController = CameraController(this),
-            locationProvider = LocationProvider(this),
+            locationProvider = locationProvider,
             orientationProvider = OrientationProvider(this),
             weatherProvider = WeatherProvider(this)
         )
@@ -43,37 +58,57 @@ class MainActivity : AppCompatActivity() {
             requestPermissions(requiredPermissions, cameraPermissionCode)
 
         binding.btnTestCamera.setOnClickListener {
-            if (allPermissionsGranted()) {
+            if (!allPermissionsGranted()) {
+                Toast.makeText(this, "Please grant all permissions!", Toast.LENGTH_SHORT).show()
+                requestPermissions(requiredPermissions, cameraPermissionCode)
+                return@setOnClickListener
+            }
+
+            // preverim, če je GPS omogočen, drugače slike ne zajamem
+            locationProvider.isLocationEnabled { enabled ->
+                if (!enabled) {
+                    Toast.makeText(
+                        this,
+                        "Location is OFF. Please enable GPS to save photo location.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    return@isLocationEnabled
+                }
 
                 // zajem slike in shranjevanje v galerijo
-                sensorDataManager.cameraController.capturePhoto("test_photo.jpg") { uri, timestamp ->
-                    if (uri != null) {
-                        val photoPayload = PhotoPayload(
-                            imageUri = uri,
-                            timestamp = timestamp,
-
-                            // TODO
-                            latitude = null,
-                            longitude = null,
-                            orientation = null,
-                            temperature = null,
-                            weatherDescription = null
-                        )
-                        Toast.makeText(this, "Image saved: URI-$uri", Toast.LENGTH_SHORT).show()
-
-                        // toast za testiranje, če vse dela, kratek delay da vidim podatke uri in timestamp
-                        val duration = 2000L
-
-                        Handler(mainLooper).postDelayed({
-                            Toast.makeText(this, "Time-${photoPayload.getFormattedTimestamp()}", Toast.LENGTH_SHORT).show()
-                        }, duration)
+                sensorDataManager.cameraController.capturePhoto { uri, timestamp ->
+                    if (uri == null) {
+                        Timber.e("Error saving image")
+                        return@capturePhoto
                     }
-                    else
-                        Toast.makeText(this, "Error saving image", Toast.LENGTH_SHORT).show()
+
+                    // PhotoPayload brez lokacije, ta pride naknadno, da user ne čaka da se slika shrani
+                    val photoPayload = PhotoPayload(
+                        imageUri = uri,
+                        timestamp = timestamp,
+                        latitude = null,
+                        longitude = null,
+
+                        // TODO
+                        orientation = null,
+                        temperature = null,
+                        weatherDescription = null
+                    )
+                    Toast.makeText(this, "Image saved!", Toast.LENGTH_SHORT).show()
+                    Timber.i("URI: ${photoPayload.imageUri}, Time: ${photoPayload.getFormattedTimestamp()}")
+
+                    // in potem asinhrono pridobim lokacijo in s tem tudi posodobim PhotoPayload
+                    locationProvider.fetchLocationAsync { location ->
+                        if (location != null) {
+                            val updatedPhotoPayload = photoPayload.copy(
+                                latitude = location.latitude,
+                                longitude = location.longitude
+                            )
+                            Timber.i("Updated location: ${updatedPhotoPayload.latitude}, ${updatedPhotoPayload.longitude}")
+                        }
+                    }
                 }
             }
-            else
-                Toast.makeText(this, "CAMERA permission not granted!", Toast.LENGTH_SHORT).show()
         }
 
         binding.btnSwitchCamera.setOnClickListener {
@@ -99,7 +134,7 @@ class MainActivity : AppCompatActivity() {
                 sensorDataManager.cameraController.startCamera(binding.previewView)
 
             else
-                Toast.makeText(this, "CAMERA permission not granted!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Permissions not granted!", Toast.LENGTH_SHORT).show()
         }
     }
 

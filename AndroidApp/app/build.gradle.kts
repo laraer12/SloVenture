@@ -60,4 +60,7 @@ dependencies {
     implementation("androidx.camera:camera-view:${cameraxVersion}")
     implementation("androidx.camera:camera-mlkit-vision:${cameraxVersion}")
     implementation("androidx.camera:camera-extensions:${cameraxVersion}")
+
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+    implementation("com.jakewharton.timber:timber:5.0.1")
 }

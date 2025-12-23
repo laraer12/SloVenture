@@ -7,7 +7,7 @@ import si.um.feri.sloventure.sloventureandroid.weather.WeatherProvider
 
 class SensorDataManager(
     val cameraController: CameraController,
-    private val locationProvider: LocationProvider,
+    val locationProvider: LocationProvider,
     private val orientationProvider: OrientationProvider,
     private val weatherProvider: WeatherProvider
 ) {
