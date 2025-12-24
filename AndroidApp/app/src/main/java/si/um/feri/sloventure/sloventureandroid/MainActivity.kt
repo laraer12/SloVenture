@@ -31,8 +31,6 @@ class MainActivity : AppCompatActivity() {
         ACCESS_COARSE_LOCATION
     )
 
-    private lateinit var locationProvider: LocationProvider
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -41,11 +39,9 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        locationProvider = LocationProvider(this)
-
         sensorDataManager = SensorDataManager(
             cameraController = CameraController(this),
-            locationProvider = locationProvider,
+            locationProvider = LocationProvider(this),
             orientationProvider = OrientationProvider(this),
             weatherProvider = WeatherProvider(this)
         )
@@ -65,7 +61,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             // preverim, če je GPS omogočen, drugače slike ne zajamem
-            locationProvider.isLocationEnabled { enabled ->
+            sensorDataManager.locationProvider.isLocationEnabled { enabled ->
                 if (!enabled) {
                     Toast.makeText(
                         this,
@@ -82,23 +78,26 @@ class MainActivity : AppCompatActivity() {
                         return@capturePhoto
                     }
 
+                    // da pridobim podatke oriantacije telefona ob zajemu slike
+                    val orientation = sensorDataManager.orientationProvider.getCurrentOrientation()
+
                     // PhotoPayload brez lokacije, ta pride naknadno, da user ne čaka da se slika shrani
                     val photoPayload = PhotoPayload(
                         imageUri = uri,
                         timestamp = timestamp,
                         latitude = null,
                         longitude = null,
+                        orientation = orientation,
 
                         // TODO
-                        orientation = null,
                         temperature = null,
                         weatherDescription = null
                     )
                     Toast.makeText(this, "Image saved!", Toast.LENGTH_SHORT).show()
-                    Timber.i("URI: ${photoPayload.imageUri}, Time: ${photoPayload.getFormattedTimestamp()}")
+                    Timber.i("URI: ${photoPayload.imageUri}, Time: ${photoPayload.getFormattedTimestamp()}, Phone orientation: ${photoPayload.orientation}")
 
                     // in potem asinhrono pridobim lokacijo in s tem tudi posodobim PhotoPayload
-                    locationProvider.fetchLocationAsync { location ->
+                    sensorDataManager.locationProvider.fetchLocationAsync { location ->
                         if (location != null) {
                             val updatedPhotoPayload = photoPayload.copy(
                                 latitude = location.latitude,
@@ -138,8 +137,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        sensorDataManager.orientationProvider.start()
+    }
+
     override fun onStop() {
         super.onStop()
+        sensorDataManager.orientationProvider.stop()
         sensorDataManager.cameraController.stopCamera()
     }
 }
