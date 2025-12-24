@@ -9,7 +9,7 @@ class SensorDataManager(
     val cameraController: CameraController,
     val locationProvider: LocationProvider,
     val orientationProvider: OrientationProvider,
-    private val weatherProvider: WeatherProvider
+    val weatherProvider: WeatherProvider
 ) {
     fun collectAllSensorData() {
         // TODO: implementiraj senzor za zajem vseh podatkov

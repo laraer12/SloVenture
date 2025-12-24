@@ -43,7 +43,7 @@ class MainActivity : AppCompatActivity() {
             cameraController = CameraController(this),
             locationProvider = LocationProvider(this),
             orientationProvider = OrientationProvider(this),
-            weatherProvider = WeatherProvider(this)
+            weatherProvider = WeatherProvider()
         )
 
         // dovoljenje za kamero
@@ -78,32 +78,38 @@ class MainActivity : AppCompatActivity() {
                         return@capturePhoto
                     }
 
-                    // da pridobim podatke oriantacije telefona ob zajemu slike
-                    val orientation = sensorDataManager.orientationProvider.getCurrentOrientation()
-
-                    // PhotoPayload brez lokacije, ta pride naknadno, da user ne čaka da se slika shrani
-                    val photoPayload = PhotoPayload(
-                        imageUri = uri,
-                        timestamp = timestamp,
-                        latitude = null,
-                        longitude = null,
-                        orientation = orientation,
-
-                        // TODO
-                        temperature = null,
-                        weatherDescription = null
-                    )
-                    Toast.makeText(this, "Image saved!", Toast.LENGTH_SHORT).show()
-                    Timber.i("URI: ${photoPayload.imageUri}, Time: ${photoPayload.getFormattedTimestamp()}, Phone orientation: ${photoPayload.orientation}")
-
                     // in potem asinhrono pridobim lokacijo in s tem tudi posodobim PhotoPayload
                     sensorDataManager.locationProvider.fetchLocationAsync { location ->
-                        if (location != null) {
-                            val updatedPhotoPayload = photoPayload.copy(
-                                latitude = location.latitude,
-                                longitude = location.longitude
+                        if (location == null) {
+                            Timber.e("Location is null, cannot fetch weather")
+                            return@fetchLocationAsync
+                        }
+                        val latitude = location.latitude
+                        val longitude = location.longitude
+
+                        // za pridobivanje vremena
+                        sensorDataManager.weatherProvider.getCurrentWeather(latitude, longitude) { temperature, description ->
+
+                            // da pridobim podatke oriantacije telefona ob zajemu slike
+                            val orientation = sensorDataManager.orientationProvider.getCurrentOrientation()
+
+                            val photoPayload = PhotoPayload(
+                                imageUri = uri,
+                                timestamp = timestamp,
+                                latitude = latitude,
+                                longitude = longitude,
+                                orientation = orientation,
+                                temperature = temperature,
+                                weatherDescription = description
                             )
-                            Timber.i("Updated location: ${updatedPhotoPayload.latitude}, ${updatedPhotoPayload.longitude}")
+                            Toast.makeText(this, "Image saved!", Toast.LENGTH_SHORT).show()
+                            Timber.i("*** IMAGE INFO ***\n" +
+                                    "URI: ${photoPayload.imageUri}\n" +
+                                    "Date and time: ${photoPayload.getFormattedTimestamp()}\n" +
+                                    "Location -> LAT: ${photoPayload.latitude}, LON: ${photoPayload.longitude}\n" +
+                                    "Phone orientation: ${photoPayload.orientation}\n" +
+                                    "Temperature: ${photoPayload.temperature} °C\n" +
+                                    "Weather description: ${photoPayload.weatherDescription}")
                         }
                     }
                 }
@@ -146,5 +152,6 @@ class MainActivity : AppCompatActivity() {
         super.onStop()
         sensorDataManager.orientationProvider.stop()
         sensorDataManager.cameraController.stopCamera()
+        sensorDataManager.weatherProvider.cancel()
     }
 }

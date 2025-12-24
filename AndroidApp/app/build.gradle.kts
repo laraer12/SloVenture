@@ -63,4 +63,5 @@ dependencies {
 
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("com.jakewharton.timber:timber:5.0.1")
+    implementation("com.squareup.okhttp3:okhttp:4.11.0")
 }
