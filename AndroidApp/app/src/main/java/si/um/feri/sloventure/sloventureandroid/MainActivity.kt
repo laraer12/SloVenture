@@ -9,7 +9,6 @@ import androidx.appcompat.app.AppCompatActivity
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.Manifest.permission.ACCESS_COARSE_LOCATION
 
-import si.um.feri.sloventure.sloventureandroid.model.PhotoPayload
 import si.um.feri.sloventure.sloventureandroid.core.SensorDataManager
 import si.um.feri.sloventure.sloventureandroid.camera.CameraController
 import si.um.feri.sloventure.sloventureandroid.weather.WeatherProvider
@@ -31,6 +30,8 @@ class MainActivity : AppCompatActivity() {
         ACCESS_COARSE_LOCATION
     )
 
+    val cameraController = CameraController(this)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -40,7 +41,6 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         sensorDataManager = SensorDataManager(
-            cameraController = CameraController(this),
             locationProvider = LocationProvider(this),
             orientationProvider = OrientationProvider(this),
             weatherProvider = WeatherProvider()
@@ -48,7 +48,7 @@ class MainActivity : AppCompatActivity() {
 
         // dovoljenje za kamero
         if (allPermissionsGranted())
-            sensorDataManager.cameraController.startCamera(binding.previewView)
+            cameraController.startCamera(binding.previewView)
 
         else
             requestPermissions(requiredPermissions, cameraPermissionCode)
@@ -72,52 +72,33 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 // zajem slike in shranjevanje v galerijo
-                sensorDataManager.cameraController.capturePhoto { uri, timestamp ->
+                cameraController.capturePhoto { uri, timestamp ->
                     if (uri == null) {
                         Timber.e("Error saving image")
                         return@capturePhoto
                     }
 
-                    // in potem asinhrono pridobim lokacijo in s tem tudi posodobim PhotoPayload
-                    sensorDataManager.locationProvider.fetchLocationAsync { location ->
-                        if (location == null) {
-                            Timber.e("Location is null, cannot fetch weather")
-                            return@fetchLocationAsync
+                    // namesto, da vse posebej kličem, uporabim collectAllSensorData
+                    sensorDataManager.collectAllSensorData(uri, timestamp) { photoPayload ->
+                        if (photoPayload == null) {
+                            Timber.e("Failed to collect sensor data")
+                            return@collectAllSensorData
                         }
-                        val latitude = location.latitude
-                        val longitude = location.longitude
-
-                        // za pridobivanje vremena
-                        sensorDataManager.weatherProvider.getCurrentWeather(latitude, longitude) { temperature, description ->
-
-                            // da pridobim podatke oriantacije telefona ob zajemu slike
-                            val orientation = sensorDataManager.orientationProvider.getCurrentOrientation()
-
-                            val photoPayload = PhotoPayload(
-                                imageUri = uri,
-                                timestamp = timestamp,
-                                latitude = latitude,
-                                longitude = longitude,
-                                orientation = orientation,
-                                temperature = temperature,
-                                weatherDescription = description
-                            )
-                            Toast.makeText(this, "Image saved!", Toast.LENGTH_SHORT).show()
-                            Timber.i("*** IMAGE INFO ***\n" +
+                        Toast.makeText(this, "Image saved!", Toast.LENGTH_SHORT).show()
+                        Timber.i("*** IMAGE INFO ***\n" +
                                     "URI: ${photoPayload.imageUri}\n" +
                                     "Date and time: ${photoPayload.getFormattedTimestamp()}\n" +
                                     "Location -> LAT: ${photoPayload.latitude}, LON: ${photoPayload.longitude}\n" +
                                     "Phone orientation: ${photoPayload.orientation}\n" +
                                     "Temperature: ${photoPayload.temperature} °C\n" +
                                     "Weather description: ${photoPayload.weatherDescription}")
-                        }
                     }
                 }
             }
         }
 
         binding.btnSwitchCamera.setOnClickListener {
-            sensorDataManager.cameraController.switchCamera(binding.previewView)
+            cameraController.switchCamera(binding.previewView)
         }
     }
 
@@ -136,7 +117,7 @@ class MainActivity : AppCompatActivity() {
         // preverim če gre za naš request
         if (requestCode == cameraPermissionCode) {
             if (allPermissionsGranted())
-                sensorDataManager.cameraController.startCamera(binding.previewView)
+                cameraController.startCamera(binding.previewView)
 
             else
                 Toast.makeText(this, "Permissions not granted!", Toast.LENGTH_SHORT).show()
@@ -151,7 +132,7 @@ class MainActivity : AppCompatActivity() {
     override fun onStop() {
         super.onStop()
         sensorDataManager.orientationProvider.stop()
-        sensorDataManager.cameraController.stopCamera()
+        cameraController.stopCamera()
         sensorDataManager.weatherProvider.cancel()
     }
 }

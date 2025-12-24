@@ -1,17 +1,47 @@
 package si.um.feri.sloventure.sloventureandroid.core
 
-import si.um.feri.sloventure.sloventureandroid.camera.CameraController
+import android.net.Uri
+
+import si.um.feri.sloventure.sloventureandroid.model.PhotoPayload
+import si.um.feri.sloventure.sloventureandroid.weather.WeatherProvider
 import si.um.feri.sloventure.sloventureandroid.location.LocationProvider
 import si.um.feri.sloventure.sloventureandroid.sensors.OrientationProvider
-import si.um.feri.sloventure.sloventureandroid.weather.WeatherProvider
+
+import timber.log.Timber
 
 class SensorDataManager(
-    val cameraController: CameraController,
     val locationProvider: LocationProvider,
     val orientationProvider: OrientationProvider,
     val weatherProvider: WeatherProvider
 ) {
-    fun collectAllSensorData() {
-        // TODO: implementiraj senzor za zajem vseh podatkov
+    fun collectAllSensorData(
+        imageUri: Uri,
+        timestamp: Long,
+        onResult: (PhotoPayload?) -> Unit
+    ) {
+        locationProvider.fetchLocationAsync { location ->
+            if (location == null) {
+                Timber.e("Location is null, cannot collect sensor data")
+                onResult(null)
+                return@fetchLocationAsync
+            }
+            val latitude = location.latitude
+            val longitude = location.longitude
+
+            val orientation = orientationProvider.getCurrentOrientation()
+
+            weatherProvider.getCurrentWeather(latitude, longitude) { temperature, description ->
+                val photoPayload = PhotoPayload(
+                    imageUri = imageUri,
+                    timestamp = timestamp,
+                    latitude = latitude,
+                    longitude = longitude,
+                    orientation = orientation,
+                    temperature = temperature,
+                    weatherDescription = description
+                )
+                onResult(photoPayload)
+            }
+        }
     }
 }
