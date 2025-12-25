@@ -1,13 +1,13 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+
+    id("org.jetbrains.kotlin.plugin.serialization")
 }
 
 android {
     namespace = "si.um.feri.sloventure.sloventureandroid"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "si.um.feri.sloventure.sloventureandroid"
@@ -64,4 +64,5 @@ dependencies {
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("com.jakewharton.timber:timber:5.0.1")
     implementation("com.squareup.okhttp3:okhttp:4.11.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
 }

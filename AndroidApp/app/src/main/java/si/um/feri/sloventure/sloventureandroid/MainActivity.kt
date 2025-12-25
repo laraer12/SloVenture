@@ -84,14 +84,33 @@ class MainActivity : AppCompatActivity() {
                             Timber.e("Failed to collect sensor data")
                             return@collectAllSensorData
                         }
+                        sensorDataManager.savePhotoPayloadAsJson(photoPayload, this) // shranim vse podatke slike v JSON file
+
+                        // testiram, če so se slike pravilno shranile in preberem par podatkov
+                        val allPhotosFromFile = sensorDataManager.loadAllPhotosFromFile(this)
+
+                        allPhotosFromFile.forEach { photo ->
+                            Timber.i("Loaded photo: ${photo.imageUri}, timestamp: ${photo.getFormattedTimestamp()}")
+                        }
+
                         Toast.makeText(this, "Image saved!", Toast.LENGTH_SHORT).show()
-                        Timber.i("*** IMAGE INFO ***\n" +
-                                    "URI: ${photoPayload.imageUri}\n" +
-                                    "Date and time: ${photoPayload.getFormattedTimestamp()}\n" +
-                                    "Location -> LAT: ${photoPayload.latitude}, LON: ${photoPayload.longitude}\n" +
-                                    "Phone orientation: ${photoPayload.orientation}\n" +
-                                    "Temperature: ${photoPayload.temperature} °C\n" +
-                                    "Weather description: ${photoPayload.weatherDescription}")
+                        Timber.i("""
+                            *** IMAGE INFO ***
+                            URI: %s
+                            Date and time: %s
+                            Location -> LAT: %s, LON: %s
+                            Phone orientation: %s
+                            Temperature: %s °C
+                            Weather description: %s
+                            """.trimIndent(),
+                            photoPayload.imageUri,
+                            photoPayload.getFormattedTimestamp(),
+                            photoPayload.latitude ?: "unknown",
+                            photoPayload.longitude ?: "unknown",
+                            photoPayload.orientation ?: "unknown",
+                            photoPayload.temperature ?: "unknown",
+                            photoPayload.weatherDescription ?: "unknown"
+                        )
                     }
                 }
             }
