@@ -11,18 +11,20 @@ public:
 
     Block getLastBlock();
 
-    void addBlock(BlockData data);
+    Block createBlock(BlockData data);
 
     void printChain();
-
-private:
-    std::vector<Block> blockchain;
-
-    void proofOfWork(Block &block) const;
 
     bool validateBlock(Block block);
 
     bool validateChain();
+
+    void addBlock(Block &block);
+
+    int getLength();
+
+private:
+    std::vector<Block> blockchain;
 };
 
 

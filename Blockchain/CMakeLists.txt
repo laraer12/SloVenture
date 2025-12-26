@@ -13,6 +13,7 @@ add_executable(Blockchain main.cpp
         Blockchain.h
         Block.cpp
         BlockData.cpp
+        SyncQueue.h
 )
 
 target_link_libraries(Blockchain OpenSSL::SSL OpenSSL::Crypto)

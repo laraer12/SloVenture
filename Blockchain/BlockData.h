@@ -1,7 +1,3 @@
-//
-// Created by Lenovo on 26. 12. 2025.
-//
-
 #ifndef BLOCKCHAIN_BLOCKDATA_H
 #define BLOCKCHAIN_BLOCKDATA_H
 
@@ -10,8 +6,6 @@
 #include <string>
 #include <sstream>
 
-using namespace std;
-
 class BlockData {
 public:
     int numOfPeople;
@@ -19,7 +13,7 @@ public:
     double longitude;
     double latitude;
 
-    string toString();
+    std::string toString();
 };
 
 

@@ -2,8 +2,8 @@
 #include "iostream"
 
 
-string Block::createHash(int nonce) {
-    stringstream ss;
+std::string Block::createHash(int nonce) {
+    std::stringstream ss;
     ss << index
        << previousHash
        << data.toString()
@@ -11,7 +11,7 @@ string Block::createHash(int nonce) {
        << difficulty
        << nonce;
 
-    string str = ss.str();
+    std::string str = ss.str();
 
     unsigned char hashChars[SHA256_DIGEST_LENGTH];
     SHA256(reinterpret_cast<const unsigned char *>(str.c_str()), str.size(), hashChars);

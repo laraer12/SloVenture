@@ -1,7 +1,3 @@
-//
-// Created by Lenovo on 26. 12. 2025.
-//
-
 #ifndef BLOCKCHAIN_BLOCK_H
 #define BLOCKCHAIN_BLOCK_H
 
@@ -12,19 +8,18 @@
 #include <openssl/sha.h>
 #include <iomanip>
 
-using namespace std;
-
 class Block {
 public:
     int index;
-    string previousHash;
+    std::string previousHash;
     time_t timestamp;
     int difficulty;
     BlockData data;
-    string hash;
+    std::string hash;
     int foundNonce;
+    bool stopBlock = false;
 
-    string createHash(int nonce);
+    std::string createHash(int nonce);
 };
 
 

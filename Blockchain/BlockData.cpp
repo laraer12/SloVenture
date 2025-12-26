@@ -1,8 +1,8 @@
 #include "BlockData.h"
 #include "iostream"
 
-string BlockData::toString() {
-    stringstream ss;
+std::string BlockData::toString() {
+    std::stringstream ss;
     ss << numOfPeople
        << timestamp
        << longitude

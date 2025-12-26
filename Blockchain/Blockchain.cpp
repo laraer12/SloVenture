@@ -5,7 +5,7 @@ Block Blockchain::getLastBlock() {
     return blockchain.back();
 }
 
-void Blockchain::addBlock(BlockData data) {
+Block Blockchain::createBlock(BlockData data) {
     time_t timestamp = time(nullptr);
     Block newBlock;
     if (blockchain.empty()) {
@@ -28,34 +28,17 @@ void Blockchain::addBlock(BlockData data) {
         );
     }
 
-    proofOfWork(newBlock);
+    return newBlock;
+}
 
-    if (validateBlock(newBlock)) {
-        blockchain.push_back(newBlock);
-        validateChain();
-    }
+void Blockchain::addBlock(Block &block) {
+    blockchain.push_back(block);
 }
 
 void Blockchain::printChain() {
     for (int i = 0; i < blockchain.size(); ++i) {
-        cout << blockchain[i].index << " hash " << blockchain[i].hash << " previous hash "
-             << blockchain[i].previousHash << endl;
-    }
-
-}
-
-void Blockchain::proofOfWork(Block &block) const {
-    string startZeroes(difficulty, '0');
-    int nonce = 0;
-
-    while (true) {
-        string h = block.createHash(nonce);
-        if (h.starts_with(startZeroes) && h != block.previousHash) {
-            block.foundNonce = nonce;
-            block.hash = h;
-            break;
-        }
-        nonce++;
+        std::cout <<"Index: "<< blockchain[i].index << " Hash: " << blockchain[i].hash << " Previous hash: "
+                  << blockchain[i].previousHash << std::endl;
     }
 
 }
@@ -65,20 +48,20 @@ bool Blockchain::validateBlock(Block block) {
         Block previous = getLastBlock();
 
         if (block.index != previous.index + 1) {
-            cout << "Invalid index at: " << block.index << endl;
+            std::cout << "Invalid index at block: " << block.index << std::endl;
             return false;
         }
 
         if (block.previousHash != previous.hash) {
-            cout << "Invalid previous hash at: " << block.index << endl;
+            std::cout << "Invalid previous hash at: " << block.index << std::endl;
             return false;
         }
     }
 
-    string hash = block.createHash(block.foundNonce);
+    std::string hash = block.createHash(block.foundNonce);
 
     if (hash != block.hash) {
-        cout << "Invalid hash at: " << block.index << endl;
+        std::cout << "Invalid hash at: " << block.index << std::endl;
         return false;
     }
 
@@ -91,20 +74,24 @@ bool Blockchain::validateChain() {
         Block previous = blockchain[i - 1];
 
         if (current.previousHash != previous.hash) {
-            cout << "Invalid index at: " << current.index << endl;
+            std::cout << "Invalid index in chain: " << current.index << std::endl;
             return false;
         }
 
         if (current.index != previous.index + 1) {
-            cout << "Invalid index at: " << current.index << endl;
+            std::cout << "Invalid index at: " << current.index << std::endl;
             return false;
         }
 
-        string hash = current.createHash(current.foundNonce);
+        std::string hash = current.createHash(current.foundNonce);
         if (hash != current.hash) {
-            cout << "Invalid hash at: " << current.index << endl;
+            std::cout << "Invalid hash at: " << current.index << std::endl;
             return false;
         }
     }
     return true;
+}
+
+int Blockchain::getLength() {
+    return blockchain.size();
 }
