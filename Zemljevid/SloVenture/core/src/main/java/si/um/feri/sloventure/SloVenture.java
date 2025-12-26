@@ -2,33 +2,196 @@ package si.um.feri.sloventure;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.utils.ScreenUtils;
+import com.badlogic.gdx.Input;
+import com.badlogic.gdx.graphics.*;
+import com.badlogic.gdx.graphics.g3d.*;
+import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
+import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
+import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
+import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
+import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.Array;
 
-/** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class SloVenture extends ApplicationAdapter {
-    private SpriteBatch batch;
-    private Texture image;
+
+    private PerspectiveCamera camera;
+    private ModelBatch modelBatch;
+    private Environment environment;
+
+    private Array<Model> chunkModels = new Array<>();
+    private Array<ModelInstance> chunkInstances = new Array<>();
+
+    private static final int CHUNK_SIZE = 64;
+    private static final float HEIGHT_SCALE = 40f;
+    private static final float TERRAIN_SCALE = 1f;
 
     @Override
     public void create() {
-        batch = new SpriteBatch();
-        image = new Texture("libgdx.png");
+        modelBatch = new ModelBatch();
+        setupCamera();
+        setupLight();
+        createTerrainChunks("slovenia_clipped_2000.png");
     }
 
     @Override
     public void render() {
-        ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f);
-        batch.begin();
-        batch.draw(image, 140, 210);
-        batch.end();
+        handleInput();
+
+        Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        Gdx.gl.glClearColor(0.6f, 0.8f, 1f, 1f);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+
+        modelBatch.begin(camera);
+        for (ModelInstance instance : chunkInstances) {
+            modelBatch.render(instance, environment);
+        }
+        modelBatch.end();
     }
 
     @Override
     public void dispose() {
-        batch.dispose();
-        image.dispose();
+        modelBatch.dispose();
+        for (Model m : chunkModels) m.dispose();
+    }
+
+    private void setupCamera() {
+        camera = new PerspectiveCamera(
+            67,
+            Gdx.graphics.getWidth(),
+            Gdx.graphics.getHeight()
+        );
+        camera.position.set(0f, 200f, 300f);
+        camera.lookAt(0f, 0f, 0f);
+        camera.near = 0.1f;
+        camera.far = 2000f;
+        camera.update();
+    }
+
+    private void setupLight() {
+        environment = new Environment();
+        environment.set(new ColorAttribute(
+            ColorAttribute.AmbientLight,
+            0.4f, 0.4f, 0.4f, 1f
+        ));
+        environment.add(new DirectionalLight().set(
+            1.1f, 1.1f, 1.1f,
+            -0.3f, -1f, -0.2f
+        ));
+    }
+
+    private void createTerrainChunks(String heightmapPath) {
+        Pixmap pixmap = new Pixmap(Gdx.files.internal(heightmapPath));
+
+        int width = pixmap.getWidth();
+        int height = pixmap.getHeight();
+
+        float offsetX = -width / 2f;
+        float offsetZ = -height / 2f;
+
+        for (int startX = 0; startX < width - 1; startX += CHUNK_SIZE) {
+            for (int startZ = 0; startZ < height - 1; startZ += CHUNK_SIZE) {
+
+                int chunkWidth = Math.min(CHUNK_SIZE, width - startX - 1);
+                int chunkHeight = Math.min(CHUNK_SIZE, height - startZ - 1);
+
+                Model chunkModel = createChunk(
+                    pixmap,
+                    startX,
+                    startZ,
+                    chunkWidth,
+                    chunkHeight,
+                    offsetX,
+                    offsetZ
+                );
+
+                chunkModels.add(chunkModel);
+                chunkInstances.add(new ModelInstance(chunkModel));
+            }
+        }
+
+        pixmap.dispose();
+    }
+
+    private Model createChunk(
+        Pixmap pixmap,
+        int startX,
+        int startZ,
+        int chunkWidth,
+        int chunkHeight,
+        float offsetX,
+        float offsetZ
+    ) {
+        ModelBuilder modelBuilder = new ModelBuilder();
+        modelBuilder.begin();
+
+        Material material = new Material(
+            ColorAttribute.createDiffuse(new Color(0.35f, 0.65f, 0.35f, 1f))
+        );
+
+        MeshPartBuilder builder = modelBuilder.part(
+            "chunk",
+            GL20.GL_TRIANGLES,
+            VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal,
+            material
+        );
+
+        for (int x = 0; x < chunkWidth; x++) {
+            for (int z = 0; z < chunkHeight; z++) {
+
+                int px = startX + x;
+                int pz = startZ + z;
+
+                float h1 = getHeight(pixmap, px, pz);
+                float h2 = getHeight(pixmap, px + 1, pz);
+                float h3 = getHeight(pixmap, px + 1, pz + 1);
+                float h4 = getHeight(pixmap, px, pz + 1);
+
+                Vector3 v1 = new Vector3((px + offsetX) * TERRAIN_SCALE, h1, (pz + offsetZ) * TERRAIN_SCALE);
+                Vector3 v2 = new Vector3((px + 1 + offsetX) * TERRAIN_SCALE, h2, (pz + offsetZ) * TERRAIN_SCALE);
+                Vector3 v3 = new Vector3((px + 1 + offsetX) * TERRAIN_SCALE, h3, (pz + 1 + offsetZ) * TERRAIN_SCALE);
+                Vector3 v4 = new Vector3((px + offsetX) * TERRAIN_SCALE, h4, (pz + 1 + offsetZ) * TERRAIN_SCALE);
+
+                boolean t1 = isTransparent(pixmap, px, pz);
+                boolean t2 = isTransparent(pixmap, px + 1, pz);
+                boolean t3 = isTransparent(pixmap, px + 1, pz + 1);
+                boolean t4 = isTransparent(pixmap, px, pz + 1);
+
+                if (t1 || t2 || t3 || t4) {
+                    continue;
+                }
+
+                builder.triangle(v1, v2, v3);
+                builder.triangle(v1, v3, v4);
+            }
+        }
+
+        return modelBuilder.end();
+    }
+    private float getHeight(Pixmap pixmap, int x, int z) {
+        int pixel = pixmap.getPixel(x, z);
+        int value = (pixel >> 24) & 0xff;
+        return (value / 255f) * HEIGHT_SCALE;
+    }
+    private void handleInput() {
+        float speed = 200f * Gdx.graphics.getDeltaTime();
+
+        if (Gdx.input.isKeyPressed(Input.Keys.W)) camera.position.z -= speed;
+        if (Gdx.input.isKeyPressed(Input.Keys.S)) camera.position.z += speed;
+        if (Gdx.input.isKeyPressed(Input.Keys.A)) camera.position.x -= speed;
+        if (Gdx.input.isKeyPressed(Input.Keys.D)) camera.position.x += speed;
+        if (Gdx.input.isKeyPressed(Input.Keys.Q)) camera.position.y += speed;
+        if (Gdx.input.isKeyPressed(Input.Keys.E)) camera.position.y -= speed;
+
+        camera.update();
+    }
+
+    private boolean isTransparent(Pixmap pixmap, int x, int z) {
+        x = Math.max(0, Math.min(x, pixmap.getWidth() - 1));
+        z = Math.max(0, Math.min(z, pixmap.getHeight() - 1));
+
+        int pixel = pixmap.getPixel(x, z);
+        int alpha = pixel & 0xff;
+
+        return alpha == 0;
     }
 }
