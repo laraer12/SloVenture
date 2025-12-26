@@ -13,14 +13,12 @@ int main() {
     bd1.longitude = 14.5058;
     bd1.latitude = 46.0569;
 
-    // Drugi primer
     BlockData bd2;
     bd2.numOfPeople = 12;
     bd2.timestamp = std::time(nullptr) - 3600;
     bd2.longitude = 13.4170;
     bd2.latitude = 52.5200;
 
-    // Tretji primer
     BlockData bd3;
     bd3.numOfPeople = 3;
     bd3.timestamp = std::time(nullptr) - 86400;

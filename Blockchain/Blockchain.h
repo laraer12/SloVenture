@@ -19,6 +19,8 @@ private:
     std::vector<Block> blockchain;
 
     void proofOfWork(Block &block) const;
+
+    bool validateBlock(Block block);
 };
 
 

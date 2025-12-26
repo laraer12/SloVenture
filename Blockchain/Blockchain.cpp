@@ -30,7 +30,9 @@ void Blockchain::addBlock(BlockData data) {
 
     proofOfWork(newBlock);
 
-    blockchain.push_back(newBlock);
+    if (validateBlock(newBlock)) {
+        blockchain.push_back(newBlock);
+    }
 }
 
 void Blockchain::printChain() {
@@ -55,4 +57,29 @@ void Blockchain::proofOfWork(Block &block) const {
         nonce++;
     }
 
+}
+
+bool Blockchain::validateBlock(Block block) {
+    if (!blockchain.empty()) {
+        Block previous = getLastBlock();
+
+        if (block.index != previous.index + 1) {
+            cout << "Invalid index at: " << block.index << endl;
+            return false;
+        }
+
+        if (block.previousHash != previous.hash) {
+            cout << "Invalid previous hash at: " << block.index << endl;
+            return false;
+        }
+    }
+
+    string hash = block.createHash(block.foundNonce);
+
+    if (hash != block.hash) {
+        cout << "Invalid hash at: " << block.index << endl;
+        return false;
+    }
+
+    return true;
 }
