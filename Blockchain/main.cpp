@@ -1,16 +1,37 @@
 #include <iostream>
+#include <vector>
+#include "Block.h"
+#include "Blockchain.h"
 
-// TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 int main() {
-    // TIP Press <shortcut actionId="RenameElement"/> when your caret is at the <b>lang</b> variable name to see how CLion can help you rename it.
-    auto lang = "C++";
-    std::cout << "Hello and welcome to " << lang << "!\n";
+    Blockchain blockchain;
+    blockchain.difficulty = 3;
 
-    for (int i = 1; i <= 5; i++) {
-        // TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-        std::cout << "i = " << i << std::endl;
-    }
+    BlockData bd1;
+    bd1.numOfPeople = 5;
+    bd1.timestamp = std::time(nullptr);
+    bd1.longitude = 14.5058;
+    bd1.latitude = 46.0569;
+
+    // Drugi primer
+    BlockData bd2;
+    bd2.numOfPeople = 12;
+    bd2.timestamp = std::time(nullptr) - 3600;
+    bd2.longitude = 13.4170;
+    bd2.latitude = 52.5200;
+
+    // Tretji primer
+    BlockData bd3;
+    bd3.numOfPeople = 3;
+    bd3.timestamp = std::time(nullptr) - 86400;
+    bd3.longitude = -0.1276;
+    bd3.latitude = 51.5074;
+
+    blockchain.addBlock(bd1);
+    blockchain.addBlock(bd2);
+    blockchain.addBlock(bd3);
+
+    blockchain.printChain();
 
     return 0;
-    // TIP See CLion help at <a href="https://www.jetbrains.com/help/clion/">jetbrains.com/help/clion/</a>. Also, you can try interactive lessons for CLion by selecting 'Help | Learn IDE Features' from the main menu.
 }

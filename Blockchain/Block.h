@@ -7,18 +7,24 @@
 
 
 #include <string>
+#include <sstream>
 #include "BlockData.h"
+#include <openssl/sha.h>
+#include <iomanip>
 
 using namespace std;
 
 class Block {
 public:
     int index;
-    string hash;
+    string previousHash;
     time_t timestamp;
     int difficulty;
-    int nonce;
     BlockData data;
+    string hash;
+    int foundNonce;
+
+    string createHash(int nonce);
 };
 
 

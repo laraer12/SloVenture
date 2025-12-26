@@ -7,6 +7,10 @@
 
 
 #include <ctime>
+#include <string>
+#include <sstream>
+
+using namespace std;
 
 class BlockData {
 public:
@@ -14,6 +18,8 @@ public:
     time_t timestamp;
     double longitude;
     double latitude;
+
+    string toString();
 };
 
 
