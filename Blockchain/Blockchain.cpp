@@ -32,6 +32,7 @@ void Blockchain::addBlock(BlockData data) {
 
     if (validateBlock(newBlock)) {
         blockchain.push_back(newBlock);
+        validateChain();
     }
 }
 
@@ -81,5 +82,29 @@ bool Blockchain::validateBlock(Block block) {
         return false;
     }
 
+    return true;
+}
+
+bool Blockchain::validateChain() {
+    for (int i = 1; i < blockchain.size(); ++i) {
+        Block current = blockchain[i];
+        Block previous = blockchain[i - 1];
+
+        if (current.previousHash != previous.hash) {
+            cout << "Invalid index at: " << current.index << endl;
+            return false;
+        }
+
+        if (current.index != previous.index + 1) {
+            cout << "Invalid index at: " << current.index << endl;
+            return false;
+        }
+
+        string hash = current.createHash(current.foundNonce);
+        if (hash != current.hash) {
+            cout << "Invalid hash at: " << current.index << endl;
+            return false;
+        }
+    }
     return true;
 }

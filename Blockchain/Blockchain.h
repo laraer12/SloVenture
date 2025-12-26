@@ -21,6 +21,8 @@ private:
     void proofOfWork(Block &block) const;
 
     bool validateBlock(Block block);
+
+    bool validateChain();
 };
 
 
