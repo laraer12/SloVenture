@@ -6,20 +6,25 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g3d.*;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
+import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
+import com.badlogic.gdx.graphics.g3d.utils.CameraInputController;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 
-public class SloVenture extends ApplicationAdapter {
-
+public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kamere
     private PerspectiveCamera camera;
     private ModelBatch modelBatch;
     private Environment environment;
+    private CameraInputController camController;
 
     private Array<Model> chunkModels = new Array<>();
     private Array<ModelInstance> chunkInstances = new Array<>();
+
+    private Texture terrainTexture;
 
     private static final int CHUNK_SIZE = 64;
     private static final float HEIGHT_SCALE = 40f;
@@ -29,13 +34,30 @@ public class SloVenture extends ApplicationAdapter {
     public void create() {
         modelBatch = new ModelBatch();
         setupCamera();
+        camController = new CameraInputController(camera);
+        Gdx.input.setInputProcessor(camController);
+
+        camController.rotateButton = Input.Buttons.RIGHT;
+        camController.translateButton = Input.Buttons.MIDDLE;
+        camController.scrollFactor = -20f;
+        camController.translateUnits = 10f;
+
+        terrainTexture = new Texture(Gdx.files.internal("slovenia_sat_small.png"));
+        terrainTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        terrainTexture.setWrap(
+            Texture.TextureWrap.ClampToEdge,
+            Texture.TextureWrap.ClampToEdge
+        );
+
         setupLight();
         createTerrainChunks("slovenia_clipped_2000.png");
     }
 
     @Override
     public void render() {
-        handleInput();
+        Gdx.gl.glDisable(GL20.GL_CULL_FACE);
+
+        camController.update();
 
         Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         Gdx.gl.glClearColor(0.6f, 0.8f, 1f, 1f);
@@ -52,8 +74,9 @@ public class SloVenture extends ApplicationAdapter {
     public void dispose() {
         modelBatch.dispose();
         for (Model m : chunkModels) m.dispose();
-    }
+        terrainTexture.dispose();
 
+    }
     private void setupCamera() {
         camera = new PerspectiveCamera(
             67,
@@ -111,7 +134,6 @@ public class SloVenture extends ApplicationAdapter {
 
         pixmap.dispose();
     }
-
     private Model createChunk(
         Pixmap pixmap,
         int startX,
@@ -125,15 +147,19 @@ public class SloVenture extends ApplicationAdapter {
         modelBuilder.begin();
 
         Material material = new Material(
-            ColorAttribute.createDiffuse(new Color(0.35f, 0.65f, 0.35f, 1f))
+            TextureAttribute.createDiffuse(terrainTexture)
         );
 
         MeshPartBuilder builder = modelBuilder.part(
             "chunk",
             GL20.GL_TRIANGLES,
-            VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal,
+            VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal |
+                VertexAttributes.Usage.TextureCoordinates,
             material
         );
+
+        Vector3 normal = new Vector3(0, 1, 0);
+
 
         for (int x = 0; x < chunkWidth; x++) {
             for (int z = 0; z < chunkHeight; z++) {
@@ -160,29 +186,39 @@ public class SloVenture extends ApplicationAdapter {
                     continue;
                 }
 
-                builder.triangle(v1, v2, v3);
-                builder.triangle(v1, v3, v4);
+                float u1 = (px / (float) (pixmap.getWidth() - 1));
+                float u2 = ((px + 1) / (float) (pixmap.getWidth() - 1));
+
+
+                float v1t = (pz / (float) (pixmap.getHeight() - 1));
+                float v2t = ((pz + 1) / (float) (pixmap.getHeight() - 1));
+
+
+                MeshPartBuilder.VertexInfo vi1 = new MeshPartBuilder.VertexInfo()
+                    .set(v1, normal, null, new Vector2(u1, v1t));
+
+                MeshPartBuilder.VertexInfo vi2 = new MeshPartBuilder.VertexInfo()
+                    .set(v2, normal, null, new Vector2(u2, v1t));
+
+                MeshPartBuilder.VertexInfo vi3 = new MeshPartBuilder.VertexInfo()
+                    .set(v3, normal, null, new Vector2(u2, v2t));
+
+                MeshPartBuilder.VertexInfo vi4 = new MeshPartBuilder.VertexInfo()
+                    .set(v4, normal, null, new Vector2(u1, v2t));
+
+                builder.triangle(vi1, vi3, vi2);
+                builder.triangle(vi1, vi4, vi3);
+
             }
         }
 
         return modelBuilder.end();
     }
+
     private float getHeight(Pixmap pixmap, int x, int z) {
         int pixel = pixmap.getPixel(x, z);
-        int value = (pixel >> 24) & 0xff;
+        int value = (pixel >> 16) & 0xff;
         return (value / 255f) * HEIGHT_SCALE;
-    }
-    private void handleInput() {
-        float speed = 200f * Gdx.graphics.getDeltaTime();
-
-        if (Gdx.input.isKeyPressed(Input.Keys.W)) camera.position.z -= speed;
-        if (Gdx.input.isKeyPressed(Input.Keys.S)) camera.position.z += speed;
-        if (Gdx.input.isKeyPressed(Input.Keys.A)) camera.position.x -= speed;
-        if (Gdx.input.isKeyPressed(Input.Keys.D)) camera.position.x += speed;
-        if (Gdx.input.isKeyPressed(Input.Keys.Q)) camera.position.y += speed;
-        if (Gdx.input.isKeyPressed(Input.Keys.E)) camera.position.y -= speed;
-
-        camera.update();
     }
 
     private boolean isTransparent(Pixmap pixmap, int x, int z) {
