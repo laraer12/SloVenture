@@ -2,13 +2,11 @@ package si.um.feri.sloventure;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g3d.*;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
-import com.badlogic.gdx.graphics.g3d.utils.CameraInputController;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Vector2;
@@ -19,12 +17,14 @@ public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kam
     private PerspectiveCamera camera;
     private ModelBatch modelBatch;
     private Environment environment;
-    private CameraInputController camController;
 
-    private Array<Model> chunkModels = new Array<>();
-    private Array<ModelInstance> chunkInstances = new Array<>();
+    private final Array<Model> chunkModels = new Array<>();
+    private final Array<ModelInstance> chunkInstances = new Array<>();
 
     private Texture terrainTexture;
+    private float terrainWidth;
+    private float terrainDepth;
+
 
     private static final int CHUNK_SIZE = 64;
     private static final float HEIGHT_SCALE = 40f;
@@ -34,15 +34,11 @@ public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kam
     public void create() {
         modelBatch = new ModelBatch();
         setupCamera();
-        camController = new CameraInputController(camera);
-        Gdx.input.setInputProcessor(camController);
-
-        camController.rotateButton = Input.Buttons.RIGHT;
-        camController.translateButton = Input.Buttons.MIDDLE;
-        camController.scrollFactor = -20f;
-        camController.translateUnits = 10f;
+        MapCameraController mapController = new MapCameraController(camera);
+        Gdx.input.setInputProcessor(mapController);
 
         terrainTexture = new Texture(Gdx.files.internal("slovenia_sat_small.png"));
+        //terrainTexture = new Texture(Gdx.files.internal("slovenia_sat_big.png"));
         terrainTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
         terrainTexture.setWrap(
             Texture.TextureWrap.ClampToEdge,
@@ -50,14 +46,11 @@ public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kam
         );
 
         setupLight();
-        createTerrainChunks("slovenia_clipped_2000.png");
+        createTerrainChunks("slovenia_clipped_4000.png");
     }
 
     @Override
     public void render() {
-        Gdx.gl.glDisable(GL20.GL_CULL_FACE);
-
-        camController.update();
 
         Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         Gdx.gl.glClearColor(0.6f, 0.8f, 1f, 1f);
@@ -79,14 +72,18 @@ public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kam
     }
     private void setupCamera() {
         camera = new PerspectiveCamera(
-            67,
+            60,
             Gdx.graphics.getWidth(),
             Gdx.graphics.getHeight()
         );
-        camera.position.set(0f, 200f, 300f);
+
+        camera.near = 1f;
+        camera.far = 3000f;
+
+        camera.position.set(0f, 300f, 300f);
         camera.lookAt(0f, 0f, 0f);
-        camera.near = 0.1f;
-        camera.far = 2000f;
+        camera.up.set(Vector3.Y);
+
         camera.update();
     }
 
@@ -107,6 +104,9 @@ public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kam
 
         int width = pixmap.getWidth();
         int height = pixmap.getHeight();
+
+        terrainWidth = width * TERRAIN_SCALE;
+        terrainDepth = height * TERRAIN_SCALE;
 
         float offsetX = -width / 2f;
         float offsetZ = -height / 2f;
