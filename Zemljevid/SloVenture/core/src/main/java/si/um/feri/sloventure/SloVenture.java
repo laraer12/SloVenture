@@ -13,6 +13,10 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 
+import java.util.List;
+
+import si.um.feri.sloventure.data.AttractionData;
+import si.um.feri.sloventure.data.AttractionImage;
 import si.um.feri.sloventure.data.AttractionService;
 
 public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kamere
@@ -53,9 +57,27 @@ public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kam
         // API test
         AttractionService.fetchAllAttractions(new AttractionService.Callback() {
             @Override
-            public void onSuccess(String json) {
-                System.out.println("RAW JSON RECEIVED:");
-                System.out.println(json);
+            public void onSuccess(List<AttractionData> attractions) {
+                int num = 1;
+
+                for (AttractionData a : attractions) {
+                    System.out.println("ATTRACTION " + num + " - " + a.name +
+                        "\nRegion - " + a.regionName +
+                        "\nLocation - LAT: " + a.lat + ", LON: " + a.lon +
+                        "\nAddress - Street: " + a.street + ", City: " + a.city + ", Postal code: " + a.postalCode +
+                        "\nDescription - " + a.description +
+                        "\nClassification - " + a.classification +
+                        "\nLocation type - " + a.locationType +
+                        "\nElevation - " + a.elevation + " m" +
+                        "\nRating - " + a.rating +
+                        "\nImages - "
+                    );
+                    for (AttractionImage img : a.images)
+                        System.out.println(" URL: " + img.url);
+
+                    System.out.print("\n");
+                    num++;
+                }
             }
 
             @Override
