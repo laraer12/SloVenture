@@ -13,6 +13,8 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 
+import si.um.feri.sloventure.data.AttractionService;
+
 public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kamere
     private PerspectiveCamera camera;
     private ModelBatch modelBatch;
@@ -47,6 +49,21 @@ public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kam
 
         setupLight();
         createTerrainChunks("slovenia_clipped_4000.png");
+
+        // API test
+        AttractionService.fetchAllAttractions(new AttractionService.Callback() {
+            @Override
+            public void onSuccess(String json) {
+                System.out.println("RAW JSON RECEIVED:");
+                System.out.println(json);
+            }
+
+            @Override
+            public void onFailure(int status, String message) {
+                System.err.println("Failed to fetch attractions");
+                System.err.println("Status: " + status + " | Reason: " + message);
+            }
+        });
     }
 
     @Override
