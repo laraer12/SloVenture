@@ -1,8 +1,13 @@
+#include <chrono>
 #include <iostream>
 #include <vector>
+#include <mpi.h>
 #include "Block.h"
 #include "Blockchain.h"
 #include "SyncQueue.h"
+
+int mpiRank;
+int mpiSize;
 
 SyncQueue<Block> workQueue;
 SyncQueue<Block> resultQueue;
@@ -20,20 +25,18 @@ std::atomic<bool> found = false;
 std::atomic<int> index = -1;
 
 
-void workerTask(int threadId, int numThreads) {
+void workerTask(int threadId, int numThreads, int rank, int size) {
     while (!stop.load()) {
-
         //nit caka da je v vrsti nov blok
         Block block = workQueue.read();
 
         if (block.stopBlock) break;
 
-        int nonce = threadId;
+        int nonce = rank * numThreads + threadId;
 
         std::string startZeroes(block.difficulty, '0');
 
         while (!found.load() && !stop.load()) {
-
             std::string h = block.createHash(nonce);
 
             if (h.starts_with(startZeroes)) {
@@ -41,7 +44,7 @@ void workerTask(int threadId, int numThreads) {
                 block.hash = h;
 
                 //prevedi da se ni bil najden ustrezen blok
-                if (block.index > index.load() && !found.exchange(true) ) {
+                if (block.index > index.load() && !found.exchange(true)) {
                     resultQueue.add(block);
                     {
                         std::lock_guard<std::mutex> lock(mtx);
@@ -51,12 +54,16 @@ void workerTask(int threadId, int numThreads) {
                 break;
             }
 
-            nonce += numThreads;
+            nonce += size * numThreads;
         }
     }
 }
 
 int main(int argc, char **argv) {
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpiRank);
+    MPI_Comm_size(MPI_COMM_WORLD, &mpiSize);
+
     // -N stevilo niti -diff tezavnost
     if (argc < 4) {
         std::cerr << "Use: -N <unsigned int> -diff <unsigned int>\n";
@@ -76,7 +83,6 @@ int main(int argc, char **argv) {
     std::vector<std::thread> threads;
     std::vector<BlockData> inputData;
 
-
     BlockData bd1(5, std::time(nullptr), 14.5058, 46.0569);
     BlockData bd2(12, std::time(nullptr) - 3600, 13.4170, 52.5200);
     BlockData bd3(3, std::time(nullptr) - 86400, -0.1276, 51.5074);
@@ -88,7 +94,7 @@ int main(int argc, char **argv) {
     auto start = std::chrono::high_resolution_clock::now();
 
     for (int i = 0; i < numThreads; ++i) {
-        threads.emplace_back(workerTask, i, numThreads);
+        threads.emplace_back(workerTask, i, numThreads, mpiRank, mpiSize);
     }
 
     for (int i = 0; i < inputData.size(); ++i) {
@@ -98,13 +104,11 @@ int main(int argc, char **argv) {
         for (int j = 0; j < numThreads; ++j) {
             workQueue.add(newBlock);
         }
-
         //cakanje da prva nit najde hash
         {
             std::unique_lock<std::mutex> lock(mtx);
             cv.wait(lock, [] { return found.load(); });
         }
-
         //dodajanje v verigo
         Block block = resultQueue.read();
         if (blockchain.validateBlock(block) && blockchain.validateChain()) {
@@ -121,19 +125,16 @@ int main(int argc, char **argv) {
     for (int i = 0; i < numThreads; ++i) {
         workQueue.add(stopBlock);
     }
-
     //zdruzevanje niti
     for (auto &t: threads) {
         t.join();
     }
 
     auto end = std::chrono::high_resolution_clock::now();
-
     unsigned int runtime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-
     std::cout << "Runtime: " << runtime << std::endl;
 
     blockchain.printChain();
-
+    MPI_Finalize();
     return 0;
 }
