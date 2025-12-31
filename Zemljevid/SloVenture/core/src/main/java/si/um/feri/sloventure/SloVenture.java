@@ -2,16 +2,19 @@ package si.um.feri.sloventure;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.assets.loaders.ModelLoader;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g3d.*;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
+import com.badlogic.gdx.graphics.g3d.loader.G3dModelLoader;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.JsonReader;
 
 import java.util.List;
 
@@ -36,6 +39,9 @@ public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kam
     private static final float HEIGHT_SCALE = 40f;
     private static final float TERRAIN_SCALE = 1f;
 
+    private Model testModel;
+    private ModelInstance testInstance;
+
     @Override
     public void create() {
         modelBatch = new ModelBatch();
@@ -43,8 +49,8 @@ public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kam
         MapCameraController mapController = new MapCameraController(camera);
         Gdx.input.setInputProcessor(mapController);
 
-        terrainTexture = new Texture(Gdx.files.internal("slovenia_sat_small.png"));
-        //terrainTexture = new Texture(Gdx.files.internal("slovenia_sat_big.png"));
+        terrainTexture = new Texture(Gdx.files.internal("images/slovenia_sat_small.png"));
+        //terrainTexture = new Texture(Gdx.files.internal("images/slovenia_sat_big.png"));
         terrainTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
         terrainTexture.setWrap(
             Texture.TextureWrap.ClampToEdge,
@@ -52,7 +58,19 @@ public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kam
         );
 
         setupLight();
-        createTerrainChunks("slovenia_clipped_4000.png");
+        createTerrainChunks("images/slovenia_clipped_4000.png");
+
+        // TESTIRANJE 3D modelov
+        ModelLoader<?> loader = new G3dModelLoader(new JsonReader());
+        testModel = loader.loadModel(Gdx.files.internal("models/person/Person.g3dj")); // castle/Castle.g3dj // church/Church.g3dj // cabin/Cabin.g3dj // pool/Pool.g3dj // lake/Lake.g3dj // museum/Museum.g3dj // canyon/Canyon.g3dj // park/Park.g3dj watch_tower/WatchTower.g3dj // other/Other.g3dj
+        testInstance = new ModelInstance(testModel);
+
+        // scale modela
+        testInstance.transform.idt();
+        testInstance.transform.scale(0.05f, 0.05f, 0.05f);
+
+        // lokacija modela
+        testInstance.transform.translate(0f, 500f, 0f);
 
         // API test
         AttractionService.fetchAllAttractions(new AttractionService.Callback() {
@@ -99,6 +117,7 @@ public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kam
         for (ModelInstance instance : chunkInstances) {
             modelBatch.render(instance, environment);
         }
+        modelBatch.render(testInstance, environment); // model
         modelBatch.end();
     }
 
@@ -108,6 +127,8 @@ public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kam
         for (Model m : chunkModels) m.dispose();
         terrainTexture.dispose();
 
+        if (testModel != null)
+            testModel.dispose();
     }
     private void setupCamera() {
         camera = new PerspectiveCamera(
