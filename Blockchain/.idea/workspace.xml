@@ -24,7 +24,17 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="0b7b9f4c-fe20-462d-8e6b-a0497ee801eb" name="Changes" comment="" />
+    <list default="true" id="0b7b9f4c-fe20-462d-8e6b-a0497ee801eb" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/editor.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/material_theme_project_new.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Zemljevid/SloVenture/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/main.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Zemljevid/SloVenture/.idea/caches/deviceStreaming.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../Zemljevid/SloVenture/.idea/caches/deviceStreaming.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Zemljevid/SloVenture/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../Zemljevid/SloVenture/.idea/gradle.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Zemljevid/SloVenture/.idea/material_theme_project_new.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../Zemljevid/SloVenture/.idea/material_theme_project_new.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Zemljevid/SloVenture/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../Zemljevid/SloVenture/.idea/misc.xml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -58,7 +68,7 @@
     "RunOnceActivity.west.config.association.type.startup.service": "true",
     "cf.first.check.clang-format": "false",
     "cidr.known.project.marker": "true",
-    "git-widget-placeholder": "Blockchain-PPR",
+    "git-widget-placeholder": "Rebasing blockchain",
     "last_opened_file_path": "C:/Users/Lenovo/Documents/GitHub/SloVenture/Blockchain",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
