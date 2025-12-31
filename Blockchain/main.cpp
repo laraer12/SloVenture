@@ -101,15 +101,17 @@ int main(int argc, char **argv) {
     int numThreads = 1;
 
     try {
-        numThreads = std::stoi(argv[2]);
-        //int numThreads = std::thread::hardware_concurrency();
+        //numThreads = std::stoi(argv[2]);
+        //odkomentiraj ce zelis da se uposteva st niti podano pri argumentih
+        numThreads = std::thread::hardware_concurrency();
         //"Program na vsakem vozlišču zažene toliko niti kot je optimalna za arhitekturo vozlišča" odvisno kako razumes navodila
         blockchain.difficulty = std::stoi(argv[4]);
     } catch (const std::exception &e) {
         std::cerr << "Illegal arguments\n";
         return 1;
     }
-    std::vector<std::thread> threads;\
+    std::vector<std::thread> threads;
+    std::cout << "Rank " << mpiRank << " running with " << numThreads << " threads.\n";
 
     std::vector<BlockData> inputData = generateBlockData(15); //za testiranje
 
