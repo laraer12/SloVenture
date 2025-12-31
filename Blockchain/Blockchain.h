@@ -23,6 +23,11 @@ public:
 
     int getLength();
 
+    static constexpr int BLOCK_INTERVAL = 10;   // sekunde
+    static constexpr int DIFF_INTERVAL  = 10;   // bloki
+
+    int getAdjustedDifficulty();
+
 private:
     std::vector<Block> blockchain;
 };

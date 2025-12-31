@@ -1,6 +1,8 @@
 #include <chrono>
 #include <iostream>
 #include <vector>
+#include <random>
+#include <ctime>
 #include <mpi.h>
 #include "Block.h"
 #include "Blockchain.h"
@@ -59,6 +61,31 @@ void workerTask(int threadId, int numThreads, int rank, int size) {
     }
 }
 
+std::vector<BlockData> generateBlockData(int count) {
+    std::vector<BlockData> data;
+    data.reserve(count);
+
+    std::mt19937 rng(static_cast<unsigned>(std::time(nullptr)));
+
+    std::uniform_int_distribution<int> people(1, 15);
+    std::uniform_int_distribution<int> timeOffsetDist(0, 100000);
+    std::uniform_real_distribution<double> lonDist(-180.0, 180.0);
+    std::uniform_real_distribution<double> latDist(-90.0, 90.0);
+
+    time_t now = std::time(nullptr);
+
+    for (int i = 0; i < count; ++i) {
+        int value = people(rng);
+        time_t timestamp = now - timeOffsetDist(rng);
+        double longitude = lonDist(rng);
+        double latitude = latDist(rng);
+
+        data.emplace_back(value, timestamp, longitude, latitude);
+    }
+
+    return data;
+}
+
 int main(int argc, char **argv) {
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpiRank);
@@ -75,21 +102,16 @@ int main(int argc, char **argv) {
 
     try {
         numThreads = std::stoi(argv[2]);
+        //int numThreads = std::thread::hardware_concurrency();
+        //"Program na vsakem vozlišču zažene toliko niti kot je optimalna za arhitekturo vozlišča" odvisno kako razumes navodila
         blockchain.difficulty = std::stoi(argv[4]);
     } catch (const std::exception &e) {
         std::cerr << "Illegal arguments\n";
         return 1;
     }
-    std::vector<std::thread> threads;
-    std::vector<BlockData> inputData;
+    std::vector<std::thread> threads;\
 
-    BlockData bd1(5, std::time(nullptr), 14.5058, 46.0569);
-    BlockData bd2(12, std::time(nullptr) - 3600, 13.4170, 52.5200);
-    BlockData bd3(3, std::time(nullptr) - 86400, -0.1276, 51.5074);
-
-    inputData.push_back(bd1);
-    inputData.push_back(bd2);
-    inputData.push_back(bd3);
+    std::vector<BlockData> inputData = generateBlockData(15); //za testiranje
 
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -110,11 +132,19 @@ int main(int argc, char **argv) {
             cv.wait(lock, [] { return found.load(); });
         }
         //dodajanje v verigo
+
+        if (mpiRank == 0) {
+            std::cout << "Block " << newBlock.index << " target difficulty: " << newBlock.difficulty << std::endl;
+        }
+        std::cout << "Rank " << mpiRank << std::endl;
+
         Block block = resultQueue.read();
         if (blockchain.validateBlock(block) && blockchain.validateChain()) {
             blockchain.addBlock(block);
             index.fetch_add(1);
-            std::cout << "Block found" << std::endl;
+            if (mpiRank == 0) {
+                std::cout << "Block found" << std::endl;
+            }
         }
     }
 
@@ -134,7 +164,9 @@ int main(int argc, char **argv) {
     unsigned int runtime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     std::cout << "Runtime: " << runtime << std::endl;
 
-    blockchain.printChain();
+    if (mpiRank == 0) {
+        blockchain.printChain();
+    }
     MPI_Finalize();
     return 0;
 }

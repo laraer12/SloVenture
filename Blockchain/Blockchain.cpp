@@ -13,7 +13,7 @@ Block Blockchain::createBlock(BlockData data) {
                 0,
                 "0",
                 timestamp,
-                difficulty,
+                getAdjustedDifficulty(),
                 data
         );
     } else {
@@ -23,7 +23,7 @@ Block Blockchain::createBlock(BlockData data) {
                 previous.index + 1,
                 previous.hash,
                 timestamp,
-                difficulty,
+                getAdjustedDifficulty(),
                 data
         );
     }
@@ -95,3 +95,22 @@ bool Blockchain::validateChain() {
 int Blockchain::getLength() {
     return blockchain.size();
 }
+
+int Blockchain::getAdjustedDifficulty() {
+    if (blockchain.size() < DIFF_INTERVAL)
+        return difficulty;
+
+    Block& last = blockchain.back();
+    Block& adjustBlock = blockchain[blockchain.size() - DIFF_INTERVAL];
+
+    int expectedTime = BLOCK_INTERVAL * DIFF_INTERVAL;
+    int actualTime = last.timestamp - adjustBlock.timestamp;
+
+    if (actualTime < expectedTime / 2)
+        return adjustBlock.difficulty + 1;
+    else if (actualTime > expectedTime * 2)
+        return std::max(1, adjustBlock.difficulty - 1);
+    else
+        return adjustBlock.difficulty;
+}
+
