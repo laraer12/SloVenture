@@ -72,30 +72,11 @@ public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kam
         // lokacija modela
         testInstance.transform.translate(0f, 500f, 0f);
 
-        // API test
+        // API test (VSE znamenitosti)
         AttractionService.fetchAllAttractions(new AttractionService.Callback() {
             @Override
             public void onSuccess(List<AttractionData> attractions) {
-                int num = 1;
-
-                for (AttractionData a : attractions) {
-                    System.out.println("ATTRACTION " + num + " - " + a.name +
-                        "\nRegion - " + a.regionName +
-                        "\nLocation - LAT: " + a.lat + ", LON: " + a.lon +
-                        "\nAddress - Street: " + a.street + ", City: " + a.city + ", Postal code: " + a.postalCode +
-                        "\nDescription - " + a.description +
-                        "\nClassification - " + a.classification +
-                        "\nLocation type - " + a.locationType +
-                        "\nElevation - " + a.elevation + " m" +
-                        "\nRating - " + a.rating +
-                        "\nImages - "
-                    );
-                    for (AttractionImage img : a.images)
-                        System.out.println(" URL: " + img.url);
-
-                    System.out.print("\n");
-                    num++;
-                }
+                printAttractions(attractions);
             }
 
             @Override
@@ -104,6 +85,77 @@ public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kam
                 System.err.println("Status: " + status + " | Reason: " + message);
             }
         });
+
+        // filter po KLASIFIKACIJI
+        /*
+        AttractionService.fetchByClassification("Kultura", new AttractionService.Callback() { // Kultura, Naravne lepote, Pohodništvo, Poletna osvežitev, Raziskovanje, Supanje
+            @Override
+            public void onSuccess(List<AttractionData> attractions) {
+                printAttractions(attractions);
+            }
+
+            @Override
+            public void onFailure(int status, String message) {
+                System.err.println("Failed to fetch attractions");
+                System.err.println("Status: " + status + " | Reason: " + message);
+            }
+        });
+        */
+
+        // filter po REGIJI
+        /*
+        AttractionService.fetchByRegion("6846a8cf845a679bffb1c82e", new AttractionService.Callback() { // to je id Gorenjske
+            @Override
+            public void onSuccess(List<AttractionData> attractions) {
+                printAttractions(attractions);
+            }
+
+            @Override
+            public void onFailure(int status, String message) {
+                System.err.println("Failed to fetch attractions");
+                System.err.println("Status: " + status + " | Reason: " + message);
+            }
+        });
+        */
+
+        // filter po TIPU LOKACIJE
+        /*
+        AttractionService.fetchByLocationType("Cerkev", new AttractionService.Callback() { // Cerkev, Drugo, Dvorec, Grad, Hrib, Izvir, Jama, Jezero, Kopališče, Koča, Muzej na prostem, Park, Planina, Razgledni stolp, SUP točka, Slap, Soteska
+            @Override
+            public void onSuccess(List<AttractionData> attractions) {
+                printAttractions(attractions);
+            }
+
+            @Override
+            public void onFailure(int status, String message) {
+                System.err.println("Failed to fetch attractions");
+                System.err.println("Status: " + status + " | Reason: " + message);
+            }
+        });
+        */
+    }
+
+    private void printAttractions(List<AttractionData> attractions) {
+        int num = 1;
+
+        for (AttractionData a : attractions) {
+            System.out.println("ATTRACTION " + num + " - " + a.name +
+                "\nRegion - " + a.regionName +
+                "\nLocation - LAT: " + a.lat + ", LON: " + a.lon +
+                "\nAddress - Street: " + a.street + ", City: " + a.city + ", Postal code: " + a.postalCode +
+                "\nDescription - " + a.description +
+                "\nClassification - " + a.classification +
+                "\nLocation type - " + a.locationType +
+                "\nElevation - " + a.elevation + " m" +
+                "\nRating - " + a.rating +
+                "\nImages - "
+            );
+            for (AttractionImage img : a.images)
+                System.out.println(" URL: " + img.url);
+
+            System.out.print("\n");
+            num++;
+        }
     }
 
     @Override

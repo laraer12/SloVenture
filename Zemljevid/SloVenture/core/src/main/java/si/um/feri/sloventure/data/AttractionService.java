@@ -18,48 +18,39 @@ public class AttractionService {
         void onFailure(int status, String message);
     }
 
+    // pridobitev VSEH znamenitosti
     public static void fetchAllAttractions(Callback callback) {
-        HttpRequestBuilder requestBuilder = new HttpRequestBuilder();
+        sendRequest(URL, callback);
+    }
 
-        Net.HttpRequest request = requestBuilder.newRequest()
-            .method(Net.HttpMethods.GET)
-            .url(URL)
-            .timeout(5000)
-            .build();
+    // filtriranje po klasifikaciji
+    public static void fetchByClassification(String classification, Callback callback) {
+        try {
+            String encodedClassification = java.net.URLEncoder.encode(classification, "UTF-8").replace("+", "%20"); // moram zakodirat, ker so prisotni šumniki ter presledki
+            String url = URL + "/classification/" + encodedClassification;
+            sendRequest(url, callback);
+        }
+        catch (Exception e) {
+            callback.onFailure(-1, "Encoding failed: " + e.getMessage());
+        }
+    }
 
-        Gdx.net.sendHttpRequest(request, new HttpResponseListener() {
-            @Override
-            public void handleHttpResponse(Net.HttpResponse httpResponse) {
-                int status = httpResponse.getStatus().getStatusCode();
-                String json = httpResponse.getResultAsString();
+    // filtriranje po regiji
+    public static void fetchByRegion(String regionId, Callback callback) {
+        String url = URL + "/region/" + regionId;
+        sendRequest(url, callback);
+    }
 
-                System.out.println("HTTP STATUS: " + status);
-
-                // uspešno
-                if (status == 200 && json != null && !json.isEmpty()) {
-                    try {
-                        List<AttractionData> attractions = parse(json);
-                        callback.onSuccess(attractions);
-                    }
-                    catch (Exception e) {
-                        callback.onFailure(status, "JSON parse failed: " + e.getMessage());
-                    }
-                }
-                else
-                    callback.onFailure(status, "Invalid response body");
-            }
-
-            // preklic ali neuspeh
-            @Override
-            public void cancelled() {
-                callback.onFailure(-1, "Request cancelled");
-            }
-
-            @Override
-            public void failed(Throwable t) {
-                callback.onFailure(-1, t.getMessage());
-            }
-        });
+    // filtriranje po tipu lokacije
+    public static void fetchByLocationType(String locationType, Callback callback) {
+        try {
+            String encodedLocationType = java.net.URLEncoder.encode(locationType, "UTF-8").replace("+", "%20"); // moram zakodirat, ker so prisotni šumniki ter presledki
+            String url = URL + "/type/" + encodedLocationType;
+            sendRequest(url, callback);
+        }
+        catch (Exception e) {
+            callback.onFailure(-1, "Encoding failed: " + e.getMessage());
+        }
     }
 
     private static List<AttractionData> parse(String json) {
@@ -136,5 +127,46 @@ public class AttractionService {
             ));
         }
         return attractions;
+    }
+
+    private static void sendRequest(String url, Callback callback) {
+        HttpRequestBuilder requestBuilder = new HttpRequestBuilder();
+
+        Net.HttpRequest request = requestBuilder.newRequest()
+            .method(Net.HttpMethods.GET)
+            .url(url)
+            .timeout(5000)
+            .build();
+
+        Gdx.net.sendHttpRequest(request, new HttpResponseListener() {
+            @Override
+            public void handleHttpResponse(Net.HttpResponse httpResponse) {
+                int status = httpResponse.getStatus().getStatusCode();
+                String json = httpResponse.getResultAsString();
+
+                System.out.println("HTTP STATUS: " + status);
+
+                // uspešno
+                if (status == 200 && json != null && !json.isEmpty()) {
+                    try {
+                        callback.onSuccess(parse(json));
+                    } catch (Exception e) {
+                        callback.onFailure(status, "JSON parse failed: " + e.getMessage());
+                    }
+                } else
+                    callback.onFailure(status, "Invalid response body");
+            }
+
+            // preklic ali neuspeh
+            @Override
+            public void cancelled() {
+                callback.onFailure(-1, "Request cancelled");
+            }
+
+            @Override
+            public void failed(Throwable t) {
+                callback.onFailure(-1, t.getMessage());
+            }
+        });
     }
 }

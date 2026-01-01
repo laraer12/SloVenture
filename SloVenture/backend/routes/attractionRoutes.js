@@ -20,6 +20,6 @@ router.post('/', attractionController.create);
 router.put('/:id', attractionController.update);
 router.delete('/:id', attractionController.remove);
 router.get('/region/:regionId', attractionController.listByRegion);
-router.get('/type/:typeId', attractionController.listByLocationType);
+router.get('/type/:locationType', attractionController.listByLocationType);
 
 module.exports = router;
