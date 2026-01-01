@@ -18,9 +18,11 @@ import com.badlogic.gdx.utils.JsonReader;
 
 import java.util.List;
 
-import si.um.feri.sloventure.data.AttractionData;
-import si.um.feri.sloventure.data.AttractionImage;
-import si.um.feri.sloventure.data.AttractionService;
+import si.um.feri.sloventure.data.crowd.CrowdData;
+import si.um.feri.sloventure.data.crowd.CrowdService;
+import si.um.feri.sloventure.data.attraction.AttractionData;
+import si.um.feri.sloventure.data.attraction.AttractionImage;
+import si.um.feri.sloventure.data.attraction.AttractionService;
 
 public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kamere
     private PerspectiveCamera camera;
@@ -76,7 +78,23 @@ public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kam
         AttractionService.fetchAllAttractions(new AttractionService.Callback() {
             @Override
             public void onSuccess(List<AttractionData> attractions) {
-                printAttractions(attractions);
+                System.out.println("Število pridobljenih znamenitosti: " + attractions.size() + "\n");
+
+                for (AttractionData a : attractions) {
+                    // pridobi gnečo glede na lat/lon
+                    CrowdService.fetchCrowdDataForAttraction(a.lat, a.lon, new CrowdService.Callback() {
+                        @Override
+                        public void onSuccess(List<CrowdData> crowdList) {
+                            a.crowd = crowdList; // shranim gnečo v AttractionData
+                            printAttraction(a);
+                        }
+
+                        @Override
+                        public void onFailure(String message) {
+                            System.err.println("Failed to fetch crowd data for " + a.name + ": " + message);
+                        }
+                    });
+                }
             }
 
             @Override
@@ -91,7 +109,23 @@ public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kam
         AttractionService.fetchByClassification("Kultura", new AttractionService.Callback() { // Kultura, Naravne lepote, Pohodništvo, Poletna osvežitev, Raziskovanje, Supanje
             @Override
             public void onSuccess(List<AttractionData> attractions) {
-                printAttractions(attractions);
+                System.out.println("Število pridobljenih znamenitosti: " + attractions.size() + "\n");
+
+                for (AttractionData a : attractions) {
+                    // pridobi gnečo glede na lat/lon
+                    CrowdService.fetchCrowdDataForAttraction(a.lat, a.lon, new CrowdService.Callback() {
+                        @Override
+                        public void onSuccess(List<CrowdData> crowdList) {
+                            a.crowd = crowdList; // shranim gnečo v AttractionData
+                            printAttraction(a);
+                        }
+
+                        @Override
+                        public void onFailure(String message) {
+                            System.err.println("Failed to fetch crowd data for " + a.name + ": " + message);
+                        }
+                    });
+                }
             }
 
             @Override
@@ -107,7 +141,23 @@ public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kam
         AttractionService.fetchByRegion("6846a8cf845a679bffb1c82e", new AttractionService.Callback() { // to je id Gorenjske
             @Override
             public void onSuccess(List<AttractionData> attractions) {
-                printAttractions(attractions);
+                System.out.println("Število pridobljenih znamenitosti: " + attractions.size() + "\n");
+
+                for (AttractionData a : attractions) {
+                    // pridobi gnečo glede na lat/lon
+                    CrowdService.fetchCrowdDataForAttraction(a.lat, a.lon, new CrowdService.Callback() {
+                        @Override
+                        public void onSuccess(List<CrowdData> crowdList) {
+                            a.crowd = crowdList; // shranim gnečo v AttractionData
+                            printAttraction(a);
+                        }
+
+                        @Override
+                        public void onFailure(String message) {
+                            System.err.println("Failed to fetch crowd data for " + a.name + ": " + message);
+                        }
+                    });
+                }
             }
 
             @Override
@@ -123,7 +173,23 @@ public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kam
         AttractionService.fetchByLocationType("Cerkev", new AttractionService.Callback() { // Cerkev, Drugo, Dvorec, Grad, Hrib, Izvir, Jama, Jezero, Kopališče, Koča, Muzej na prostem, Park, Planina, Razgledni stolp, SUP točka, Slap, Soteska
             @Override
             public void onSuccess(List<AttractionData> attractions) {
-                printAttractions(attractions);
+                System.out.println("Število pridobljenih znamenitosti: " + attractions.size() + "\n");
+
+                for (AttractionData a : attractions) {
+                    // pridobi gnečo glede na lat/lon
+                    CrowdService.fetchCrowdDataForAttraction(a.lat, a.lon, new CrowdService.Callback() {
+                        @Override
+                        public void onSuccess(List<CrowdData> crowdList) {
+                            a.crowd = crowdList; // shranim gnečo v AttractionData
+                            printAttraction(a);
+                        }
+
+                        @Override
+                        public void onFailure(String message) {
+                            System.err.println("Failed to fetch crowd data for " + a.name + ": " + message);
+                        }
+                    });
+                }
             }
 
             @Override
@@ -135,27 +201,32 @@ public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kam
         */
     }
 
-    private void printAttractions(List<AttractionData> attractions) {
-        int num = 1;
+    private void printAttraction(AttractionData a) {
+        System.out.println("ATTRACTION - " + a.name +
+                            "\nRegion - " + a.regionName +
+                            "\nLocation - LAT: " + a.lat + ", LON: " + a.lon +
+                            "\nAddress - Street: " + a.street + ", City: " + a.city + ", Postal code: " + a.postalCode +
+                            "\nDescription - " + a.description +
+                            "\nClassification - " + a.classification +
+                            "\nLocation type - " + a.locationType +
+                            "\nElevation - " + a.elevation + " m" +
+                            "\nRating - " + a.rating +
+                            "\nImages - "
+        );
+        for (AttractionImage img : a.images)
+            System.out.println(" URL: " + img.url);
 
-        for (AttractionData a : attractions) {
-            System.out.println("ATTRACTION " + num + " - " + a.name +
-                "\nRegion - " + a.regionName +
-                "\nLocation - LAT: " + a.lat + ", LON: " + a.lon +
-                "\nAddress - Street: " + a.street + ", City: " + a.city + ", Postal code: " + a.postalCode +
-                "\nDescription - " + a.description +
-                "\nClassification - " + a.classification +
-                "\nLocation type - " + a.locationType +
-                "\nElevation - " + a.elevation + " m" +
-                "\nRating - " + a.rating +
-                "\nImages - "
-            );
-            for (AttractionImage img : a.images)
-                System.out.println(" URL: " + img.url);
+        // poleg znamenitosti pridobim še gnečo ljudi pri njej
+        if (a.crowd != null && !a.crowd.isEmpty()) {
+            System.out.println("Crowd data:");
 
-            System.out.print("\n");
-            num++;
+            for (CrowdData c : a.crowd)
+                System.out.println(" " + c.toString());
         }
+        else
+            System.out.println("No crowd data");
+
+        System.out.print("\n");
     }
 
     @Override

@@ -1,6 +1,8 @@
-package si.um.feri.sloventure.data;
+package si.um.feri.sloventure.data.attraction;
 
 import java.util.List;
+
+import si.um.feri.sloventure.data.crowd.CrowdData;
 
 public class AttractionData {
     public String id;
@@ -19,6 +21,7 @@ public class AttractionData {
     public int elevation;
     public float rating;
     public List<AttractionImage> images;
+    public List<CrowdData> crowd;
 
     public AttractionData(
         String id,
@@ -36,7 +39,8 @@ public class AttractionData {
         String locationType,
         int elevation,
         float rating,
-        List<AttractionImage> images
+        List<AttractionImage> images,
+        List<CrowdData> crowd
     ) {
         this.id = id;
         this.name = name;
@@ -54,5 +58,6 @@ public class AttractionData {
         this.elevation = elevation;
         this.rating = rating;
         this.images = images;
+        this.crowd = crowd;
     }
 }

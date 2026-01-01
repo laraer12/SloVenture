@@ -1,4 +1,4 @@
-package si.um.feri.sloventure.data;
+package si.um.feri.sloventure.data.attraction;
 
 public class AttractionImage {
     public String imageId;

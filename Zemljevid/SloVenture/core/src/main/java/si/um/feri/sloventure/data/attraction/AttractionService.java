@@ -1,4 +1,4 @@
-package si.um.feri.sloventure.data;
+package si.um.feri.sloventure.data.attraction;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Net;
@@ -9,6 +9,8 @@ import com.badlogic.gdx.Net.HttpResponseListener;
 
 import java.util.List;
 import java.util.ArrayList;
+
+import si.um.feri.sloventure.data.crowd.CrowdData;
 
 public class AttractionService {
     private static final String URL = "http://localhost:3001/attractions"; // kasneje menjano s strežniškim URL
@@ -113,6 +115,10 @@ public class AttractionService {
                     images.add(new AttractionImage(imageId, attractionId, url));
                 }
             }
+
+            // *** CROWD ***
+            List<CrowdData> crowd = new ArrayList<>(); // trenutno je prazno, dodam kasneje ko se generira
+
             attractions.add(new AttractionData(
                 id, name,
                 regionId, regionName,
@@ -123,7 +129,8 @@ public class AttractionService {
                 locationType,
                 elevation,
                 rating,
-                images
+                images,
+                crowd
             ));
         }
         return attractions;
