@@ -1,27 +1,27 @@
 package si.um.feri.sloventure.sloventureandroid
 
+import android.Manifest.permission.ACCESS_COARSE_LOCATION
+import android.Manifest.permission.ACCESS_FINE_LOCATION
+import android.Manifest.permission.CAMERA
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.Toast
-import android.content.pm.PackageManager
-import android.Manifest.permission.CAMERA
-import androidx.core.content.ContextCompat
 import androidx.appcompat.app.AppCompatActivity
-import android.Manifest.permission.ACCESS_FINE_LOCATION
-import android.Manifest.permission.ACCESS_COARSE_LOCATION
-
-import si.um.feri.sloventure.sloventureandroid.core.SensorDataManager
+import androidx.core.content.ContextCompat
 import si.um.feri.sloventure.sloventureandroid.camera.CameraController
-import si.um.feri.sloventure.sloventureandroid.weather.WeatherProvider
+import si.um.feri.sloventure.sloventureandroid.core.MQTTClient
+import si.um.feri.sloventure.sloventureandroid.core.SensorDataManager
+import si.um.feri.sloventure.sloventureandroid.databinding.ActivityMainBinding
 import si.um.feri.sloventure.sloventureandroid.location.LocationProvider
 import si.um.feri.sloventure.sloventureandroid.sensors.OrientationProvider
-import si.um.feri.sloventure.sloventureandroid.databinding.ActivityMainBinding
-
+import si.um.feri.sloventure.sloventureandroid.weather.WeatherProvider
 import timber.log.Timber
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var sensorDataManager: SensorDataManager
     private val cameraPermissionCode = 1001 // request code za permission dialog
+    private lateinit var mqttClient: MQTTClient
 
     // seznam zahtevanih permission-ov
     private val requiredPermissions = arrayOf(
@@ -40,6 +40,8 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        mqttClient = MQTTClient(applicationContext)
+
         sensorDataManager = SensorDataManager(
             locationProvider = LocationProvider(this),
             orientationProvider = OrientationProvider(this),
@@ -49,7 +51,6 @@ class MainActivity : AppCompatActivity() {
         // dovoljenje za kamero
         if (allPermissionsGranted())
             cameraController.startCamera(binding.previewView)
-
         else
             requestPermissions(requiredPermissions, cameraPermissionCode)
 
@@ -84,7 +85,10 @@ class MainActivity : AppCompatActivity() {
                             Timber.e("Failed to collect sensor data")
                             return@collectAllSensorData
                         }
-                        sensorDataManager.savePhotoPayloadAsJson(photoPayload, this) // shranim vse podatke slike v JSON file
+                        sensorDataManager.savePhotoPayloadAsJson(
+                            photoPayload,
+                            this
+                        ) // shranim vse podatke slike v JSON file
 
                         // testiram, če so se slike pravilno shranile in preberem par podatkov
                         val allPhotosFromFile = sensorDataManager.loadAllPhotosFromFile(this)
@@ -94,7 +98,8 @@ class MainActivity : AppCompatActivity() {
                         }
 
                         Toast.makeText(this, "Image saved!", Toast.LENGTH_SHORT).show()
-                        Timber.i("""
+                        Timber.i(
+                            """
                             *** IMAGE INFO ***
                             URI: %s
                             Date and time: %s
@@ -137,7 +142,6 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == cameraPermissionCode) {
             if (allPermissionsGranted())
                 cameraController.startCamera(binding.previewView)
-
             else
                 Toast.makeText(this, "Permissions not granted!", Toast.LENGTH_SHORT).show()
         }
@@ -146,6 +150,7 @@ class MainActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         sensorDataManager.orientationProvider.start()
+        mqttClient.connect()
     }
 
     override fun onStop() {
@@ -153,5 +158,6 @@ class MainActivity : AppCompatActivity() {
         sensorDataManager.orientationProvider.stop()
         cameraController.stopCamera()
         sensorDataManager.weatherProvider.cancel()
+        mqttClient.disconnect()
     }
 }
