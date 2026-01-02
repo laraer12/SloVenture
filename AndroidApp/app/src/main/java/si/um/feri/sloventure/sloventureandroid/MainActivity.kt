@@ -90,6 +90,8 @@ class MainActivity : AppCompatActivity() {
                             this
                         ) // shranim vse podatke slike v JSON file
 
+                        mqttClient.publishPhotoPayload(photoPayload)
+
                         // testiram, če so se slike pravilno shranile in preberem par podatkov
                         val allPhotosFromFile = sensorDataManager.loadAllPhotosFromFile(this)
 

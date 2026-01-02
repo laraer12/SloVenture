@@ -1,6 +1,7 @@
 package si.um.feri.sloventure.sloventureandroid.core
 
 import android.content.Context
+import si.um.feri.sloventure.sloventureandroid.BuildConfig
 import info.mqtt.android.service.MqttAndroidClient
 import kotlinx.serialization.json.Json
 import org.eclipse.paho.client.mqttv3.IMqttActionListener
@@ -48,23 +49,43 @@ class MQTTClient(context: Context) {
         })
     }
 
-    fun disconnect(){
-        if (mqttClient.isConnected){
+    fun disconnect() {
+        if (mqttClient.isConnected) {
             mqttClient.disconnect()
             Timber.tag("MQTT").d("Mqtt disconnected")
         }
     }
 
+    fun publishPhotoPayload(payload: PhotoPayload) {
+        val topic = "sensors/camera"
+        val payloadString = Json.encodeToString(payload)
+
+        if (!mqttClient.isConnected) {
+            Timber.tag("MQTT").w("Client not connected")
+            return
+        }
+
+        val message = MqttMessage(payloadString.toByteArray()).apply {
+            qos = 1
+        }
+
+        mqttClient.publish(topic, message)
+
+        Timber.tag("MQTT").d("Published message to $topic")
+        Timber.tag("MQTT").d(payloadString)
+    }
+
     private fun getSocketFactory(context: Context): SSLSocketFactory {
+        val p12Pass = BuildConfig.P12_PASSWORD
         //ustvari objekt ki bere .p12 datoteke
         val keyStore = KeyStore.getInstance("PKCS12")
         context.resources.openRawResource(R.raw.android_client).use {
-            keyStore.load(it, "changeit".toCharArray())
+            keyStore.load(it, p12Pass.toCharArray())
         }
 
         //da client certifikat da je lahko izveden TLS handshake
         val kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm())
-        kmf.init(keyStore, "changeit".toCharArray())
+        kmf.init(keyStore, p12Pass.toCharArray())
 
         //preveri ustreznost strežnika
         val tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
