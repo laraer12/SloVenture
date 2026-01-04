@@ -1,3 +1,5 @@
+import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -18,7 +20,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "P12_PASSWORD", "\"${System.getenv("P12_PASSWORD") ?: ""}\"")
+        buildConfigField("String", "P12_PASSWORD", "\"${gradleLocalProperties(rootDir, providers).getProperty("p12_password")}\"")
     }
 
     buildTypes {
