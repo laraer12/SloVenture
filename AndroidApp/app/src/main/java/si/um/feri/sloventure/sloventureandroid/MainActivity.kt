@@ -8,6 +8,10 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import si.um.feri.sloventure.sloventureandroid.camera.CameraController
 import si.um.feri.sloventure.sloventureandroid.core.MQTTClient
 import si.um.feri.sloventure.sloventureandroid.core.SensorDataManager
@@ -22,6 +26,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var sensorDataManager: SensorDataManager
     private val cameraPermissionCode = 1001 // request code za permission dialog
     private lateinit var mqttClient: MQTTClient
+
+    private lateinit var app: MyApplication
 
     // seznam zahtevanih permission-ov
     private val requiredPermissions = arrayOf(
@@ -41,6 +47,8 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         mqttClient = MQTTClient(applicationContext)
+
+        app = application as MyApplication
 
         sensorDataManager = SensorDataManager(
             locationProvider = LocationProvider(this),
@@ -125,6 +133,14 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnSwitchCamera.setOnClickListener {
             cameraController.switchCamera(binding.previewView)
+        }
+
+        binding.btnGetAttractions.setOnClickListener {
+            lifecycleScope.launch {
+                withContext(Dispatchers.IO) {
+                    app.getAllAttractions()
+                }
+            }
         }
     }
 
