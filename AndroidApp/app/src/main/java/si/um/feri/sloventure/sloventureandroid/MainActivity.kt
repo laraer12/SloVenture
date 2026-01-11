@@ -1,40 +1,84 @@
 package si.um.feri.sloventure.sloventureandroid
 
-import android.Manifest.permission.ACCESS_COARSE_LOCATION
-import android.Manifest.permission.ACCESS_FINE_LOCATION
-import android.Manifest.permission.CAMERA
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
+import android.content.Intent
+import android.content.pm.PackageManager
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.Dispatchers
+import androidx.core.content.ContextCompat
+import androidx.appcompat.app.AppCompatActivity
+
+import android.Manifest.permission.CAMERA
+import android.Manifest.permission.POST_NOTIFICATIONS
+import android.Manifest.permission.ACCESS_FINE_LOCATION
+import android.Manifest.permission.ACCESS_COARSE_LOCATION
+import android.Manifest.permission.FOREGROUND_SERVICE_LOCATION
+import android.os.Build
+
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import si.um.feri.sloventure.sloventureandroid.camera.CameraController
+
+import timber.log.Timber
+
 import si.um.feri.sloventure.sloventureandroid.core.MQTTClient
 import si.um.feri.sloventure.sloventureandroid.core.SensorDataManager
-import si.um.feri.sloventure.sloventureandroid.databinding.ActivityMainBinding
+import si.um.feri.sloventure.sloventureandroid.camera.CameraController
+import si.um.feri.sloventure.sloventureandroid.weather.WeatherProvider
 import si.um.feri.sloventure.sloventureandroid.location.LocationProvider
 import si.um.feri.sloventure.sloventureandroid.sensors.OrientationProvider
-import si.um.feri.sloventure.sloventureandroid.weather.WeatherProvider
-import timber.log.Timber
+import si.um.feri.sloventure.sloventureandroid.databinding.ActivityMainBinding
+import si.um.feri.sloventure.sloventureandroid.location_checker.ProximityService
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var sensorDataManager: SensorDataManager
-    private val cameraPermissionCode = 1001 // request code za permission dialog
-    private lateinit var mqttClient: MQTTClient
-
+    private val cameraPermissionCode = 1001
+    private val notificationPermissionCode = 2001
     private lateinit var app: MyApplication
+    private lateinit var mqttClient: MQTTClient
 
     // seznam zahtevanih permission-ov
     private val requiredPermissions = arrayOf(
         CAMERA,
         ACCESS_FINE_LOCATION,
-        ACCESS_COARSE_LOCATION
+        ACCESS_COARSE_LOCATION,
+        FOREGROUND_SERVICE_LOCATION
     )
+
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= 33) {
+            requestPermissions(
+                arrayOf(POST_NOTIFICATIONS),
+                notificationPermissionCode
+            )
+        }
+    }
+
+    private fun hasNotificationPermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= 33) {
+            ContextCompat.checkSelfPermission(
+                this,
+                POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        }
+        else
+            true
+    }
+
+    private fun openNotificationSettings() {
+        val intent = Intent().apply {
+            if (Build.VERSION.SDK_INT >= 26) {
+                action = android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS
+                putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, packageName)
+            }
+            else {
+                action = android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                data = android.net.Uri.parse("package:$packageName")
+            }
+        }
+        startActivity(intent)
+    }
 
     val cameraController = CameraController(this)
 
@@ -46,9 +90,12 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        mqttClient = MQTTClient(applicationContext)
+        if (!hasNotificationPermission())
+            requestNotificationPermission()
 
         app = application as MyApplication
+
+        mqttClient = app.mqttClient
 
         sensorDataManager = SensorDataManager(
             locationProvider = LocationProvider(this),
@@ -108,6 +155,9 @@ class MainActivity : AppCompatActivity() {
                         }
 
                         Toast.makeText(this, "Image saved!", Toast.LENGTH_SHORT).show()
+
+                        app.markPhotoTaken()
+
                         Timber.i(
                             """
                             *** IMAGE INFO ***
@@ -142,6 +192,21 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+
+        binding.swNotifs.isChecked = app.areNotificationsEnabled()
+
+        binding.swNotifs.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                if (!hasNotificationPermission()) {
+                    Toast.makeText(this, getString(R.string.enable_notifs), Toast.LENGTH_LONG).show()
+
+                    openNotificationSettings()
+                    binding.swNotifs.isChecked = false
+                    return@setOnCheckedChangeListener
+                }
+            }
+            app.setNotificationsEnabled(isChecked)
+        }
     }
 
     private fun allPermissionsGranted() = requiredPermissions.all {
@@ -156,19 +221,36 @@ class MainActivity : AppCompatActivity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
-        // preverim če gre za naš request
-        if (requestCode == cameraPermissionCode) {
-            if (allPermissionsGranted())
-                cameraController.startCamera(binding.previewView)
-            else
-                Toast.makeText(this, "Permissions not granted!", Toast.LENGTH_SHORT).show()
+        if (requestCode == notificationPermissionCode) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Timber.i("Notifications allowed – starting service")
+
+                ContextCompat.startForegroundService(
+                    this,
+                    Intent(this, ProximityService::class.java)
+                )
+            }
         }
     }
 
     override fun onStart() {
         super.onStart()
         sensorDataManager.orientationProvider.start()
-        mqttClient.connect()
+        // mqttClient.connect()
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        if (allPermissionsGranted())
+            cameraController.startCamera(binding.previewView)
+
+        if (hasNotificationPermission()) {
+            ContextCompat.startForegroundService(
+                this,
+                Intent(this, ProximityService::class.java)
+            )
+        }
     }
 
     override fun onStop() {
@@ -176,6 +258,6 @@ class MainActivity : AppCompatActivity() {
         sensorDataManager.orientationProvider.stop()
         cameraController.stopCamera()
         sensorDataManager.weatherProvider.cancel()
-        mqttClient.disconnect()
+        // mqttClient.disconnect()
     }
 }

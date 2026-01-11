@@ -3,4 +3,10 @@
     <string name="btnTestCamera">Take picture</string>
     <string name="btnSwitchCamera">Switch camera</string>
     <string name="btnGetAttractions">Get attractions</string>
+    <string name="sw_notifs">Enable notifications</string>
+    <string name="enable_notifs">Enable notifications in settings</string>
+    <string name="active_service">SloVenture active</string>
+    <string name="location_tracking">Tracking location in background</string>
+    <string name="nearby_attraction">Attraction nearby!</string>
+    <string name="take_pic">Take picture: %s</string>
 </resources>

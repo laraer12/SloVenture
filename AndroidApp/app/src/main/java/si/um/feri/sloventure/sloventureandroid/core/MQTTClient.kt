@@ -1,6 +1,7 @@
 package si.um.feri.sloventure.sloventureandroid.core
 
 import android.content.Context
+import android.location.Location
 import si.um.feri.sloventure.sloventureandroid.BuildConfig
 import info.mqtt.android.service.MqttAndroidClient
 import kotlinx.serialization.json.Json
@@ -27,7 +28,7 @@ class MQTTClient(context: Context) {
     private val options = MqttConnectOptions().apply {
         socketFactory = getSocketFactory(context)
         isCleanSession = true
-        isAutomaticReconnect = false
+        isAutomaticReconnect = true
         mqttVersion = MqttConnectOptions.MQTT_VERSION_3_1_1
         userName = authName
     }
@@ -56,23 +57,37 @@ class MQTTClient(context: Context) {
         }
     }
 
-    fun publishPhotoPayload(payload: PhotoPayload) {
-        val topic = "sensors/camera"
-        val payloadString = Json.encodeToString(payload)
-
+    private fun publish(topic: String, payload: String) {
         if (!mqttClient.isConnected) {
             Timber.tag("MQTT").w("Client not connected")
             return
         }
-
-        val message = MqttMessage(payloadString.toByteArray()).apply {
+        val message = MqttMessage(payload.toByteArray()).apply {
             qos = 1
         }
-
         mqttClient.publish(topic, message)
 
         Timber.tag("MQTT").d("Published message to $topic")
-        Timber.tag("MQTT").d(payloadString)
+        Timber.tag("MQTT").d(payload)
+    }
+
+    fun publishPhotoPayload(payload: PhotoPayload) {
+        val topic = "sensors/camera"
+        val payloadString = Json.encodeToString(payload)
+
+        publish(topic, payloadString)
+    }
+
+    fun publishLocation(location: Location) {
+        val payload = """
+        {
+          "lat": ${location.latitude},
+          "lon": ${location.longitude},
+          "timestamp": ${System.currentTimeMillis()}
+        }
+    """.trimIndent()
+
+        publish("user/location", payload)
     }
 
     private fun getSocketFactory(context: Context): SSLSocketFactory {

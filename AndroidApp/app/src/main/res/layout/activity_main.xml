@@ -30,7 +30,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.85" />
+        app:layout_constraintGuide_percent="0.88" />
 
     <Button
         android:id="@+id/btnSwitchCamera"
@@ -46,10 +46,20 @@
         android:id="@+id/btnGetAttractions"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
         android:text="@string/btnGetAttractions"
-        app:layout_constraintBottom_toTopOf="@+id/btnSwitchCamera"
-        app:layout_constraintEnd_toEndOf="@+id/btnSwitchCamera"
-        app:layout_constraintStart_toStartOf="@+id/btnSwitchCamera" />
+        app:layout_constraintBottom_toTopOf="@+id/guideline"
+        app:layout_constraintEnd_toStartOf="@+id/swNotifs"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Switch
+        android:id="@+id/swNotifs"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/sw_notifs"
+        app:layout_constraintBottom_toTopOf="@+id/btnTestCamera"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/btnGetAttractions" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
