@@ -101,7 +101,7 @@ int main(int argc, char **argv) {
     int numThreads = 1;
 
     try {
-        //numThreads = std::stoi(argv[2]);
+        numThreads = std::stoi(argv[2]);
         //odkomentiraj ce zelis da se uposteva st niti podano pri argumentih
         numThreads = std::thread::hardware_concurrency();
         //"Program na vsakem vozlišču zažene toliko niti kot je optimalna za arhitekturo vozlišča" odvisno kako razumes navodila
@@ -110,6 +110,71 @@ int main(int argc, char **argv) {
         std::cerr << "Illegal arguments\n";
         return 1;
     }
+
+    /* // TEST ČASOVNE VALIDACIJE BLOKOV
+    if (mpiRank == 0) {
+        std::cout << "[TEST] Timestamp validation test" << std::endl;
+
+        // genesis blok
+        BlockData genesisData{0, time(nullptr), 0.0, 0.0};
+        Block genesisBlock = blockchain.createBlock(genesisData);
+        genesisBlock.hash = genesisBlock.createHash(0);
+        genesisBlock.foundNonce = 0;
+        blockchain.addBlock(genesisBlock);
+
+        // blok v prihodnosti
+        time_t futureTs = time(nullptr) + 61;
+        Block futureBlock(
+                genesisBlock.index + 1,
+                genesisBlock.hash,
+                futureTs,
+                blockchain.difficulty,
+                BlockData{5, futureTs, 0.0, 0.0}
+        );
+        futureBlock.hash = futureBlock.createHash(0);
+        futureBlock.foundNonce = 0;
+
+        if (!blockchain.validateBlock(futureBlock))
+            std::cout << "[TEST] Correctly rejected future block" << std::endl;
+        else
+            std::cout << "[TEST] ERROR: Future block accepted!" << std::endl;
+
+        // blok preveč v preteklosti
+        time_t pastTs = time(nullptr) - 61;
+        Block pastBlock(
+                genesisBlock.index + 1,
+                genesisBlock.hash,
+                pastTs,
+                blockchain.difficulty,
+                BlockData{5, pastTs, 0.0, 0.0}
+        );
+        pastBlock.hash = pastBlock.createHash(0);
+        pastBlock.foundNonce = 0;
+
+        if (!blockchain.validateBlock(pastBlock))
+            std::cout << "[TEST] Correctly rejected past block" << std::endl;
+        else
+            std::cout << "[TEST] ERROR: Past block accepted!" << std::endl;
+
+        // validacija celotne verige z neveljavnim timestampom
+        // dodam blok s timestampom preveč v preteklosti, da se sproži sporočilo
+        Block invalidBlock(
+                genesisBlock.index + 1,
+                genesisBlock.hash,
+                genesisBlock.timestamp - 5000,  // NEVELJAVEN timestamp
+                blockchain.difficulty,
+                BlockData{1, genesisBlock.timestamp - 5000, 0.0, 0.0}
+        );
+        invalidBlock.hash = invalidBlock.createHash(0);
+        invalidBlock.foundNonce = 0;
+
+        blockchain.addBlock(invalidBlock);
+
+        if (!blockchain.validateChain())
+            std::cout << "[TEST] Chain validation detected invalid timestamp!" << std::endl;
+    }
+    */ // konec testa
+
     std::vector<std::thread> threads;
     std::cout << "Rank " << mpiRank << " running with " << numThreads << " threads.\n";
 

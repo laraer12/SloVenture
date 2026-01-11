@@ -44,8 +44,19 @@ void Blockchain::printChain() {
 }
 
 bool Blockchain::validateBlock(Block block) {
+    time_t currentTime = time(nullptr);
+
+    if (block.timestamp > currentTime + 60) {
+        std::cout << "Block " << block.index << " is from the future" << std::endl;
+        return false;
+    }
     if (!blockchain.empty()) {
         Block previous = getLastBlock();
+
+        if (block.timestamp < previous.timestamp - 60) {
+            std::cout << "Block " << block.index << " timestamp is too old" << std::endl;
+            return false;
+        }
 
         if (block.index != previous.index + 1) {
             std::cout << "Invalid index at block: " << block.index << std::endl;
@@ -88,6 +99,10 @@ bool Blockchain::validateChain() {
             std::cout << "Invalid hash at: " << current.index << std::endl;
             return false;
         }
+        if (current.timestamp > time(nullptr) + 60 || current.timestamp < previous.timestamp - 60) {
+            std::cout << "Invalid timestamp at block: " << current.index << std::endl;
+            return false;
+        }
     }
     return true;
 }
@@ -113,4 +128,3 @@ int Blockchain::getAdjustedDifficulty() {
     else
         return adjustBlock.difficulty;
 }
-
