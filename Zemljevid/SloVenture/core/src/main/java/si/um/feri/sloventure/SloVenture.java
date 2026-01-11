@@ -3,8 +3,16 @@ package si.um.feri.sloventure;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.loaders.ModelLoader;
-import com.badlogic.gdx.graphics.*;
-import com.badlogic.gdx.graphics.g3d.*;
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.PerspectiveCamera;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.VertexAttributes;
+import com.badlogic.gdx.graphics.g3d.Environment;
+import com.badlogic.gdx.graphics.g3d.Material;
+import com.badlogic.gdx.graphics.g3d.Model;
+import com.badlogic.gdx.graphics.g3d.ModelBatch;
+import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
@@ -18,11 +26,12 @@ import com.badlogic.gdx.utils.JsonReader;
 
 import java.util.List;
 
-import si.um.feri.sloventure.data.crowd.CrowdData;
-import si.um.feri.sloventure.data.crowd.CrowdService;
+import si.um.feri.sloventure.assets.AssetDescriptors;
 import si.um.feri.sloventure.data.attraction.AttractionData;
 import si.um.feri.sloventure.data.attraction.AttractionImage;
 import si.um.feri.sloventure.data.attraction.AttractionService;
+import si.um.feri.sloventure.data.crowd.CrowdData;
+import si.um.feri.sloventure.data.crowd.CrowdService;
 
 public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kamere
     private PerspectiveCamera camera;
@@ -44,12 +53,25 @@ public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kam
     private Model testModel;
     private ModelInstance testInstance;
 
+    // Slovenija bounding box
+    static final float MIN_LAT = 45.421f;
+    static final float MAX_LAT = 46.876f;
+    static final float MIN_LON = 13.375f;
+    static final float MAX_LON = 16.610f;
+
+    private Assets assets;
+
     @Override
     public void create() {
         modelBatch = new ModelBatch();
         setupCamera();
         MapCameraController mapController = new MapCameraController(camera);
         Gdx.input.setInputProcessor(mapController);
+
+        assets = new Assets();
+
+        assets.load();
+        assets.finishLoading();
 
         terrainTexture = new Texture(Gdx.files.internal("images/slovenia_sat_small.png"));
         //terrainTexture = new Texture(Gdx.files.internal("images/slovenia_sat_big.png"));
@@ -64,12 +86,13 @@ public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kam
 
         // TESTIRANJE 3D modelov
         ModelLoader<?> loader = new G3dModelLoader(new JsonReader());
-        testModel = loader.loadModel(Gdx.files.internal("models/person/Person.g3dj")); // castle/Castle.g3dj // church/Church.g3dj // cabin/Cabin.g3dj // pool/Pool.g3dj // lake/Lake.g3dj // museum/Museum.g3dj // canyon/Canyon.g3dj // park/Park.g3dj watch_tower/WatchTower.g3dj // other/Other.g3dj
+        //testModel = loader.loadModel(Gdx.files.internal("models/person/Person.g3dj")); // castle/Castle.g3dj // church/Church.g3dj // cabin/Cabin.g3dj // pool/Pool.g3dj // lake/Lake.g3dj // museum/Museum.g3dj // canyon/Canyon.g3dj // park/Park.g3dj watch_tower/WatchTower.g3dj // other/Other.g3dj
+        testModel = assets.get(AssetDescriptors.CABIN);
         testInstance = new ModelInstance(testModel);
 
         // scale modela
         testInstance.transform.idt();
-        testInstance.transform.scale(0.05f, 0.05f, 0.05f);
+        testInstance.transform.scale(0.01f, 0.01f, 0.01f);
 
         // lokacija modela
         testInstance.transform.translate(0f, 500f, 0f);
@@ -203,15 +226,15 @@ public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kam
 
     private void printAttraction(AttractionData a) {
         System.out.println("ATTRACTION - " + a.name +
-                            "\nRegion - " + a.regionName +
-                            "\nLocation - LAT: " + a.lat + ", LON: " + a.lon +
-                            "\nAddress - Street: " + a.street + ", City: " + a.city + ", Postal code: " + a.postalCode +
-                            "\nDescription - " + a.description +
-                            "\nClassification - " + a.classification +
-                            "\nLocation type - " + a.locationType +
-                            "\nElevation - " + a.elevation + " m" +
-                            "\nRating - " + a.rating +
-                            "\nImages - "
+            "\nRegion - " + a.regionName +
+            "\nLocation - LAT: " + a.lat + ", LON: " + a.lon +
+            "\nAddress - Street: " + a.street + ", City: " + a.city + ", Postal code: " + a.postalCode +
+            "\nDescription - " + a.description +
+            "\nClassification - " + a.classification +
+            "\nLocation type - " + a.locationType +
+            "\nElevation - " + a.elevation + " m" +
+            "\nRating - " + a.rating +
+            "\nImages - "
         );
         for (AttractionImage img : a.images)
             System.out.println(" URL: " + img.url);
@@ -222,8 +245,7 @@ public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kam
 
             for (CrowdData c : a.crowd)
                 System.out.println(" " + c.toString());
-        }
-        else
+        } else
             System.out.println("No crowd data");
 
         System.out.print("\n");
@@ -253,6 +275,7 @@ public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kam
         if (testModel != null)
             testModel.dispose();
     }
+
     private void setupCamera() {
         camera = new PerspectiveCamera(
             60,
@@ -317,6 +340,7 @@ public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kam
 
         pixmap.dispose();
     }
+
     private Model createChunk(
         Pixmap pixmap,
         int startX,
