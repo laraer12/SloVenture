@@ -7,10 +7,11 @@ import android.app.Service
 import android.content.Intent
 import android.app.Notification
 import android.location.Location
+import android.util.Log
 import androidx.core.app.NotificationCompat
 
 import si.um.feri.sloventure.sloventureandroid.R
-import si.um.feri.sloventure.sloventureandroid.MyApplication
+import si.um.feri.sloventure.sloventureandroid.SloVentureApplication
 import si.um.feri.sloventure.sloventureandroid.core.MQTTClient
 import si.um.feri.sloventure.sloventureandroid.location.LocationProvider
 
@@ -22,14 +23,14 @@ class ProximityService : Service() {
     private lateinit var notifier: NotificationHelper
     private lateinit var mqttClient: MQTTClient
     private val triggered = mutableMapOf<String, Long>()
-    private val locationCheckInterval = 5 * 60 * 1000L // 5 minut // 10 * 500L // 5 sekund za test
+    private val locationCheckInterval = 1 * 30 * 1000L // 1 minuta // 10 * 500L // 5 sekund za test
     private val photoCooldownIfTaken = 60 * 60 * 1000L // 1 ura // 10 * 2000L // 20 sekund za test
     private val photoCooldownIfNotTaken = 30 * 60 * 1000L // pol ure // 10 * 1000L // 10 sekund za test
 
     override fun onCreate() {
         super.onCreate()
 
-        val app = application as MyApplication
+        val app = application as SloVentureApplication
 
         startForeground(1, createServiceNotification())
 
@@ -57,6 +58,9 @@ class ProximityService : Service() {
 
                 // uporaba dejanskih koordinat
                 locationProvider.getCurrentLocation { location ->
+
+                   // Log.i("ProximityService", "is running")
+
                     location?.let { handleLocation(it) }
                 }
 
@@ -66,7 +70,7 @@ class ProximityService : Service() {
     }
 
     private fun handleLocation(location: Location) {
-        val app = application as MyApplication
+        val app = application as SloVentureApplication
 
         if (!app.areNotificationsEnabled()) {
             Timber.i("Notifications disabled by user")

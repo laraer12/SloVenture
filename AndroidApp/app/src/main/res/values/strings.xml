@@ -9,4 +9,27 @@
     <string name="location_tracking">Tracking location in background</string>
     <string name="nearby_attraction">Attraction nearby!</string>
     <string name="take_pic">Take picture: %s</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="latitude">Latitude: %1$s</string>
+    <string name="longitude">Longitude: %1$s</string>
+    <string name="last_capture">Last capture: %1$s</string>
+    <string name="last_sensor_update">Last sensor update: %1$s</string>
+    <string name="temperature">Temperature: %1$s</string>
+    <string name="weather">Weather: %1$s</string>
+    <string name="switch_camera">Switch Camera</string>
+    <string name="capture_photo">Capture Photo</string>
+    <string name="camera">Camera</string>
+    <string name="weather_n_a">Weather: N/A</string>
+    <string name="temperature_n_a">Temperature: N/A</string>
+    <string name="longitude_n_a">Longitude: N/A</string>
+    <string name="latitude_n_a">Latitude: N/A</string>
+    <string name="live_sensor_data">Live Sensor Data:</string>
+    <string name="last_capture_n_a">Last capture: N/A</string>
+    <string name="stop_auto_capture">Stop Auto Capture</string>
+    <string name="start_auto_capture">Start Auto Capture</string>
+    <string name="_60">60</string>
+    <string name="capture_interval_seconds">Capture interval (seconds):</string>
+    <string name="sensor_capture_settings">Sensor Capture Settings</string>
+    <string name="attractions_loaded">Attractions loaded: %1$d</string>
 </resources>

@@ -5,6 +5,7 @@ import android.content.Context
 import android.app.PendingIntent
 import android.app.NotificationManager
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 
 import timber.log.Timber
 
@@ -16,12 +17,11 @@ class NotificationHelper(private val context: Context) {
     private val channelId = "EVENTS"
 
     fun showAttractionNotification(attraction: Attraction) {
-        Timber.i("Trying to show notification for attraction: ${attraction.name} (id: ${attraction.id})")
 
         val intent = Intent(context, MainActivity::class.java).apply {
-            putExtra("OPEN_CAMERA", true)
-            putExtra("ATTRACTION_ID", attraction.id)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra("navigate_to", "event")
+            putExtra("attraction_id", attraction.id)
         }
 
         val pendingIntent = PendingIntent.getActivity(
@@ -31,12 +31,19 @@ class NotificationHelper(private val context: Context) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        sendNotification(
-            context.getString(R.string.nearby_attraction),
-            context.getString(R.string.take_pic, attraction.name),
-            pendingIntent
-        )
+        val notification = NotificationCompat.Builder(context, "EVENTS")
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle("Nearby attraction")
+            .setContentText(attraction.name)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .build()
+
+        NotificationManagerCompat.from(context)
+            .notify(attraction.id.hashCode(), notification)
     }
+
 
     private fun sendNotification(
         title: String,

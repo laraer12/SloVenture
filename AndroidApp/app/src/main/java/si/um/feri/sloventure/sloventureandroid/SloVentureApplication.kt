@@ -3,7 +3,11 @@ package si.um.feri.sloventure.sloventureandroid
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.Intent
 import android.content.SharedPreferences
+import androidx.core.content.ContextCompat
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 import kotlinx.serialization.json.Json
 
@@ -16,10 +20,13 @@ import java.io.IOException
 import timber.log.Timber
 
 import si.um.feri.sloventure.sloventureandroid.core.MQTTClient
+import si.um.feri.sloventure.sloventureandroid.location_checker.ProximityService
 import si.um.feri.sloventure.sloventureandroid.model.Attraction
+import si.um.feri.sloventure.sloventureandroid.model.PhotoPayload
 
-class MyApplication : Application() {
+class SloVentureApplication : Application() {
     lateinit var data: MutableList<Attraction>
+    val photoData = mutableListOf<PhotoPayload>()
     private lateinit var file: File
     lateinit var mqttClient: MQTTClient
     private lateinit var sharedPref: SharedPreferences
@@ -34,6 +41,8 @@ class MyApplication : Application() {
 
         Timber.plant(Timber.DebugTree())
 
+        notificationsEnabledRuntime = true //FIXXX TODO
+
         mqttClient = MQTTClient(applicationContext)
         mqttClient.connect()
 
@@ -45,6 +54,7 @@ class MyApplication : Application() {
             mutableListOf()
         }
         createNotificationChannels()
+        startProximityService()
 
         sharedPref = getSharedPreferences(userSettings, MODE_PRIVATE)
         applyUserSettings()
@@ -64,36 +74,46 @@ class MyApplication : Application() {
         file.writeText(jsonString)
     }
 
-    fun getAllAttractions() {
+    suspend fun getAllAttractions() = withContext(Dispatchers.IO) {
         val client = OkHttpClient()
 
-        val request = Request.Builder()
+        /*val request = Request.Builder()
             //za povezavo s telefonom je potrebno zamenjati 10.0.2.2 z ip-jem računalnika
             .url("http://10.0.2.2:3001/attractions/getAllAttractionsKotlin") //za emulator
             .get()
             .build()
 
-        client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) {
-                Timber.tag("HTTP").e("Failed to fetch attractions: HTTP ${response.code}")
-                return
+         */
+        val request = Request.Builder()
+            .url("http://192.168.1.101:3001/attractions/getAllAttractionsKotlin")
+            .get()
+            .build()
+
+        try {
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    Timber.tag("HTTP").e("Failed to fetch attractions: HTTP ${response.code}")
+                    return@withContext
+                }
+
+                val responseBody = response.body?.string() ?: return@withContext
+
+                Timber.tag("HTTP").i(responseBody)
+
+                val json = Json { ignoreUnknownKeys = true }
+                val attractions = try {
+                    json.decodeFromString<List<Attraction>>(responseBody)
+                } catch (e: Exception) {
+                    Timber.tag("HTTP").e("Failed to parse attractions: ${e.message}")
+                    emptyList()
+                }
+
+                data.clear()
+                data.addAll(attractions)
+                saveToFile()
             }
-
-            val responseBody = response.body?.string() ?: return
-
-            Timber.tag("HTTP").i(responseBody)
-
-            val json = Json { ignoreUnknownKeys = true }
-            val attractions = try {
-                json.decodeFromString<List<Attraction>>(responseBody)
-            } catch (e: Exception) {
-                Timber.tag("HTTP").e("Failed to parse attractions: ${e.message}")
-                emptyList()
-            }
-
-            data.clear()
-            data.addAll(attractions)
-            saveToFile()
+        } catch (e: Exception) {
+            Timber.tag("HTTP").e(e, "Network error while fetching attractions")
         }
     }
 
@@ -149,4 +169,11 @@ class MyApplication : Application() {
 
         Timber.i("User settings loaded - notifications = $notificationsEnabledRuntime, lastPhoto = $lastPhotoTimeRuntime")
     }
+
+    private fun startProximityService() {
+        val intent = Intent(this, ProximityService::class.java)
+        ContextCompat.startForegroundService(this, intent)
+        Timber.i("ProximityService started")
+    }
+
 }

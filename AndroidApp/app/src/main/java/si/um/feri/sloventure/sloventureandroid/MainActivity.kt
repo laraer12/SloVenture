@@ -1,35 +1,52 @@
 package si.um.feri.sloventure.sloventureandroid
 
-import android.os.Bundle
-import android.widget.Toast
 import android.content.Intent
-import android.content.pm.PackageManager
-import androidx.lifecycle.lifecycleScope
-import androidx.core.content.ContextCompat
+import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-
-import android.Manifest.permission.CAMERA
-import android.Manifest.permission.POST_NOTIFICATIONS
-import android.Manifest.permission.ACCESS_FINE_LOCATION
-import android.Manifest.permission.ACCESS_COARSE_LOCATION
-import android.Manifest.permission.FOREGROUND_SERVICE_LOCATION
-import android.os.Build
-
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-
-import timber.log.Timber
+import androidx.navigation.fragment.NavHostFragment
 
 import si.um.feri.sloventure.sloventureandroid.core.MQTTClient
-import si.um.feri.sloventure.sloventureandroid.core.SensorDataManager
-import si.um.feri.sloventure.sloventureandroid.camera.CameraController
-import si.um.feri.sloventure.sloventureandroid.weather.WeatherProvider
-import si.um.feri.sloventure.sloventureandroid.location.LocationProvider
-import si.um.feri.sloventure.sloventureandroid.sensors.OrientationProvider
 import si.um.feri.sloventure.sloventureandroid.databinding.ActivityMainBinding
-import si.um.feri.sloventure.sloventureandroid.location_checker.ProximityService
 
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var binding: ActivityMainBinding
+    lateinit var app: SloVentureApplication
+    lateinit var mqttClient: MQTTClient
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        app = application as SloVentureApplication
+        mqttClient = app.mqttClient
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        val navHostFragment =
+            supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        return navHostFragment.navController.navigateUp() || super.onSupportNavigateUp()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleNavigationIntent(intent)
+    }
+
+    private fun handleNavigationIntent(intent: Intent?) {
+        if (intent?.getStringExtra("navigate_to") == "event") {
+            val navHost =
+                supportFragmentManager.findFragmentById(R.id.nav_host_fragment)
+                        as NavHostFragment
+
+            navHost.navController.navigate(R.id.eventsFragment)
+        }
+    }
+}
+
+
+/*
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var sensorDataManager: SensorDataManager
@@ -191,6 +208,7 @@ class MainActivity : AppCompatActivity() {
                     app.getAllAttractions()
                 }
             }
+            Log.i("idk", "location: ")
         }
 
         binding.swNotifs.isChecked = app.areNotificationsEnabled()
@@ -260,4 +278,4 @@ class MainActivity : AppCompatActivity() {
         sensorDataManager.weatherProvider.cancel()
         // mqttClient.disconnect()
     }
-}
+}*/

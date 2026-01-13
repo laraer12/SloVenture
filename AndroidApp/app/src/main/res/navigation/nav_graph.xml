@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav"
+    app:startDestination="@id/dashboardFragment">
+
+    <fragment
+        android:id="@+id/dashboardFragment"
+        android:name="si.um.feri.sloventure.sloventureandroid.fragments.DashboardFragment"
+        android:label="fragment_dashboard"
+        tools:layout="@layout/fragment_dashboard" >
+        <action
+            android:id="@+id/action_dashboardFragment_to_eventsFragment"
+            app:destination="@id/eventsFragment" />
+        <action
+            android:id="@+id/action_dashboardFragment_to_sensorSettingsFragment"
+            app:destination="@id/sensorSettingsFragment" />
+        <action
+            android:id="@+id/action_dashboardFragment_to_simulationFragment"
+            app:destination="@id/simulationFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/eventsFragment"
+        android:name="si.um.feri.sloventure.sloventureandroid.fragments.EventsFragment"
+        android:label="fragment_events"
+        tools:layout="@layout/fragment_events" >
+        <action
+            android:id="@+id/action_eventsFragment_to_cameraFragment"
+            app:destination="@id/cameraFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/sensorSettingsFragment"
+        android:name="si.um.feri.sloventure.sloventureandroid.fragments.SensorFragment"
+        android:label="fragment_sensor_settings"
+        tools:layout="@layout/fragment_sensor_settings" >
+        <action
+            android:id="@+id/action_sensorSettingsFragment_to_cameraFragment"
+            app:destination="@id/cameraFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/simulationFragment"
+        android:name="si.um.feri.sloventure.sloventureandroid.fragments.SimulationFragment"
+        android:label="fragment_simulation"
+        tools:layout="@layout/fragment_simulation" />
+    <fragment
+        android:id="@+id/cameraFragment"
+        android:name="si.um.feri.sloventure.sloventureandroid.fragments.CameraFragment"
+        android:label="fragment_camera"
+        tools:layout="@layout/fragment_camera" />
+</navigation>

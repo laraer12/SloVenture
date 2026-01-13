@@ -50,6 +50,32 @@ class SensorDataManager(
         }
     }
 
+    fun collectSensorDataOnly(onResult: (PhotoPayload?) -> Unit) {
+        locationProvider.fetchLocationAsync { location ->
+            if (location == null) {
+                Timber.e("Location is null, cannot collect sensor data")
+                onResult(null)
+                return@fetchLocationAsync
+            }
+            val latitude = location.latitude
+            val longitude = location.longitude
+
+
+            weatherProvider.getCurrentWeather(latitude, longitude) { temperature, description ->
+                val sensorPayload = PhotoPayload(
+                    imageUri = "", // brez slike
+                    timestamp = System.currentTimeMillis(),
+                    latitude = latitude,
+                    longitude = longitude,
+                    orientation = null, //brez orientacije
+                    temperature = temperature,
+                    weatherDescription = description
+                )
+                onResult(sensorPayload)
+            }
+        }
+    }
+
     fun savePhotoPayloadAsJson(photoPayload: PhotoPayload, context: Context, filename: String = "photos.json") {
         try {
             val jsonString = Json.encodeToString(photoPayload)
