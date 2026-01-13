@@ -21,12 +21,14 @@ import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.JsonReader;
 
 import java.util.List;
 
 import si.um.feri.sloventure.assets.AssetDescriptors;
+import si.um.feri.sloventure.data.attraction.Attraction;
 import si.um.feri.sloventure.data.attraction.AttractionData;
 import si.um.feri.sloventure.data.attraction.AttractionImage;
 import si.um.feri.sloventure.data.attraction.AttractionService;
@@ -53,13 +55,12 @@ public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kam
     private Model testModel;
     private ModelInstance testInstance;
 
-    // Slovenija bounding box
-    static final float MIN_LAT = 45.421f;
-    static final float MAX_LAT = 46.876f;
-    static final float MIN_LON = 13.375f;
-    static final float MAX_LON = 16.610f;
-
     private Assets assets;
+
+    private Array<Attraction> allAttractions;
+    private List<AttractionData> attractionData;
+
+    private Pixmap pixmap;
 
     @Override
     public void create() {
@@ -67,6 +68,8 @@ public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kam
         setupCamera();
         MapCameraController mapController = new MapCameraController(camera);
         Gdx.input.setInputProcessor(mapController);
+
+        allAttractions = new Array<>();
 
         assets = new Assets();
 
@@ -97,11 +100,15 @@ public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kam
         // lokacija modela
         testInstance.transform.translate(0f, 500f, 0f);
 
+        pixmap = new Pixmap(Gdx.files.internal("images/slovenia_clipped_4000.png"));
+
         // API test (VSE znamenitosti)
         AttractionService.fetchAllAttractions(new AttractionService.Callback() {
             @Override
             public void onSuccess(List<AttractionData> attractions) {
                 System.out.println("Število pridobljenih znamenitosti: " + attractions.size() + "\n");
+
+                attractionData = attractions;
 
                 for (AttractionData a : attractions) {
                     // pridobi gnečo glede na lat/lon
@@ -109,7 +116,7 @@ public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kam
                         @Override
                         public void onSuccess(List<CrowdData> crowdList) {
                             a.crowd = crowdList; // shranim gnečo v AttractionData
-                            printAttraction(a);
+                            //printAttraction(a);
                         }
 
                         @Override
@@ -253,6 +260,20 @@ public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kam
 
     @Override
     public void render() {
+        if (attractionData != null) {
+
+            for (AttractionData a : attractionData) {
+
+                Model model = getModelForAttraction(a);
+                ModelInstance instance = new ModelInstance(model);
+
+                allAttractions.add(new Attraction(a, instance, pixmap));
+            }
+
+            pixmap.dispose();
+
+            attractionData = null;
+        }
 
         Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         Gdx.gl.glClearColor(0.6f, 0.8f, 1f, 1f);
@@ -263,6 +284,19 @@ public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kam
             modelBatch.render(instance, environment);
         }
         modelBatch.render(testInstance, environment); // model
+
+        if (allAttractions.size > 50) {
+            for (int i = 0; i < 50; i++) {
+                if (i == 0) {
+                    //System.out.println(allAttractions.get(i).data.name);
+                }
+                BoundingBox bbox = new BoundingBox();
+                allAttractions.get(i).modelInstance.calculateBoundingBox(bbox);
+
+
+                modelBatch.render(allAttractions.get(i).modelInstance, environment);
+            }
+        }
         modelBatch.end();
     }
 
@@ -436,5 +470,36 @@ public class SloVenture extends ApplicationAdapter { //TODO uredi premikanje kam
         int alpha = pixel & 0xff;
 
         return alpha == 0;
+    }
+
+    private Model getModelForAttraction(AttractionData data) {
+
+        return assets.get(AssetDescriptors.OTHER);
+        /*
+        switch (data.locationType.toLowerCase()) {
+            case "grad":
+                return assets.get(AssetDescriptors.CASTLE);
+            case "soteska":
+                return assets.get(AssetDescriptors.CANYON);
+            case "cerkev":
+                return assets.get(AssetDescriptors.CHURCH);
+            case "koča":
+                return assets.get(AssetDescriptors.CABIN);
+            case "jezero":
+                return assets.get(AssetDescriptors.LAKE);
+            case "park":
+                return assets.get(AssetDescriptors.PARK);
+            case "muzej":
+                return assets.get(AssetDescriptors.MUSEUM);
+            case "kopališče":
+                return assets.get(AssetDescriptors.POOL);
+            case "razgledni_stolp":
+                return assets.get(AssetDescriptors.WATCH_TOWER);
+            default:
+                return assets.get(AssetDescriptors.OTHER);
+        }
+
+         */
+
     }
 }
