@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>People Detection Dashboard</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+        }
+
+        h2 {
+            margin: 10px;
+        }
+
+        img {
+            max-width: 600px;
+            border: 1px solid black;
+            border-radius: 5%;
+            margin: 10px 0;
+        }
+
+        .data {
+            font-size: 1.2em;
+            margin: 10px;
+        }
+
+        .dashboard {
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
+        .info-container {
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+</head>
+<body>
+    <h1>People Detection Dashboard</h1>
+
+    <div class="dashboard">
+        <img id="latestImage" src="" alt="Latest image" />
+
+        <div class="info-container">
+            <h2>Image information</h2>
+            <div class="data" id="info">
+                Waiting for new data...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // SSE
+        const evtSource = new EventSource("/stream");
+
+        evtSource.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+
+            if (data.imageBase64) {
+                document.getElementById("latestImage").src = "data:image/png;base64," + data.imageBase64;
+
+                document.getElementById("info").innerHTML =
+                    `<strong>Date and time:</strong> ${new Date(data.timestamp).toLocaleString()}<br>
+                     <strong>Location:</strong> lat = ${data.latitude}, lon = ${data.longitude}<br>
+                     <strong>Number of people:</strong> ${data.numOfPeople}`;
+            }
+        };
+    </script>
+</body>
+</html>
