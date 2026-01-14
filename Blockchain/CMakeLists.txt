@@ -3,28 +3,21 @@ project(Blockchain)
 
 set(CMAKE_CXX_STANDARD 20)
 
-set(OPENSSL_ROOT_DIR "C:/Program Files/OpenSSL-Win64")
+# set(OPENSSL_ROOT_DIR "C:/Program Files/OpenSSL-Win64")
+set(OPENSSL_ROOT_DIR "C:/dev/vcpkg/installed/x64-windows")
 find_package(OpenSSL REQUIRED)
-
-set(MPI_CXX_INCLUDE_PATH
-        "C:/Program Files (x86)/Microsoft SDKs/MPI/Include"
-)
-
-set(MPI_CXX_LIBRARIES
-        "C:/Program Files (x86)/Microsoft SDKs/MPI/Lib/x64/msmpi.lib"
-)
 
 find_package(MPI REQUIRED COMPONENTS CXX)
 
 add_executable(Blockchain
-        main.cpp
-        BlockData.h
-        Block.h
-        Blockchain.cpp
-        Blockchain.h
-        Block.cpp
-        BlockData.cpp
-        SyncQueue.h
+        client/main.cpp
+        client/BlockData.h
+        client/Block.h
+        client/Blockchain.cpp
+        client/Blockchain.h
+        client/Block.cpp
+        client/BlockData.cpp
+        client/SyncQueue.h
 )
 
 target_link_libraries(Blockchain

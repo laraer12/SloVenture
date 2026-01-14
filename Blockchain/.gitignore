@@ -1,0 +1,6 @@
+.env
+certificates/*
+server/__pycache__
+server/venv/
+cmake-build-debug/
+cmake-build-release/
