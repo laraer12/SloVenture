@@ -1,3 +1,4 @@
+
 package si.um.feri.sloventure.sloventureandroid.fragments
 
 import android.os.Bundle
@@ -16,18 +17,13 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import androidx.navigation.fragment.findNavController
 import si.um.feri.sloventure.sloventureandroid.SloVentureApplication
 import si.um.feri.sloventure.sloventureandroid.R
-import si.um.feri.sloventure.sloventureandroid.camera.CameraController
 import si.um.feri.sloventure.sloventureandroid.core.MQTTClient
-import si.um.feri.sloventure.sloventureandroid.core.SensorDataManager
 import si.um.feri.sloventure.sloventureandroid.databinding.FragmentSensorSettingsBinding
-import si.um.feri.sloventure.sloventureandroid.location.LocationProvider
-import si.um.feri.sloventure.sloventureandroid.model.PhotoPayload
-import si.um.feri.sloventure.sloventureandroid.sensors.OrientationProvider
+import si.um.feri.sloventure.sloventureandroid.model.SensorReading
 import si.um.feri.sloventure.sloventureandroid.sensors.SensorAutoCaptureService
-import si.um.feri.sloventure.sloventureandroid.weather.WeatherProvider
+import java.util.Locale
 
 class SensorFragment : Fragment() {
 
@@ -36,26 +32,19 @@ class SensorFragment : Fragment() {
 
     private lateinit var app: SloVentureApplication
     private lateinit var mqttClient: MQTTClient
-    private lateinit var sensorDataManager: SensorDataManager
-    private lateinit var cameraController: CameraController
 
     private var captureIntervalMs: Long = 60000 // default 60s
     private val cameraPermissionCode = 1001
     private val requiredPermissions = arrayOf(
-        Manifest.permission.CAMERA,
         Manifest.permission.ACCESS_FINE_LOCATION,
         Manifest.permission.ACCESS_COARSE_LOCATION,
-        Manifest.permission.FOREGROUND_SERVICE
     )
 
     private val sensorUpdateReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            val payload = intent?.getParcelableExtra<PhotoPayload>("payload")
-            if (payload != null) {
-                updateSensorUI(payload)
-                binding.tvLastCapture.text =
-                    getString(R.string.last_sensor_update, payload.getFormattedTimestamp())
-            }
+            val reading = intent?.getParcelableExtra<SensorReading>("reading")
+            if (reading != null) {
+                updateSensorUI(reading)}
         }
     }
 
@@ -73,13 +62,6 @@ class SensorFragment : Fragment() {
 
         app = requireActivity().application as SloVentureApplication
         mqttClient = app.mqttClient
-        sensorDataManager = SensorDataManager(
-            locationProvider = LocationProvider(requireContext()),
-            orientationProvider = OrientationProvider(requireContext()),
-            weatherProvider = WeatherProvider()
-        )
-        cameraController = CameraController(requireActivity())
-
         binding.btnStartAutoCapture.setOnClickListener {
             val intervalSec = binding.etInterval.text.toString().toLongOrNull()
             if (intervalSec == null || intervalSec <= 0) {
@@ -94,9 +76,6 @@ class SensorFragment : Fragment() {
             stopAutoCaptureService()
         }
 
-        binding.btnGoToCamera.setOnClickListener {
-            findNavController().navigate(R.id.action_sensorSettingsFragment_to_cameraFragment)
-        }
     }
 
     private fun startAutoCaptureService(intervalMs: Long) {
@@ -132,17 +111,34 @@ class SensorFragment : Fragment() {
         }
     }
 
-    private fun updateSensorUI(payload: PhotoPayload) {
-        binding.tvLatitude.text = getString(R.string.latitude, payload.latitude ?: "N/A")
-        binding.tvLongitude.text = getString(R.string.longitude, payload.longitude ?: "N/A")
-        binding.tvTemperature.text = getString(R.string.temperature, payload.temperature?.let { "$it °C" } ?: "N/A")
-        binding.tvWeatherDescription.text = getString(R.string.weather, payload.weatherDescription ?: "N/A")
-        binding.tvLastCapture.text = getString(R.string.last_sensor_update, payload.getFormattedTimestamp())
+    private fun updateSensorUI(reading: SensorReading) {
+        binding.tvLatitude.text =
+            getString(R.string.latitude, formatCoord(reading.latitude))
+
+        binding.tvLongitude.text =
+            getString(R.string.longitude, formatCoord(reading.longitude))
+
+        binding.tvTemperature.text =
+            getString(
+                R.string.temperature,
+                reading.temperature?.let { "$it °C" } ?: "N/A"
+            )
+
+        binding.tvWeatherDescription.text =
+            getString(R.string.weather, reading.weather ?: "N/A")
+
+        binding.tvLastCapture.text =
+            getString(
+                R.string.last_sensor_update,
+                reading.getFormattedTimestamp()
+            )
     }
+
+    private fun formatCoord(value: Double): String =
+        String.format(Locale.US, "%.4f", value)
 
     override fun onStart() {
         super.onStart()
-        sensorDataManager.orientationProvider.start()
 
         val intentFilter = IntentFilter(SensorAutoCaptureService.ACTION_SENSOR_UPDATE)
         LocalBroadcastManager.getInstance(requireContext()).registerReceiver(sensorUpdateReceiver, intentFilter)
@@ -150,17 +146,12 @@ class SensorFragment : Fragment() {
 
     override fun onStop() {
         super.onStop()
-        sensorDataManager.orientationProvider.stop()
-        sensorDataManager.weatherProvider.cancel()
         LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(sensorUpdateReceiver)
     }
 
 
     override fun onDestroyView() {
         super.onDestroyView()
-        stopAutoCaptureService()
         _binding = null
     }
 }
-
-

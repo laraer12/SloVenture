@@ -18,47 +18,44 @@ import si.um.feri.sloventure.sloventureandroid.location.LocationProvider
 import si.um.feri.sloventure.sloventureandroid.weather.WeatherProvider
 
 class SensorAutoCaptureService : Service() {
-
-    private lateinit var sensorDataManager: SensorDataManager
     private lateinit var mqttClient: MQTTClient
     private var captureIntervalMs: Long = 60000
+
+    private lateinit var collector: SensorReadingCollector
 
     private val handler = Handler(Looper.getMainLooper())
     private val runnable = object : Runnable {
         override fun run() {
-            sensorDataManager.collectSensorDataOnly { payload ->
-                if (payload != null) {
+            collector.collect { reading ->
+                if (reading != null) {
+                    mqttClient.publishSensorReading(reading)
 
-                    Log.i("service","Auto-capture payload: lat=${payload.latitude}, lon=${payload.longitude}, temp=${payload.temperature}")
-
-
-                    mqttClient.publishPhotoPayload(payload)
                     val intent = Intent(ACTION_SENSOR_UPDATE)
-                    intent.putExtra("payload", payload)
-                    LocalBroadcastManager.getInstance(this@SensorAutoCaptureService).sendBroadcast(intent)
+                    intent.putExtra("reading", reading)
+                    LocalBroadcastManager
+                        .getInstance(this@SensorAutoCaptureService)
+                        .sendBroadcast(intent)
                 }
                 handler.postDelayed(this, captureIntervalMs)
             }
         }
     }
 
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-
-        Log.i("service","SensorAutoCaptureService started, intervalMs=$captureIntervalMs")
-
+        startForeground(1, buildNotification())
 
         captureIntervalMs = intent?.getLongExtra("intervalMs", 60000L) ?: 60000L
 
-        sensorDataManager = SensorDataManager(
+        mqttClient = (application as SloVentureApplication).mqttClient
+        mqttClient.connect()
+
+        collector = SensorReadingCollector(
             LocationProvider(this),
-            OrientationProvider(this),
             WeatherProvider()
         )
-        mqttClient = (application as SloVentureApplication).mqttClient
 
-        startForeground(1, buildNotification())
         handler.post(runnable)
-
         return START_STICKY
     }
 

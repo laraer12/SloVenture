@@ -76,14 +76,13 @@ class SloVentureApplication : Application() {
 
     suspend fun getAllAttractions() = withContext(Dispatchers.IO) {
         val client = OkHttpClient()
+        /*
+                val request = Request.Builder()
+                    //za povezavo s telefonom je potrebno zamenjati 10.0.2.2 z ip-jem računalnika
+                    .url("http://10.0.2.2:3001/attractions/getAllAttractionsKotlin") //za emulator
+                    .get()
+                    .build()*/
 
-        /*val request = Request.Builder()
-            //za povezavo s telefonom je potrebno zamenjati 10.0.2.2 z ip-jem računalnika
-            .url("http://10.0.2.2:3001/attractions/getAllAttractionsKotlin") //za emulator
-            .get()
-            .build()
-
-         */
         val request = Request.Builder()
             .url("http://192.168.1.101:3001/attractions/getAllAttractionsKotlin")
             .get()
@@ -120,14 +119,14 @@ class SloVentureApplication : Application() {
     private fun createNotificationChannels() {
         val manager = getSystemService(NotificationManager::class.java)
 
-        // za spremljanje lokacije v ozadju
+// za spremljanje lokacije v ozadju
         val serviceChannel = NotificationChannel(
             "SERVICE",
             "Background Service",
             NotificationManager.IMPORTANCE_LOW
         )
 
-        // obvestila za ko si blizu znamenitosti
+// obvestila za ko si blizu znamenitosti
         val eventChannel = NotificationChannel(
             "EVENTS",
             "Attraction Events",

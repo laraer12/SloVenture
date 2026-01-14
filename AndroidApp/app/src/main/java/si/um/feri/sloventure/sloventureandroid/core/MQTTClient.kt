@@ -11,6 +11,7 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions
 import org.eclipse.paho.client.mqttv3.MqttMessage
 import si.um.feri.sloventure.sloventureandroid.R
 import si.um.feri.sloventure.sloventureandroid.model.PhotoPayload
+import si.um.feri.sloventure.sloventureandroid.model.SensorReading
 import timber.log.Timber
 import java.security.KeyStore
 import java.util.UUID
@@ -111,5 +112,10 @@ class MQTTClient(context: Context) {
         sslContext.init(kmf.keyManagers, tmf.trustManagers, null)
 
         return sslContext.socketFactory
+    }
+    fun publishSensorReading(reading: SensorReading) {
+        val topic = "sensors/environment"
+        val payloadString = Json.encodeToString(reading)
+        publish(topic, payloadString)
     }
 }
