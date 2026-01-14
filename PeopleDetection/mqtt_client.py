@@ -5,7 +5,7 @@ import uuid
 from dotenv import load_dotenv
 import paho.mqtt.client as mqtt
 from main import detect_people_from_image
-from convert_base64 import base64_to_cv2_image
+from convert_base64 import base64_to_cv2_image, cv2_to_base64
 
 """
 from cryptography.hazmat.primitives import serialization
@@ -78,14 +78,16 @@ def on_message(client, userdata, msg):
             return
 
         img = base64_to_cv2_image(base64_img)
-        num_people = detect_people_from_image(img)
+        num_people, annotated_img = detect_people_from_image(img)
+
+        annotated_b64 = cv2_to_base64(annotated_img)
 
         latest_result_ref["data"] = {
             "timestamp": payload["timestamp"],
             "latitude": payload["latitude"],
             "longitude": payload["longitude"],
             "numOfPeople": num_people,
-            "imageBase64": base64_img
+            "imageBase64": annotated_b64
         }
         
         analytics_result["data"] = {
@@ -95,7 +97,10 @@ def on_message(client, userdata, msg):
             "numOfPeople": num_people
         }
 
-        client.publish(TOPIC_OUT, json.dumps(analytics_result))
+        client.publish(
+            TOPIC_OUT,
+            json.dumps(analytics_result["data"])
+        )
         print("Published analytics:", analytics_result, flush=True)
 
     except Exception as e:

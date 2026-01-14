@@ -59,4 +59,6 @@ def detect_people_from_image(img):
                 if int(csl) == 0:
                     count += 1
 
-    return count
+    annotated_img = results[0].plot()
+
+    return count, annotated_img

@@ -12,3 +12,12 @@ def base64_to_cv2_image(base64_string: str):
     
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     return img
+
+def cv2_to_base64(img):
+    img_bgr = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+
+    success, buffer = cv2.imencode(".png", img_bgr)
+    if not success:
+        raise ValueError("Failed to encode image to base64")
+
+    return base64.b64encode(buffer).decode("utf-8")
