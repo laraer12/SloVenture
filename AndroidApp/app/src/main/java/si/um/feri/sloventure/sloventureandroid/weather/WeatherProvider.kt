@@ -2,7 +2,6 @@ package si.um.feri.sloventure.sloventureandroid.weather
 
 import okhttp3.Request
 import okhttp3.OkHttpClient
-
 import timber.log.Timber
 import org.json.JSONObject
 import kotlinx.coroutines.*

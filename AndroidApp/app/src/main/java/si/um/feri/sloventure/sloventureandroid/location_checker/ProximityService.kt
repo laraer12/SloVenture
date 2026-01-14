@@ -7,7 +7,6 @@ import android.app.Service
 import android.content.Intent
 import android.app.Notification
 import android.location.Location
-import android.util.Log
 import androidx.core.app.NotificationCompat
 
 import si.um.feri.sloventure.sloventureandroid.R

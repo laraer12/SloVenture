@@ -8,12 +8,10 @@ import android.content.Intent
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import si.um.feri.sloventure.sloventureandroid.SloVentureApplication
 import si.um.feri.sloventure.sloventureandroid.R
+import si.um.feri.sloventure.sloventureandroid.SloVentureApplication
 import si.um.feri.sloventure.sloventureandroid.core.MQTTClient
-import si.um.feri.sloventure.sloventureandroid.core.SensorDataManager
 import si.um.feri.sloventure.sloventureandroid.location.LocationProvider
 import si.um.feri.sloventure.sloventureandroid.weather.WeatherProvider
 import timber.log.Timber

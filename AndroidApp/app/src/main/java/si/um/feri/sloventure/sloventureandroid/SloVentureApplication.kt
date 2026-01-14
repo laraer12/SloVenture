@@ -53,7 +53,6 @@ class SloVentureApplication : Application() {
             mutableListOf()
         }
         createNotificationChannels()
-        startProximityService()
 
         sharedPref = getSharedPreferences(userSettings, MODE_PRIVATE)
         applyUserSettings()
@@ -167,11 +166,4 @@ class SloVentureApplication : Application() {
 
         Timber.i("User settings loaded - notifications = $notificationsEnabledRuntime, lastPhoto = $lastPhotoTimeRuntime")
     }
-
-    private fun startProximityService() {
-        val intent = Intent(this, ProximityService::class.java)
-        ContextCompat.startForegroundService(this, intent)
-        Timber.i("ProximityService started")
-    }
-
 }

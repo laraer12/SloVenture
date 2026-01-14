@@ -1,8 +1,9 @@
 package si.um.feri.sloventure.sloventureandroid.fragments
 
-import android.os.Bundle
 import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,7 +17,6 @@ import si.um.feri.sloventure.sloventureandroid.databinding.FragmentCameraBinding
 import si.um.feri.sloventure.sloventureandroid.location.LocationProvider
 import si.um.feri.sloventure.sloventureandroid.sensors.OrientationProvider
 import si.um.feri.sloventure.sloventureandroid.weather.WeatherProvider
-import android.util.Log
 
 class CameraFragment : Fragment() {
 

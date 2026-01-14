@@ -32,4 +32,8 @@
     <string name="capture_interval_seconds">Capture interval (seconds):</string>
     <string name="sensor_capture_settings">Sensor Capture Settings</string>
     <string name="attractions_loaded">Attractions loaded: %1$d</string>
+    <string name="capture_crowd_photo">Capture Crowd Photo</string>
+    <string name="attraction_name">Attraction name</string>
+    <string name="extreme_event_detected">Extreme Event Detected</string>
+    <string name="event_successfully_reported">Event successfully reported!</string>
 </resources>
