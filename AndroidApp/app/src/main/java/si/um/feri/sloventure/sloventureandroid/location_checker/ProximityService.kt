@@ -24,8 +24,8 @@ class ProximityService : Service() {
     private lateinit var mqttClient: MQTTClient
     private val triggered = mutableMapOf<String, Long>()
     private val locationCheckInterval = 1 * 30 * 1000L // 1 minuta // 10 * 500L // 5 sekund za test
-    private val photoCooldownIfTaken = 60 * 60 * 1000L // 1 ura // 10 * 2000L // 20 sekund za test
-    private val photoCooldownIfNotTaken = 30 * 60 * 1000L // pol ure // 10 * 1000L // 10 sekund za test
+    private val photoCooldownIfTaken = 1 * 60 * 1000L // 1 ura // 10 * 2000L // 20 sekund za test
+    private val photoCooldownIfNotTaken = 1 * 60 * 1000L // pol ure // 10 * 1000L // 10 sekund za test
 
     override fun onCreate() {
         super.onCreate()
@@ -76,7 +76,7 @@ class ProximityService : Service() {
             Timber.i("Notifications disabled by user")
             return
         }
-        mqttClient.publishLocation(location)
+        //mqttClient.publishLocation(location)
 
         checker.findNearbyAttraction(location)?.let { attraction ->
             val now = System.currentTimeMillis()

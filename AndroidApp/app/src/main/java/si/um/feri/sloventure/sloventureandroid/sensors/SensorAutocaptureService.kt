@@ -16,11 +16,13 @@ import si.um.feri.sloventure.sloventureandroid.core.MQTTClient
 import si.um.feri.sloventure.sloventureandroid.core.SensorDataManager
 import si.um.feri.sloventure.sloventureandroid.location.LocationProvider
 import si.um.feri.sloventure.sloventureandroid.weather.WeatherProvider
+import timber.log.Timber
 
 class SensorAutoCaptureService : Service() {
     private lateinit var mqttClient: MQTTClient
     private var captureIntervalMs: Long = 60000
 
+    private var isRunning = false
     private lateinit var collector: SensorReadingCollector
 
     private val handler = Handler(Looper.getMainLooper())
@@ -41,11 +43,14 @@ class SensorAutoCaptureService : Service() {
         }
     }
 
-
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        startForeground(1, buildNotification())
-
-        captureIntervalMs = intent?.getLongExtra("intervalMs", 60000L) ?: 60000L
+        if (isRunning) {
+            Timber.tag("service").w("Service already running, ignoring start")
+            return START_NOT_STICKY
+        }
+        isRunning = true
+        captureIntervalMs =
+            intent?.getLongExtra("intervalMs", 60000L) ?: 60000L
 
         mqttClient = (application as SloVentureApplication).mqttClient
         mqttClient.connect()
@@ -55,14 +60,25 @@ class SensorAutoCaptureService : Service() {
             WeatherProvider()
         )
 
+        startForeground(1, buildNotification())
         handler.post(runnable)
-        return START_STICKY
-    }
 
+        Timber.tag("service").i("Auto capture started")
+
+        return START_NOT_STICKY
+    }
 
     override fun onDestroy() {
         super.onDestroy()
+
+        Timber.tag("service").i("Auto capture stopped")
+
         handler.removeCallbacks(runnable)
+        isRunning = false
+
+        mqttClient.disconnect()
+
+        stopForeground(true)
     }
 
     override fun onBind(intent: Intent?) = null

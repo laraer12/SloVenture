@@ -44,7 +44,6 @@ class SloVentureApplication : Application() {
         notificationsEnabledRuntime = true //FIXXX TODO
 
         mqttClient = MQTTClient(applicationContext)
-        mqttClient.connect()
 
         file = File(filesDir, "attractionList.json")
 

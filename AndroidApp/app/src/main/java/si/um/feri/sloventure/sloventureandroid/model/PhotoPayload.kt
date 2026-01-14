@@ -21,6 +21,7 @@ data class OrientationData(
 @Serializable
 data class PhotoPayload (
     val imageUri: String,
+    val imageBase64: String? = null,
     val timestamp: Long,
     val latitude: Double?,
     val longitude: Double?,

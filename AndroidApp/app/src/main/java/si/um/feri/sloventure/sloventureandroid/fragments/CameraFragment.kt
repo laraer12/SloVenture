@@ -65,14 +65,22 @@ class CameraFragment : Fragment() {
 
         binding.btnCapturePhoto.setOnClickListener {
             if (!allPermissionsGranted()) {
-                Toast.makeText(requireContext(), "Please grant all permissions!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    requireContext(),
+                    "Please grant all permissions!",
+                    Toast.LENGTH_SHORT
+                ).show()
                 requestPermissions(requiredPermissions, cameraPermissionCode)
                 return@setOnClickListener
             }
 
             sensorDataManager.locationProvider.isLocationEnabled { enabled ->
                 if (!enabled) {
-                    Toast.makeText(requireContext(), "Location is OFF. Enable GPS.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        requireContext(),
+                        "Location is OFF. Enable GPS.",
+                        Toast.LENGTH_LONG
+                    ).show()
                     return@isLocationEnabled
                 }
 
@@ -84,11 +92,15 @@ class CameraFragment : Fragment() {
     private fun capturePhotoAndPublish() {
         cameraController.capturePhoto { uri, timestamp ->
             if (uri == null) {
-                Log.e("Camera","Failed to capture photo")
+                Log.e("Camera", "Failed to capture photo")
                 return@capturePhoto
             }
-
-            sensorDataManager.collectAllSensorData(uri, timestamp) { photoPayload ->
+            requireContext()
+            sensorDataManager.collectAllSensorData(
+                requireContext(),
+                uri,
+                timestamp
+            ) { photoPayload ->
                 if (photoPayload != null) {
                     sensorDataManager.savePhotoPayloadAsJson(photoPayload, requireContext())
                     app.mqttClient.publishPhotoPayload(photoPayload)
@@ -97,11 +109,12 @@ class CameraFragment : Fragment() {
 
                     Toast.makeText(requireContext(), "Photo saved!", Toast.LENGTH_SHORT).show()
                 } else {
-                    Log.e("Camera","Failed to collect sensor data")
+                    Log.e("Camera", "Failed to collect sensor data")
                 }
             }
         }
     }
+
 
     private fun allPermissionsGranted() = requiredPermissions.all {
         ContextCompat.checkSelfPermission(requireContext(), it) == PackageManager.PERMISSION_GRANTED
