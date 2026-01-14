@@ -2,7 +2,7 @@ import time
 from block import Block
 
 class Blockchain:
-    def __init__(self, difficulty):
+    def __init__(self, difficulty=5):
         self.chain = []
         self.difficulty = difficulty
 
@@ -12,10 +12,10 @@ class Blockchain:
     def create_block(self, data):
         timestamp = int(time.time())
         if not self.chain:
-            new_block = Block(0, "0", timestamp, self.get_adjusted_difficulty(), data)
+            new_block = Block(0, "0", timestamp,  difficulty=5, data=data)
         else:
             previous = self.get_last_block()
-            new_block = Block(previous.index + 1, previous.hash, timestamp, self.get_adjusted_difficulty(), data)
+            new_block = Block(previous.index + 1, previous.hash, timestamp,  difficulty=5, data=data)
         return new_block
 
     def add_block(self, block):
