@@ -1,4 +1,4 @@
-package si.um.feri.sloventure.sloventureandroid.location_checker
+package si.um.feri.sloventure.sloventureandroid.util
 
 import android.Manifest
 import android.app.PendingIntent
@@ -17,7 +17,7 @@ class NotificationHelper(private val context: Context) {
 
     @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
     fun showAttractionNotification(attraction: Attraction) {
-        Timber.i("Showing extreme event notification for ${attraction.name}")
+        Timber.Forest.i("Showing extreme event notification for ${attraction.name}")
 
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP

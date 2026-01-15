@@ -11,12 +11,12 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import si.um.feri.sloventure.sloventureandroid.SloVentureApplication
-import si.um.feri.sloventure.sloventureandroid.camera.CameraController
-import si.um.feri.sloventure.sloventureandroid.core.SensorDataManager
+import si.um.feri.sloventure.sloventureandroid.sensors.CameraController
+import si.um.feri.sloventure.sloventureandroid.sensors.SensorDataManager
 import si.um.feri.sloventure.sloventureandroid.databinding.FragmentCameraBinding
-import si.um.feri.sloventure.sloventureandroid.location.LocationProvider
+import si.um.feri.sloventure.sloventureandroid.sensors.LocationProvider
 import si.um.feri.sloventure.sloventureandroid.sensors.OrientationProvider
-import si.um.feri.sloventure.sloventureandroid.weather.WeatherProvider
+import si.um.feri.sloventure.sloventureandroid.sensors.WeatherProvider
 
 class CameraFragment : Fragment() {
 

@@ -1,19 +1,19 @@
-package si.um.feri.sloventure.sloventureandroid.location_checker
+package si.um.feri.sloventure.sloventureandroid.service
 
-import android.os.Looper
-import android.os.Handler
-import android.os.IBinder
+import android.app.Notification
 import android.app.Service
 import android.content.Intent
-import android.app.Notification
 import android.location.Location
+import android.os.Handler
+import android.os.IBinder
+import android.os.Looper
 import androidx.core.app.NotificationCompat
-
 import si.um.feri.sloventure.sloventureandroid.R
 import si.um.feri.sloventure.sloventureandroid.SloVentureApplication
-import si.um.feri.sloventure.sloventureandroid.core.MQTTClient
-import si.um.feri.sloventure.sloventureandroid.location.LocationProvider
-
+import si.um.feri.sloventure.sloventureandroid.util.MQTTClient
+import si.um.feri.sloventure.sloventureandroid.util.AttractionProximityChecker
+import si.um.feri.sloventure.sloventureandroid.util.NotificationHelper
+import si.um.feri.sloventure.sloventureandroid.sensors.LocationProvider
 import timber.log.Timber
 
 class ProximityService : Service() {
@@ -72,7 +72,7 @@ class ProximityService : Service() {
         val app = application as SloVentureApplication
 
         if (!app.areNotificationsEnabled()) {
-            Timber.i("Notifications disabled by user")
+            Timber.Forest.i("Notifications disabled by user")
             return
         }
         //mqttClient.publishLocation(location)
@@ -91,10 +91,10 @@ class ProximityService : Service() {
             if (now - lastTriggered >= cooldown) {
                 notifier.showAttractionNotification(attraction)
                 triggered[attraction.id] = now
-                Timber.i("Notification sent for ${attraction.name}")
+                Timber.Forest.i("Notification sent for ${attraction.name}")
             }
             else
-                Timber.i("Notification skipped for ${attraction.name}, cooldown not finished")
+                Timber.Forest.i("Notification skipped for ${attraction.name}, cooldown not finished")
         }
     }
 

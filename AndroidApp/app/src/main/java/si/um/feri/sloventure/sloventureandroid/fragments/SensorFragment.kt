@@ -19,10 +19,10 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import si.um.feri.sloventure.sloventureandroid.SloVentureApplication
 import si.um.feri.sloventure.sloventureandroid.R
-import si.um.feri.sloventure.sloventureandroid.core.MQTTClient
+import si.um.feri.sloventure.sloventureandroid.util.MQTTClient
 import si.um.feri.sloventure.sloventureandroid.databinding.FragmentSensorSettingsBinding
 import si.um.feri.sloventure.sloventureandroid.model.SensorReading
-import si.um.feri.sloventure.sloventureandroid.sensors.SensorAutoCaptureService
+import si.um.feri.sloventure.sloventureandroid.service.SensorAutoCaptureService
 import java.util.Locale
 
 class SensorFragment : Fragment() {

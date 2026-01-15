@@ -1,11 +1,12 @@
-package si.um.feri.sloventure.sloventureandroid.location
+package si.um.feri.sloventure.sloventureandroid.sensors
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
-import android.annotation.SuppressLint
-
-import com.google.android.gms.location.*
-
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.LocationSettingsRequest
+import com.google.android.gms.location.Priority
 import timber.log.Timber
 
 class LocationProvider(private val context: Context) {
@@ -18,15 +19,15 @@ class LocationProvider(private val context: Context) {
         fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
             .addOnSuccessListener { location ->
                 if (location != null)
-                    Timber.i("Got current location: ${location.latitude}, ${location.longitude}")
+                    Timber.Forest.i("Got current location: ${location.latitude}, ${location.longitude}")
 
                 else
-                    Timber.w("Current location is null")
+                    Timber.Forest.w("Current location is null")
 
                 onResult(location)
             }
             .addOnFailureListener {
-                Timber.e("Failed to get location: $it")
+                Timber.Forest.e("Failed to get location: $it")
                 onResult(null)
             }
     }

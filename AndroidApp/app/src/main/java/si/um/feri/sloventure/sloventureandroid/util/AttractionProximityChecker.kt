@@ -1,4 +1,4 @@
-package si.um.feri.sloventure.sloventureandroid.location_checker
+package si.um.feri.sloventure.sloventureandroid.util
 
 import android.location.Location
 import si.um.feri.sloventure.sloventureandroid.model.Attraction

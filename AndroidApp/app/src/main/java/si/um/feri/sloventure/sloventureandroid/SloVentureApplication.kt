@@ -19,8 +19,8 @@ import java.io.IOException
 
 import timber.log.Timber
 
-import si.um.feri.sloventure.sloventureandroid.core.MQTTClient
-import si.um.feri.sloventure.sloventureandroid.location_checker.ProximityService
+import si.um.feri.sloventure.sloventureandroid.util.MQTTClient
+import si.um.feri.sloventure.sloventureandroid.service.ProximityService
 import si.um.feri.sloventure.sloventureandroid.model.Attraction
 import si.um.feri.sloventure.sloventureandroid.model.PhotoPayload
 

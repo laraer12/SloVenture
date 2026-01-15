@@ -1,4 +1,4 @@
-package si.um.feri.sloventure.sloventureandroid.core
+package si.um.feri.sloventure.sloventureandroid.util
 
 import android.content.Context
 import android.location.Location
@@ -47,13 +47,13 @@ class MQTTClient(context: Context) {
 
         mqttClient.connect(options, null, object : IMqttActionListener {
             override fun onSuccess(asyncActionToken: IMqttToken?) {
-                Timber.tag("MQTT").d("Connected to Azure Event Grid")
+                Timber.Forest.tag("MQTT").d("Connected to Azure Event Grid")
                 flushPendingExtremeEvent()
                 flushPendingSensorReadings()
             }
 
             override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
-                Timber.tag("MQTT").e(exception, "Connection failed")
+                Timber.Forest.tag("MQTT").e(exception, "Connection failed")
             }
         })
     }
@@ -61,13 +61,13 @@ class MQTTClient(context: Context) {
     fun disconnect() {
         if (mqttClient.isConnected) {
             mqttClient.disconnect()
-            Timber.tag("MQTT").d("Mqtt disconnected")
+            Timber.Forest.tag("MQTT").d("Mqtt disconnected")
         }
     }
 
     private fun publish(topic: String, payload: String) {
         if (!mqttClient.isConnected) {
-            Timber.tag("MQTT").w("Client not connected")
+            Timber.Forest.tag("MQTT").w("Client not connected")
             return
         }
         val message = MqttMessage(payload.toByteArray()).apply {
@@ -75,13 +75,13 @@ class MQTTClient(context: Context) {
         }
         mqttClient.publish(topic, message)
 
-        Timber.tag("MQTT").d("Published message to $topic")
-        Timber.tag("MQTT").d(payload)
+        Timber.Forest.tag("MQTT").d("Published message to $topic")
+        Timber.Forest.tag("MQTT").d(payload)
     }
 
     fun publishPhotoPayload(payload: PhotoPayload) {
         val topic = "sensors/camera"
-        val payloadString = Json.encodeToString(payload)
+        val payloadString = Json.Default.encodeToString(payload)
 
         publish(topic, payloadString)
     }
@@ -122,7 +122,7 @@ class MQTTClient(context: Context) {
     }
     fun publishSensorReading(reading: SensorReading) {
         if (!mqttClient.isConnected) {
-            Timber.tag("MQTT").w("Client not connected, buffering sensor reading")
+            Timber.Forest.tag("MQTT").w("Client not connected, buffering sensor reading")
 
             if (pendingSensorReadings.size >= MAX_PENDING_SENSOR_READINGS) {
                 pendingSensorReadings.removeFirst() // drop oldest
@@ -139,7 +139,7 @@ class MQTTClient(context: Context) {
     private fun flushPendingSensorReadings() {
         if (!mqttClient.isConnected) return
 
-        Timber.tag("MQTT").d(
+        Timber.Forest.tag("MQTT").d(
             "Flushing ${pendingSensorReadings.size} buffered sensor readings"
         )
 
@@ -150,17 +150,17 @@ class MQTTClient(context: Context) {
     }
     private fun publishSensorReadingInternal(reading: SensorReading) {
         val topic = "sensors/environment"
-        val payloadString = Json.encodeToString(reading)
+        val payloadString = Json.Default.encodeToString(reading)
         publish(topic, payloadString)
     }
 
 
     fun publishExtremeEvent(payload: ExtremeEventPayload) {
         val topic = "events/extreme/crowd"
-        val payloadString = Json.encodeToString(payload)
+        val payloadString = Json.Default.encodeToString(payload)
 
         if (!mqttClient.isConnected) {
-            Timber.tag("MQTT").w("Client not connected, buffering extreme event")
+            Timber.Forest.tag("MQTT").w("Client not connected, buffering extreme event")
             pendingExtremeEvent = payload
             connect()
             return
@@ -172,7 +172,7 @@ class MQTTClient(context: Context) {
     private fun flushPendingExtremeEvent() {
         val payload = pendingExtremeEvent ?: return
 
-        Timber.tag("MQTT").d("Flushing pending extreme event")
+        Timber.Forest.tag("MQTT").d("Flushing pending extreme event")
         publishExtremeEvent(payload)
         pendingExtremeEvent = null
     }

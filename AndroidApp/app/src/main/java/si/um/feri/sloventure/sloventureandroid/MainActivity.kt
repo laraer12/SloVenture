@@ -6,7 +6,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.navigation.fragment.NavHostFragment
 import si.um.feri.sloventure.sloventureandroid.databinding.ActivityMainBinding
-import si.um.feri.sloventure.sloventureandroid.location_checker.ProximityService
+import si.um.feri.sloventure.sloventureandroid.service.ProximityService
 import si.um.feri.sloventure.sloventureandroid.util.PermissionHelper
 
 class MainActivity : AppCompatActivity() {

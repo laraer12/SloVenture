@@ -1,13 +1,12 @@
-package si.um.feri.sloventure.sloventureandroid.core
+package si.um.feri.sloventure.sloventureandroid.sensors
 
 import android.content.Context
 import android.net.Uri
 import kotlinx.serialization.json.Json
-import si.um.feri.sloventure.sloventureandroid.location.LocationProvider
+import si.um.feri.sloventure.sloventureandroid.sensors.LocationProvider
 import si.um.feri.sloventure.sloventureandroid.model.PhotoPayload
-import si.um.feri.sloventure.sloventureandroid.sensors.OrientationProvider
 import si.um.feri.sloventure.sloventureandroid.util.uriToBase64
-import si.um.feri.sloventure.sloventureandroid.weather.WeatherProvider
+import si.um.feri.sloventure.sloventureandroid.sensors.WeatherProvider
 import timber.log.Timber
 import java.io.File
 
@@ -25,7 +24,7 @@ class SensorDataManager(
     ) {
         locationProvider.fetchLocationAsync { location ->
             if (location == null) {
-                Timber.e("Location is null, cannot collect sensor data")
+                Timber.Forest.e("Location is null, cannot collect sensor data")
                 onResult(null)
                 return@fetchLocationAsync
             }
@@ -56,7 +55,7 @@ class SensorDataManager(
     fun collectSensorDataOnly(onResult: (PhotoPayload?) -> Unit) {
         locationProvider.fetchLocationAsync { location ->
             if (location == null) {
-                Timber.e("Location is null, cannot collect sensor data")
+                Timber.Forest.e("Location is null, cannot collect sensor data")
                 onResult(null)
                 return@fetchLocationAsync
             }
@@ -85,7 +84,7 @@ class SensorDataManager(
         filename: String = "photos.json"
     ) {
         try {
-            val jsonString = Json.encodeToString(photoPayload)
+            val jsonString = Json.Default.encodeToString(photoPayload)
             val file = File(context.filesDir, filename)
 
             if (!file.exists())
@@ -94,9 +93,9 @@ class SensorDataManager(
             // dodam vrstico po vrstico novo sliko, ne prepisujem podatkov
             file.appendText(jsonString + "\n")
 
-            Timber.e("Photo saved successfully! JSON: $jsonString")
+            Timber.Forest.e("Photo saved successfully! JSON: $jsonString")
         } catch (ex: Exception) {
-            Timber.e("Failed to save JSON: $ex")
+            Timber.Forest.e("Failed to save JSON: $ex")
         }
     }
 
@@ -107,7 +106,7 @@ class SensorDataManager(
         val file = File(context.filesDir, filename)
 
         if (!file.exists()) {
-            Timber.w("$filename does not exist, returning empty list")
+            Timber.Forest.w("$filename does not exist, returning empty list")
             return emptyList()
         }
         val photos = mutableListOf<PhotoPayload>()
@@ -116,15 +115,15 @@ class SensorDataManager(
             file.forEachLine { line ->
                 if (line.isNotBlank()) {
                     try {
-                        val photo = Json.decodeFromString<PhotoPayload>(line)
+                        val photo = Json.Default.decodeFromString<PhotoPayload>(line)
                         photos.add(photo)
                     } catch (ex: Exception) {
-                        Timber.e(ex, "Failed to parse line: $line")
+                        Timber.Forest.e(ex, "Failed to parse line: $line")
                     }
                 }
             }
         } catch (ex: Exception) {
-            Timber.e(ex, "Failed to read $filename")
+            Timber.Forest.e(ex, "Failed to read $filename")
         }
         return photos
     }

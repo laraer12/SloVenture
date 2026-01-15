@@ -1,4 +1,4 @@
-package si.um.feri.sloventure.sloventureandroid.sensors
+package si.um.feri.sloventure.sloventureandroid.service
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -11,9 +11,10 @@ import android.os.Looper
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import si.um.feri.sloventure.sloventureandroid.R
 import si.um.feri.sloventure.sloventureandroid.SloVentureApplication
-import si.um.feri.sloventure.sloventureandroid.core.MQTTClient
-import si.um.feri.sloventure.sloventureandroid.location.LocationProvider
-import si.um.feri.sloventure.sloventureandroid.weather.WeatherProvider
+import si.um.feri.sloventure.sloventureandroid.util.MQTTClient
+import si.um.feri.sloventure.sloventureandroid.sensors.LocationProvider
+import si.um.feri.sloventure.sloventureandroid.sensors.SensorReadingCollector
+import si.um.feri.sloventure.sloventureandroid.sensors.WeatherProvider
 import timber.log.Timber
 
 class SensorAutoCaptureService : Service() {

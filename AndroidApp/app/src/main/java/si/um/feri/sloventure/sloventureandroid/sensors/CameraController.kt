@@ -1,4 +1,4 @@
-package si.um.feri.sloventure.sloventureandroid.camera
+package si.um.feri.sloventure.sloventureandroid.sensors
 
 import android.content.ContentValues
 import android.content.Context
@@ -22,7 +22,7 @@ class CameraController(
 
     // zagon kamere in prikaz preview
     fun startCamera(previewView: PreviewView) {
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
+        val cameraProviderFuture = ProcessCameraProvider.Companion.getInstance(context)
 
         cameraProviderFuture.addListener({
             val cameraProvider = cameraProviderFuture.get()
@@ -94,6 +94,6 @@ class CameraController(
     }
 
     fun stopCamera() {
-        ProcessCameraProvider.getInstance(context).get().unbindAll()
+        ProcessCameraProvider.Companion.getInstance(context).get().unbindAll()
     }
 }

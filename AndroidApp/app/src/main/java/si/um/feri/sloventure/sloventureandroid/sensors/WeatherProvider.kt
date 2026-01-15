@@ -1,10 +1,15 @@
-package si.um.feri.sloventure.sloventureandroid.weather
+package si.um.feri.sloventure.sloventureandroid.sensors
 
-import okhttp3.Request
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
-import timber.log.Timber
+import okhttp3.Request
 import org.json.JSONObject
-import kotlinx.coroutines.*
+import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
 class WeatherProvider() {
@@ -41,7 +46,7 @@ class WeatherProvider() {
                         withContext(Dispatchers.Main) { onResult(null, null) }
                         return@launch
                     }
-                    Timber.e("Weather API response: $body")
+                    Timber.Forest.e("Weather API response: $body")
 
                     val json = JSONObject(body)
                     val current = json.getJSONObject("current_weather")
