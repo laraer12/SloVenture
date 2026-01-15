@@ -36,7 +36,7 @@
         android:id="@+id/sensorSettingsFragment"
         android:name="si.um.feri.sloventure.sloventureandroid.fragments.SensorFragment"
         android:label="fragment_sensor_settings"
-        tools:layout="@layout/fragment_sensor_settings">
+        tools:layout="@layout/fragment_sensor">
         <action
             android:id="@+id/action_sensorSettingsFragment_to_cameraFragment"
             app:destination="@id/cameraFragment" />

@@ -36,4 +36,7 @@
     <string name="attraction_name">Attraction name</string>
     <string name="extreme_event_detected">Extreme Event Detected</string>
     <string name="event_successfully_reported">Event successfully reported!</string>
+    <string name="sensor_auto_capture">Sensor Auto Capture</string>
+    <string name="sensor_simulation">Sensor simulation</string>
+    <string name="last_sent">Last sent: %1$s</string>
 </resources>

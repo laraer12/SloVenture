@@ -22,13 +22,25 @@ import javax.net.ssl.SSLSocketFactory
 import javax.net.ssl.TrustManagerFactory
 
 class MQTTClient(context: Context) {
+    // mqtt topics
+    private companion object {
+        const val TOPIC_SENSOR_ENVIRONMENT = "sensors/environment"
+        const val TOPIC_SENSOR_ENVIRONMENT_SIMULATION = "sensors/environment/simulation"
+        const val TOPIC_SENSOR_CAMERA = "sensors/camera"
+        const val TOPIC_USER_LOCATION = "user/location"
+        const val TOPIC_EXTREME_EVENT_CROWD = "events/extreme/crowd"
+    }
+
     private val brokerUrl = "ssl://sloventure.northeurope-1.ts.eventgrid.azure.net:8883"
     private val clientId = "androidApp-${UUID.randomUUID()}"
     private val authName = "androidApp-authn-ID"
     private val mqttClient = MqttAndroidClient(context, brokerUrl, clientId)
     private var pendingExtremeEvent: ExtremeEventPayload? = null
     private val pendingSensorReadings = ArrayDeque<SensorReading>()
+    private val pendingSimulatedReadings = ArrayDeque<SensorReading>()
+
     private val MAX_PENDING_SENSOR_READINGS = 20
+
 
     private val options = MqttConnectOptions().apply {
         socketFactory = getSocketFactory(context)
@@ -50,6 +62,7 @@ class MQTTClient(context: Context) {
                 Timber.Forest.tag("MQTT").d("Connected to Azure Event Grid")
                 flushPendingExtremeEvent()
                 flushPendingSensorReadings()
+                flushPendingSimulatedReadings()
             }
 
             override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
@@ -80,10 +93,8 @@ class MQTTClient(context: Context) {
     }
 
     fun publishPhotoPayload(payload: PhotoPayload) {
-        val topic = "sensors/camera"
         val payloadString = Json.Default.encodeToString(payload)
-
-        publish(topic, payloadString)
+        publish(TOPIC_SENSOR_CAMERA, payloadString)
     }
 
     fun publishLocation(location: Location) {
@@ -95,7 +106,7 @@ class MQTTClient(context: Context) {
         }
     """.trimIndent()
 
-        publish("user/location", payload)
+        publish(TOPIC_USER_LOCATION, payload)
     }
 
     private fun getSocketFactory(context: Context): SSLSocketFactory {
@@ -120,6 +131,8 @@ class MQTTClient(context: Context) {
 
         return sslContext.socketFactory
     }
+
+    //..........SENSORS..........
     fun publishSensorReading(reading: SensorReading) {
         if (!mqttClient.isConnected) {
             Timber.Forest.tag("MQTT").w("Client not connected, buffering sensor reading")
@@ -148,15 +161,46 @@ class MQTTClient(context: Context) {
             publishSensorReadingInternal(reading)
         }
     }
+
     private fun publishSensorReadingInternal(reading: SensorReading) {
-        val topic = "sensors/environment"
         val payloadString = Json.Default.encodeToString(reading)
-        publish(topic, payloadString)
+        publish(TOPIC_SENSOR_ENVIRONMENT, payloadString)
     }
 
+    //..........SIMULATION..........
+    fun publishSimulatedSensorReading(reading: SensorReading) {
+        if (!mqttClient.isConnected) {
+            Timber.Forest.tag("MQTT")
+                .w("Client not connected, buffering simulated sensor reading")
 
+            if (pendingSensorReadings.size >= MAX_PENDING_SENSOR_READINGS) {
+                pendingSensorReadings.removeFirst()
+            }
+
+            pendingSensorReadings.addLast(reading)
+            connect()
+            return
+        }
+
+        publishSimulatedSensorReadingInternal(reading)
+    }
+
+    private fun flushPendingSimulatedReadings() {
+        if (!mqttClient.isConnected) return
+
+        while (pendingSimulatedReadings.isNotEmpty()) {
+            val reading = pendingSimulatedReadings.removeFirst()
+            publishSimulatedSensorReadingInternal(reading)
+        }
+    }
+
+    private fun publishSimulatedSensorReadingInternal(reading: SensorReading) {
+        val payloadString = Json.Default.encodeToString(reading)
+        publish(TOPIC_SENSOR_ENVIRONMENT_SIMULATION, payloadString)
+    }
+
+    //..........EXTREME EVENT..........
     fun publishExtremeEvent(payload: ExtremeEventPayload) {
-        val topic = "events/extreme/crowd"
         val payloadString = Json.Default.encodeToString(payload)
 
         if (!mqttClient.isConnected) {
@@ -166,7 +210,7 @@ class MQTTClient(context: Context) {
             return
         }
 
-        publish(topic, payloadString)
+        publish(TOPIC_EXTREME_EVENT_CROWD, payloadString)
     }
 
     private fun flushPendingExtremeEvent() {
@@ -176,6 +220,4 @@ class MQTTClient(context: Context) {
         publishExtremeEvent(payload)
         pendingExtremeEvent = null
     }
-
-
 }

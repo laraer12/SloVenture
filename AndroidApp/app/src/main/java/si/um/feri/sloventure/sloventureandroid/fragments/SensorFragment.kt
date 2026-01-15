@@ -1,33 +1,33 @@
-
 package si.um.feri.sloventure.sloventureandroid.fragments
 
-import android.os.Bundle
 import android.Manifest
+import android.Manifest.permission.POST_NOTIFICATIONS
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
-import android.Manifest.permission.POST_NOTIFICATIONS
+import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import si.um.feri.sloventure.sloventureandroid.SloVentureApplication
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import si.um.feri.sloventure.sloventureandroid.R
-import si.um.feri.sloventure.sloventureandroid.util.MQTTClient
-import si.um.feri.sloventure.sloventureandroid.databinding.FragmentSensorSettingsBinding
+import si.um.feri.sloventure.sloventureandroid.SloVentureApplication
+import si.um.feri.sloventure.sloventureandroid.databinding.FragmentSensorBinding
 import si.um.feri.sloventure.sloventureandroid.model.SensorReading
 import si.um.feri.sloventure.sloventureandroid.service.SensorAutoCaptureService
+import si.um.feri.sloventure.sloventureandroid.service.SimulationService
+import si.um.feri.sloventure.sloventureandroid.util.MQTTClient
 import java.util.Locale
 
 class SensorFragment : Fragment() {
 
-    private var _binding: FragmentSensorSettingsBinding? = null
+    private var _binding: FragmentSensorBinding? = null
     private val binding get() = _binding!!
 
     private lateinit var app: SloVentureApplication
@@ -53,7 +53,7 @@ class SensorFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _binding = FragmentSensorSettingsBinding.inflate(inflater, container, false)
+        _binding = FragmentSensorBinding.inflate(inflater, container, false)
         return binding.root
     }
 
@@ -92,18 +92,22 @@ class SensorFragment : Fragment() {
             Toast.makeText(requireContext(), "Please allow notifications to run auto capture.", Toast.LENGTH_LONG).show()
             return
         }
+        val stopSimulation = Intent(requireContext(), SimulationService::class.java)
+        requireContext().stopService(stopSimulation)
 
         val intent = Intent(requireContext(), SensorAutoCaptureService::class.java)
         intent.putExtra("intervalMs", intervalMs)
         ContextCompat.startForegroundService(requireContext(), intent)
+        binding.btnStartAutoCapture.isEnabled = false
+        binding.btnStopAutoCapture.isEnabled = true
     }
-
 
     private fun stopAutoCaptureService() {
         val intent = Intent(requireContext(), SensorAutoCaptureService::class.java)
         requireContext().stopService(intent)
+        binding.btnStopAutoCapture.isEnabled = false
+        binding.btnStartAutoCapture.isEnabled = true
     }
-
 
     private fun allPermissionsGranted(): Boolean {
         return requiredPermissions.all {
@@ -148,7 +152,6 @@ class SensorFragment : Fragment() {
         super.onStop()
         LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(sensorUpdateReceiver)
     }
-
 
     override fun onDestroyView() {
         super.onDestroyView()

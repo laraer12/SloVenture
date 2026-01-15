@@ -1,14 +1,139 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".fragments.SimulationFragment">
+    android:padding="16dp">
 
-    <!-- TODO: Update blank fragment layout -->
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.4" />
+
     <TextView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="@string/hello_blank_fragment" />
+        android:id="@+id/tvTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="Simulation Mode"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@+id/etMinTemp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-</FrameLayout>
+    <EditText
+        android:id="@+id/etMinTemp"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:hint="Min temp (°C)"
+        android:inputType="numberDecimal"
+        app:layout_constraintBottom_toTopOf="@+id/spinnerWeather"
+        app:layout_constraintEnd_toStartOf="@id/etMaxTemp"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvTitle" />
+
+    <EditText
+        android:id="@+id/etMaxTemp"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:hint="Max temp (°C)"
+        android:inputType="numberDecimal"
+        app:layout_constraintBaseline_toBaselineOf="@id/etMinTemp"
+        app:layout_constraintStart_toEndOf="@id/etMinTemp"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <Spinner
+        android:id="@+id/spinnerWeather"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toTopOf="@+id/etInterval"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/etMinTemp" />
+
+    <EditText
+        android:id="@+id/etInterval"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:hint="Interval (seconds)"
+        android:inputType="number"
+        app:layout_constraintBottom_toTopOf="@+id/etLat"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/spinnerWeather" />
+
+    <EditText
+        android:id="@+id/etLat"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:hint="Latitude (optional)"
+        android:inputType="numberDecimal"
+        app:layout_constraintBottom_toTopOf="@+id/map"
+        app:layout_constraintEnd_toStartOf="@id/etLon"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/etInterval" />
+
+    <EditText
+        android:id="@+id/etLon"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:hint="Longitude (optional)"
+        android:inputType="numberDecimal"
+        app:layout_constraintBaseline_toBaselineOf="@id/etLat"
+        app:layout_constraintStart_toEndOf="@id/etLat"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/topChain"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:constraint_referenced_ids="tvTitle,etMinTemp,spinnerWeather,etInterval,etLat" />
+
+    <org.osmdroid.views.MapView
+        android:id="@+id/map"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/guideline"
+        app:layout_constraintBottom_toTopOf="@id/btnStartSimulation"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <Button
+        android:id="@+id/btnStartSimulation"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Start simulation"
+        app:layout_constraintBottom_toTopOf="@id/btnStopSimulation"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <Button
+        android:id="@+id/btnStopSimulation"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Stop simulation"
+        app:layout_constraintBottom_toTopOf="@id/tvLastSent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <TextView
+        android:id="@+id/tvLastSent"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Last sent: N/A"
+        android:gravity="center"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,60 +1,231 @@
 package si.um.feri.sloventure.sloventureandroid.fragments
 
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
+import android.widget.Toast
+import androidx.core.content.ContextCompat
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import org.osmdroid.config.Configuration
+import org.osmdroid.events.MapEventsReceiver
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.overlay.MapEventsOverlay
+import org.osmdroid.views.overlay.Marker
 import si.um.feri.sloventure.sloventureandroid.R
+import si.um.feri.sloventure.sloventureandroid.SloVentureApplication
+import si.um.feri.sloventure.sloventureandroid.databinding.FragmentSimulationBinding
+import si.um.feri.sloventure.sloventureandroid.model.SensorReading
+import si.um.feri.sloventure.sloventureandroid.service.SensorAutoCaptureService
+import si.um.feri.sloventure.sloventureandroid.service.SimulationService
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
-
-/**
- * A simple [Fragment] subclass.
- * Use the [SimulationFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 class SimulationFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
+    private var _binding: FragmentSimulationBinding? = null
+    private val binding get() = _binding!!
+
+    private lateinit var app: SloVentureApplication
+
+    private var selectedLat = 46.55472
+    private var selectedLon = 15.64667
+    private val weatherOptions = listOf(
+        "Clear sky",
+        "Partly cloudy",
+        "Fog",
+        "Drizzle",
+        "Freezing Drizzle",
+        "Rain",
+        "Freezing Rain",
+        "Snow fall",
+        "Snow grains",
+        "Rain showers",
+        "Snow showers",
+        "Thunderstorm",
+        "Thunderstorm with hail"
+    )
+
+    private val simulationReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            val reading =
+                intent?.getParcelableExtra<SensorReading>("reading") ?: return
+
+            binding.tvLastSent.text =
+                getString(R.string.last_sent, reading.getFormattedTimestamp())
         }
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_simulation, container, false)
+    ): View {
+        _binding = FragmentSimulationBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment SimulationFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            SimulationFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        setupMap()
+        setupWeatherSpinner()
+
+        binding.btnStartSimulation.setOnClickListener {
+            if (!validateInputs()) return@setOnClickListener
+            startSimulation()
+        }
+
+        binding.btnStopSimulation.setOnClickListener {
+            stopSimulation()
+        }
+    }
+
+    private fun setupMap() {
+        Configuration.getInstance()
+            .load(requireContext(), requireActivity().getPreferences(0))
+
+        val map = binding.map
+        map.setTileSource(TileSourceFactory.MAPNIK)
+        map.setMultiTouchControls(true)
+        map.controller.setZoom(14.0)
+
+        val startPoint = GeoPoint(selectedLat, selectedLon)
+        map.controller.setCenter(startPoint)
+
+        val marker = Marker(map).apply {
+            position = startPoint
+            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+        }
+        map.overlays.add(marker)
+
+        val receiver = object : MapEventsReceiver {
+            override fun singleTapConfirmedHelper(p: GeoPoint): Boolean {
+                selectedLat = p.latitude
+                selectedLon = p.longitude
+                marker.position = p
+                map.invalidate()
+                return true
             }
+
+            override fun longPressHelper(p: GeoPoint): Boolean = false
+        }
+
+        map.overlays.add(MapEventsOverlay(receiver))
+    }
+
+    private fun startSimulation() {
+
+        val minTemp = binding.etMinTemp.text.toString().toDouble()
+        val maxTemp = binding.etMaxTemp.text.toString().toDouble()
+        val intervalMs = binding.etInterval.text.toString().toLong() * 1000
+
+        val weather =
+            weatherOptions[binding.spinnerWeather.selectedItemPosition]
+
+        selectedLat =
+            binding.etLat.text.toString().toDoubleOrNull() ?: selectedLat
+
+        selectedLon =
+            binding.etLon.text.toString().toDoubleOrNull() ?: selectedLon
+
+        stopRealSensorCapture()
+
+        val intent = Intent(requireContext(), SimulationService::class.java).apply {
+            putExtra("minTemp", minTemp)
+            putExtra("maxTemp", maxTemp)
+            putExtra("weather", weather)
+            putExtra("lat", selectedLat)
+            putExtra("lon", selectedLon)
+            putExtra("intervalMs", intervalMs)
+        }
+
+        ContextCompat.startForegroundService(requireContext(), intent)
+        binding.btnStartSimulation.isEnabled = false
+        binding.btnStopSimulation.isEnabled = true
+    }
+
+    private fun setupWeatherSpinner() {
+        val adapter = ArrayAdapter(
+            requireContext(),
+            android.R.layout.simple_spinner_item,
+            weatherOptions
+        )
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        binding.spinnerWeather.adapter = adapter
+    }
+
+    private fun validateInputs(): Boolean {
+
+        val minTemp = binding.etMinTemp.text.toString().toDoubleOrNull()
+        val maxTemp = binding.etMaxTemp.text.toString().toDoubleOrNull()
+        val interval = binding.etInterval.text.toString().toLongOrNull()
+
+        when {
+            minTemp == null || maxTemp == null -> {
+                Toast.makeText(
+                    requireContext(),
+                    "Enter valid temperature range",
+                    Toast.LENGTH_SHORT
+                ).show()
+                return false
+            }
+            minTemp >= maxTemp -> {
+                Toast.makeText(
+                    requireContext(),
+                    "Min temperature must be lower than max",
+                    Toast.LENGTH_SHORT
+                ).show()
+                return false
+            }
+            interval == null || interval <= 0 -> {
+                Toast.makeText(
+                    requireContext(),
+                    "Enter valid interval",
+                    Toast.LENGTH_SHORT
+                ).show()
+                return false
+            }
+        }
+        return true
+    }
+
+
+    private fun stopSimulation() {
+        val intent = Intent(requireContext(), SimulationService::class.java)
+        requireContext().stopService(intent)
+        binding.btnStartSimulation.isEnabled = true
+        binding.btnStopSimulation.isEnabled = false
+    }
+
+    private fun stopRealSensorCapture() {
+        val intent = Intent(requireContext(), SensorAutoCaptureService::class.java)
+        requireContext().stopService(intent)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        val filter =
+            IntentFilter(SimulationService.ACTION_SIMULATION_UPDATE)
+        LocalBroadcastManager
+            .getInstance(requireContext())
+            .registerReceiver(simulationReceiver, filter)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        LocalBroadcastManager
+            .getInstance(requireContext())
+            .unregisterReceiver(simulationReceiver)
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }

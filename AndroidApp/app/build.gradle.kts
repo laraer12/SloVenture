@@ -58,7 +58,6 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    // za CameraX
     val cameraxVersion = "1.6.0-alpha02"
 
     implementation("androidx.camera:camera-core:${cameraxVersion}")
@@ -77,4 +76,5 @@ dependencies {
     implementation("com.github.hannesa2:paho.mqtt.android:4.4.2")
     implementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")
     implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.1.0")
+    implementation("org.osmdroid:osmdroid-android:6.1.14")
 }
