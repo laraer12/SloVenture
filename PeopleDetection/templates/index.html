@@ -87,8 +87,10 @@
                 placeholder.style.display = "none";
 
                 document.getElementById("info").innerHTML = `
+                    <strong>Attraction ID:</strong> ${data.attractionId}<br>
+                    <strong>Attraction name:</strong> ${data.attractionName}<br>
                     <strong>Date and time:</strong> ${new Date(data.timestamp).toLocaleString()}<br>
-                    <strong>Location:</strong> lat = ${data.latitude}, lon = ${data.longitude}<br>
+                    <strong>Location:</strong> lat = ${data.userLatitude}, lon = ${data.userLongitude}<br>
                     <strong>Number of people:</strong> ${data.numOfPeople}
                 `;
             }

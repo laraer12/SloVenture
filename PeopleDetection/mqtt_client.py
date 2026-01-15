@@ -83,17 +83,21 @@ def on_message(client, userdata, msg):
         annotated_b64 = cv2_to_base64(annotated_img)
 
         latest_result_ref["data"] = {
+            "attractionId": payload["attractionId"],
+            "attractionName": payload["attractionName"],
+            "userLatitude": payload["userLatitude"],
+            "userLongitude": payload["userLongitude"],
             "timestamp": payload["timestamp"],
-            "latitude": payload["latitude"],
-            "longitude": payload["longitude"],
             "numOfPeople": num_people,
             "imageBase64": annotated_b64
         }
         
         analytics_result["data"] = {
+            "attractionId": payload["attractionId"],
+            "attractionName": payload["attractionName"],
             "timestamp": payload["timestamp"],
-            "latitude": payload["latitude"],
-            "longitude": payload["longitude"],
+            "userLatitude": payload["userLatitude"],
+            "userLongitude": payload["userLongitude"],
             "numOfPeople": num_people
         }
 
