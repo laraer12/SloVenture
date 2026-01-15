@@ -17,7 +17,7 @@ import si.um.feri.sloventure.sloventureandroid.sensors.SensorReadingCollector
 import si.um.feri.sloventure.sloventureandroid.sensors.WeatherProvider
 import timber.log.Timber
 
-class SensorAutoCaptureService : Service() {
+class AutoCaptureService : Service() {
     private lateinit var mqttClient: MQTTClient
     private var captureIntervalMs: Long = 60000
 
@@ -27,18 +27,20 @@ class SensorAutoCaptureService : Service() {
     private val handler = Handler(Looper.getMainLooper())
     private val runnable = object : Runnable {
         override fun run() {
+
             collector.collect { reading ->
                 if (reading != null) {
+                    (application as SloVentureApplication)
+                        .lastSensorReading = reading
                     mqttClient.publishSensorReading(reading)
-
                     val intent = Intent(ACTION_SENSOR_UPDATE)
                     intent.putExtra("reading", reading)
                     LocalBroadcastManager
-                        .getInstance(this@SensorAutoCaptureService)
+                        .getInstance(this@AutoCaptureService)
                         .sendBroadcast(intent)
                 }
-                handler.postDelayed(this, captureIntervalMs)
             }
+            handler.postDelayed(this, captureIntervalMs)
         }
     }
 
@@ -52,7 +54,6 @@ class SensorAutoCaptureService : Service() {
             intent?.getLongExtra("intervalMs", 60000L) ?: 60000L
 
         mqttClient = (application as SloVentureApplication).mqttClient
-        mqttClient.connect()
 
         collector = SensorReadingCollector(
             LocationProvider(this),
@@ -74,8 +75,6 @@ class SensorAutoCaptureService : Service() {
 
         handler.removeCallbacks(runnable)
         isRunning = false
-
-        mqttClient.disconnect()
 
         stopForeground(true)
     }

@@ -71,10 +71,6 @@ class ProximityService : Service() {
     private fun handleLocation(location: Location) {
         val app = application as SloVentureApplication
 
-        if (!app.areNotificationsEnabled()) {
-            Timber.Forest.i("Notifications disabled by user")
-            return
-        }
         //mqttClient.publishLocation(location)
 
         checker.findNearbyAttraction(location)?.let { attraction ->

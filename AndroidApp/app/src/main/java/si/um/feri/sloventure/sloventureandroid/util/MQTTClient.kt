@@ -2,6 +2,8 @@ package si.um.feri.sloventure.sloventureandroid.util
 
 import android.content.Context
 import android.location.Location
+import android.os.Handler
+import android.os.Looper
 import info.mqtt.android.service.MqttAndroidClient
 import kotlinx.serialization.json.Json
 import org.eclipse.paho.client.mqttv3.IMqttActionListener
@@ -13,6 +15,7 @@ import si.um.feri.sloventure.sloventureandroid.R
 import si.um.feri.sloventure.sloventureandroid.model.ExtremeEventPayload
 import si.um.feri.sloventure.sloventureandroid.model.PhotoPayload
 import si.um.feri.sloventure.sloventureandroid.model.SensorReading
+import si.um.feri.sloventure.sloventureandroid.model.UserEventPayload
 import timber.log.Timber
 import java.security.KeyStore
 import java.util.UUID
@@ -26,21 +29,22 @@ class MQTTClient(context: Context) {
     private companion object {
         const val TOPIC_SENSOR_ENVIRONMENT = "sensors/environment"
         const val TOPIC_SENSOR_ENVIRONMENT_SIMULATION = "sensors/environment/simulation"
-        const val TOPIC_SENSOR_CAMERA = "sensors/camera"
-        const val TOPIC_USER_LOCATION = "user/location"
-        const val TOPIC_EXTREME_EVENT_CROWD = "events/extreme/crowd"
+        const val TOPIC_USER_LOCATION = "sensors/user/location"
+        const val TOPIC_EXTREME_EVENT_CROWD = "sensors/events/extreme/crowd"
+        private val TOPIC_USER_EVENT_BASE = "sensors/events/user" //  /warning, /info
     }
 
+    @Volatile
+    private var isConnecting = false
     private val brokerUrl = "ssl://sloventure.northeurope-1.ts.eventgrid.azure.net:8883"
     private val clientId = "androidApp-${UUID.randomUUID()}"
     private val authName = "androidApp-authn-ID"
     private val mqttClient = MqttAndroidClient(context, brokerUrl, clientId)
     private var pendingExtremeEvent: ExtremeEventPayload? = null
+    private var pendingUserEvent: UserEventPayload? = null
     private val pendingSensorReadings = ArrayDeque<SensorReading>()
     private val pendingSimulatedReadings = ArrayDeque<SensorReading>()
-
     private val MAX_PENDING_SENSOR_READINGS = 20
-
 
     private val options = MqttConnectOptions().apply {
         socketFactory = getSocketFactory(context)
@@ -51,25 +55,36 @@ class MQTTClient(context: Context) {
     }
 
     fun connect() {
-        if (mqttClient.isConnected) {
-            flushPendingExtremeEvent()
-            flushPendingSensorReadings()
+        if (mqttClient.isConnected || isConnecting) {
+            Timber.tag("MQTT").d(
+                "Skipping connect | connected=${mqttClient.isConnected} connecting=$isConnecting"
+            )
             return
         }
 
+        isConnecting = true
+
+        Timber.tag("MQTT").e(
+            "CONNECT attempt | connected=${mqttClient.isConnected} connecting=$isConnecting thread=${Thread.currentThread().name}"
+        )
+
         mqttClient.connect(options, null, object : IMqttActionListener {
             override fun onSuccess(asyncActionToken: IMqttToken?) {
-                Timber.Forest.tag("MQTT").d("Connected to Azure Event Grid")
+                Timber.tag("MQTT").d("Connected to Azure Event Grid")
+                isConnecting = false
                 flushPendingExtremeEvent()
                 flushPendingSensorReadings()
                 flushPendingSimulatedReadings()
+
             }
 
             override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
-                Timber.Forest.tag("MQTT").e(exception, "Connection failed")
+                Timber.tag("MQTT").e(exception, "CONNECT FAILED")
+                isConnecting = false
             }
         })
     }
+
 
     fun disconnect() {
         if (mqttClient.isConnected) {
@@ -90,11 +105,6 @@ class MQTTClient(context: Context) {
 
         Timber.Forest.tag("MQTT").d("Published message to $topic")
         Timber.Forest.tag("MQTT").d(payload)
-    }
-
-    fun publishPhotoPayload(payload: PhotoPayload) {
-        val payloadString = Json.Default.encodeToString(payload)
-        publish(TOPIC_SENSOR_CAMERA, payloadString)
     }
 
     fun publishLocation(location: Location) {
@@ -173,11 +183,11 @@ class MQTTClient(context: Context) {
             Timber.Forest.tag("MQTT")
                 .w("Client not connected, buffering simulated sensor reading")
 
-            if (pendingSensorReadings.size >= MAX_PENDING_SENSOR_READINGS) {
-                pendingSensorReadings.removeFirst()
+            if (pendingSimulatedReadings.size >= MAX_PENDING_SENSOR_READINGS) {
+                pendingSimulatedReadings.removeFirst()
             }
 
-            pendingSensorReadings.addLast(reading)
+            pendingSimulatedReadings.addLast(reading)
             connect()
             return
         }
@@ -219,5 +229,27 @@ class MQTTClient(context: Context) {
         Timber.Forest.tag("MQTT").d("Flushing pending extreme event")
         publishExtremeEvent(payload)
         pendingExtremeEvent = null
+    }
+
+    //..........USER EVENT..........
+    fun publishUserEvent(payload: UserEventPayload) {
+        val topic = "$TOPIC_USER_EVENT_BASE/${payload.eventType}"
+        val payloadString = Json.Default.encodeToString(payload)
+
+        if (!mqttClient.isConnected) {
+            Timber.Forest.tag("MQTT").w("Client not connected, buffering user event")
+            pendingUserEvent = payload
+            connect()
+            return
+        }
+        publish(topic, payloadString)
+    }
+
+    private fun flushPendingUserEvent() {
+        val payload = pendingUserEvent ?: return
+
+        Timber.Forest.tag("MQTT").d("Flushing pending user event")
+        publishUserEvent(payload)
+        pendingUserEvent = null
     }
 }

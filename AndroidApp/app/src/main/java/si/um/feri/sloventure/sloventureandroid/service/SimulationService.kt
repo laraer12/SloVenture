@@ -40,6 +40,9 @@ class SimulationService : Service() {
                 weather = weather
             )
 
+            (application as SloVentureApplication)
+                .lastSimulationReading = reading
+
             mqttClient.publishSimulatedSensorReading(reading)
 
             val intent = Intent(ACTION_SIMULATION_UPDATE)
@@ -63,7 +66,9 @@ class SimulationService : Service() {
         if (isRunning) return START_NOT_STICKY
         isRunning = true
 
-        intervalMs = intent!!.getLongExtra("intervalMs", 60000L)
+        val app = application as SloVentureApplication
+
+        intervalMs = intent!!.getLongExtra("intervalMs", app.simulationIntervalMs)
         minTemp = intent.getDoubleExtra("minTemp", 0.0)
         maxTemp = intent.getDoubleExtra("maxTemp", 0.0)
         weather = intent.getStringExtra("weather") ?: "Unknown"
@@ -71,7 +76,6 @@ class SimulationService : Service() {
         longitude = intent.getDoubleExtra("lon", 0.0)
 
         mqttClient = (application as SloVentureApplication).mqttClient
-        mqttClient.connect()
 
         startForeground(2, buildNotification())
 
@@ -94,8 +98,6 @@ class SimulationService : Service() {
 
         handler.removeCallbacks(runnable)
         isRunning = false
-
-        mqttClient.disconnect()
         stopForeground(true)
 
         Timber.tag("simulation").i("Simulation stopped")

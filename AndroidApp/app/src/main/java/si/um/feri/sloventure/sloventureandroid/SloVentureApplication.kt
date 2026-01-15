@@ -23,6 +23,7 @@ import si.um.feri.sloventure.sloventureandroid.util.MQTTClient
 import si.um.feri.sloventure.sloventureandroid.service.ProximityService
 import si.um.feri.sloventure.sloventureandroid.model.Attraction
 import si.um.feri.sloventure.sloventureandroid.model.PhotoPayload
+import si.um.feri.sloventure.sloventureandroid.model.SensorReading
 
 class SloVentureApplication : Application() {
     lateinit var data: MutableList<Attraction>
@@ -36,6 +37,21 @@ class SloVentureApplication : Application() {
     private var notificationsEnabledRuntime = false
     private var lastPhotoTimeRuntime = 0L
 
+    @Volatile
+    var lastSensorReading: SensorReading? = null
+    @Volatile
+    var lastSimulationReading: SensorReading? = null
+    @Volatile
+    var captureIntervalMs: Long = 60_000L
+
+    @Volatile
+    var simulationIntervalMs: Long = 60_000L
+    var simulationMinTemp: Double = 0.0
+    var simulationMaxTemp: Double = 10.0
+    var simulationWeatherIndex: Int = 0
+    var simulationLat: Double = 46.55472
+    var simulationLon: Double = 15.64667
+
     override fun onCreate() {
         super.onCreate()
 
@@ -43,7 +59,8 @@ class SloVentureApplication : Application() {
 
         notificationsEnabledRuntime = true //FIXXX TODO
 
-        mqttClient = MQTTClient(applicationContext)
+        mqttClient = MQTTClient(this)
+        mqttClient.connect()
 
         file = File(filesDir, "attractionList.json")
 

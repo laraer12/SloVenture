@@ -39,8 +39,8 @@ class NotificationHelper(private val context: Context) {
 
         val notification = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("Extreme event nearby")
-            .setContentText("Crowd detected near ${attraction.name}")
+            .setContentTitle("Attraction nearby")
+            .setContentText("Take a picture of the crowd at: ${attraction.name}")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)

@@ -42,7 +42,7 @@ class DashboardFragment : Fragment() {
         }
 
         binding.btnGoToEvents.setOnClickListener {
-            findNavController().navigate(R.id.eventsFragment)
+            findNavController().navigate(R.id.userEventFragment)
         }
 
         binding.btnGoToSimulation.setOnClickListener {

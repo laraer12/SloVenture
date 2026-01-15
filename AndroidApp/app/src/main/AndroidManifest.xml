@@ -41,7 +41,7 @@
             android:exported="false" />
 
         <service
-            android:name=".service.SensorAutoCaptureService"
+            android:name=".service.AutoCaptureService"
             android:foregroundServiceType="location"
             android:exported="false"/>
 

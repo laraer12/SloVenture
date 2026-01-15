@@ -23,7 +23,7 @@ import si.um.feri.sloventure.sloventureandroid.R
 import si.um.feri.sloventure.sloventureandroid.SloVentureApplication
 import si.um.feri.sloventure.sloventureandroid.databinding.FragmentSimulationBinding
 import si.um.feri.sloventure.sloventureandroid.model.SensorReading
-import si.um.feri.sloventure.sloventureandroid.service.SensorAutoCaptureService
+import si.um.feri.sloventure.sloventureandroid.service.AutoCaptureService
 import si.um.feri.sloventure.sloventureandroid.service.SimulationService
 
 class SimulationFragment : Fragment() {
@@ -73,8 +73,25 @@ class SimulationFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        app = requireActivity().application as SloVentureApplication
         setupMap()
         setupWeatherSpinner()
+
+        binding.etInterval.setText((app.simulationIntervalMs / 1000).toString())
+        binding.etMinTemp.setText(app.simulationMinTemp.toString())
+        binding.etMaxTemp.setText(app.simulationMaxTemp.toString())
+        binding.spinnerWeather.setSelection(app.simulationWeatherIndex)
+
+        app.lastSimulationReading?.let { reading ->
+            binding.tvLastSent.text =
+                getString(R.string.last_sent, reading.getFormattedTimestamp())
+        }
+
+        selectedLat = app.simulationLat
+        selectedLon = app.simulationLon
+
+        binding.etLat.setText(selectedLat.toString())
+        binding.etLon.setText(selectedLon.toString())
 
         binding.btnStartSimulation.setOnClickListener {
             if (!validateInputs()) return@setOnClickListener
@@ -124,15 +141,26 @@ class SimulationFragment : Fragment() {
         val minTemp = binding.etMinTemp.text.toString().toDouble()
         val maxTemp = binding.etMaxTemp.text.toString().toDouble()
         val intervalMs = binding.etInterval.text.toString().toLong() * 1000
-
-        val weather =
-            weatherOptions[binding.spinnerWeather.selectedItemPosition]
+        val weatherIndex = binding.spinnerWeather.selectedItemPosition
+        val weather = weatherOptions[weatherIndex]
 
         selectedLat =
             binding.etLat.text.toString().toDoubleOrNull() ?: selectedLat
 
         selectedLon =
             binding.etLon.text.toString().toDoubleOrNull() ?: selectedLon
+
+        app.simulationIntervalMs = intervalMs
+        app.simulationMinTemp = minTemp
+        app.simulationMaxTemp = maxTemp
+        app.simulationWeatherIndex = weatherIndex
+        app.simulationLat = selectedLat
+        app.simulationLon = selectedLon
+
+        binding.etInterval.isEnabled = false
+        binding.etMinTemp.isEnabled = false
+        binding.etMaxTemp.isEnabled = false
+        binding.spinnerWeather.isEnabled = false
 
         stopRealSensorCapture()
 
@@ -175,6 +203,7 @@ class SimulationFragment : Fragment() {
                 ).show()
                 return false
             }
+
             minTemp >= maxTemp -> {
                 Toast.makeText(
                     requireContext(),
@@ -183,6 +212,7 @@ class SimulationFragment : Fragment() {
                 ).show()
                 return false
             }
+
             interval == null || interval <= 0 -> {
                 Toast.makeText(
                     requireContext(),
@@ -201,10 +231,14 @@ class SimulationFragment : Fragment() {
         requireContext().stopService(intent)
         binding.btnStartSimulation.isEnabled = true
         binding.btnStopSimulation.isEnabled = false
+        binding.etInterval.isEnabled = true
+        binding.etMinTemp.isEnabled = true
+        binding.etMaxTemp.isEnabled = true
+        binding.spinnerWeather.isEnabled = true
     }
 
     private fun stopRealSensorCapture() {
-        val intent = Intent(requireContext(), SensorAutoCaptureService::class.java)
+        val intent = Intent(requireContext(), AutoCaptureService::class.java)
         requireContext().stopService(intent)
     }
 

@@ -20,7 +20,7 @@ import si.um.feri.sloventure.sloventureandroid.R
 import si.um.feri.sloventure.sloventureandroid.SloVentureApplication
 import si.um.feri.sloventure.sloventureandroid.databinding.FragmentSensorBinding
 import si.um.feri.sloventure.sloventureandroid.model.SensorReading
-import si.um.feri.sloventure.sloventureandroid.service.SensorAutoCaptureService
+import si.um.feri.sloventure.sloventureandroid.service.AutoCaptureService
 import si.um.feri.sloventure.sloventureandroid.service.SimulationService
 import si.um.feri.sloventure.sloventureandroid.util.MQTTClient
 import java.util.Locale
@@ -44,7 +44,8 @@ class SensorFragment : Fragment() {
         override fun onReceive(context: Context?, intent: Intent?) {
             val reading = intent?.getParcelableExtra<SensorReading>("reading")
             if (reading != null) {
-                updateSensorUI(reading)}
+                updateSensorUI(reading)
+            }
         }
     }
 
@@ -62,13 +63,23 @@ class SensorFragment : Fragment() {
 
         app = requireActivity().application as SloVentureApplication
         mqttClient = app.mqttClient
+
+        captureIntervalMs = app.captureIntervalMs
+        binding.etInterval.setText((captureIntervalMs / 1000).toString())
+        app.lastSensorReading?.let { reading ->
+            updateSensorUI(reading)
+        }
+
         binding.btnStartAutoCapture.setOnClickListener {
             val intervalSec = binding.etInterval.text.toString().toLongOrNull()
             if (intervalSec == null || intervalSec <= 0) {
-                Toast.makeText(requireContext(), "Enter a valid interval (>0)", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Enter a valid interval (>0)", Toast.LENGTH_SHORT)
+                    .show()
                 return@setOnClickListener
             }
             captureIntervalMs = intervalSec * 1000
+            app.captureIntervalMs = captureIntervalMs
+
             startAutoCaptureService(captureIntervalMs)
         }
 
@@ -80,22 +91,33 @@ class SensorFragment : Fragment() {
 
     private fun startAutoCaptureService(intervalMs: Long) {
         if (!allPermissionsGranted()) {
-            Toast.makeText(requireContext(), "Please grant camera and location permissions!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                requireContext(),
+                "Please grant camera and location permissions!",
+                Toast.LENGTH_SHORT
+            ).show()
             requestPermissions(requiredPermissions, cameraPermissionCode)
             return
         }
 
         if (Build.VERSION.SDK_INT >= 33 &&
-            ContextCompat.checkSelfPermission(requireContext(), POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(
+                requireContext(),
+                POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
         ) {
             requestPermissions(arrayOf(POST_NOTIFICATIONS), cameraPermissionCode)
-            Toast.makeText(requireContext(), "Please allow notifications to run auto capture.", Toast.LENGTH_LONG).show()
+            Toast.makeText(
+                requireContext(),
+                "Please allow notifications to run auto capture.",
+                Toast.LENGTH_LONG
+            ).show()
             return
         }
         val stopSimulation = Intent(requireContext(), SimulationService::class.java)
         requireContext().stopService(stopSimulation)
 
-        val intent = Intent(requireContext(), SensorAutoCaptureService::class.java)
+        val intent = Intent(requireContext(), AutoCaptureService::class.java)
         intent.putExtra("intervalMs", intervalMs)
         ContextCompat.startForegroundService(requireContext(), intent)
         binding.btnStartAutoCapture.isEnabled = false
@@ -103,7 +125,7 @@ class SensorFragment : Fragment() {
     }
 
     private fun stopAutoCaptureService() {
-        val intent = Intent(requireContext(), SensorAutoCaptureService::class.java)
+        val intent = Intent(requireContext(), AutoCaptureService::class.java)
         requireContext().stopService(intent)
         binding.btnStopAutoCapture.isEnabled = false
         binding.btnStartAutoCapture.isEnabled = true
@@ -111,7 +133,10 @@ class SensorFragment : Fragment() {
 
     private fun allPermissionsGranted(): Boolean {
         return requiredPermissions.all {
-            ContextCompat.checkSelfPermission(requireContext(), it) == PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(
+                requireContext(),
+                it
+            ) == PackageManager.PERMISSION_GRANTED
         }
     }
 
@@ -144,8 +169,9 @@ class SensorFragment : Fragment() {
     override fun onStart() {
         super.onStart()
 
-        val intentFilter = IntentFilter(SensorAutoCaptureService.ACTION_SENSOR_UPDATE)
-        LocalBroadcastManager.getInstance(requireContext()).registerReceiver(sensorUpdateReceiver, intentFilter)
+        val intentFilter = IntentFilter(AutoCaptureService.ACTION_SENSOR_UPDATE)
+        LocalBroadcastManager.getInstance(requireContext())
+            .registerReceiver(sensorUpdateReceiver, intentFilter)
     }
 
     override fun onStop() {

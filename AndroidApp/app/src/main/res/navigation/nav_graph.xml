@@ -11,9 +11,6 @@
         android:label="fragment_dashboard"
         tools:layout="@layout/fragment_dashboard">
         <action
-            android:id="@+id/action_dashboardFragment_to_eventsFragment"
-            app:destination="@id/eventsFragment" />
-        <action
             android:id="@+id/action_dashboardFragment_to_sensorSettingsFragment"
             app:destination="@id/sensorSettingsFragment" />
         <action
@@ -22,35 +19,21 @@
         <action
             android:id="@+id/action_dashboardFragment_to_extremeEventFragment"
             app:destination="@id/extremeEventFragment" />
-    </fragment>
-    <fragment
-        android:id="@+id/eventsFragment"
-        android:name="si.um.feri.sloventure.sloventureandroid.fragments.EventsFragment"
-        android:label="fragment_events"
-        tools:layout="@layout/fragment_events">
         <action
-            android:id="@+id/action_eventsFragment_to_cameraFragment"
-            app:destination="@id/cameraFragment" />
+            android:id="@+id/action_dashboardFragment_to_userEventFragment"
+            app:destination="@id/userEventFragment" />
     </fragment>
     <fragment
         android:id="@+id/sensorSettingsFragment"
         android:name="si.um.feri.sloventure.sloventureandroid.fragments.SensorFragment"
         android:label="fragment_sensor_settings"
         tools:layout="@layout/fragment_sensor">
-        <action
-            android:id="@+id/action_sensorSettingsFragment_to_cameraFragment"
-            app:destination="@id/cameraFragment" />
     </fragment>
     <fragment
         android:id="@+id/simulationFragment"
         android:name="si.um.feri.sloventure.sloventureandroid.fragments.SimulationFragment"
         android:label="fragment_simulation"
         tools:layout="@layout/fragment_simulation" />
-    <fragment
-        android:id="@+id/cameraFragment"
-        android:name="si.um.feri.sloventure.sloventureandroid.fragments.CameraFragment"
-        android:label="fragment_camera"
-        tools:layout="@layout/fragment_camera" />
     <fragment
         android:id="@+id/extremeEventFragment"
         android:name="si.um.feri.sloventure.sloventureandroid.fragments.ExtremeEventFragment"
@@ -69,4 +52,9 @@
             android:name="attraction_lon"
             app:argType="float" />
     </fragment>
+    <fragment
+        android:id="@+id/userEventFragment"
+        android:name="si.um.feri.sloventure.sloventureandroid.fragments.UserEventFragment"
+        android:label="fragment_user_event"
+        tools:layout="@layout/fragment_user_event" />
 </navigation>
