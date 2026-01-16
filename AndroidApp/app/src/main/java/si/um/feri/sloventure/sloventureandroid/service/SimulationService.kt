@@ -16,18 +16,14 @@ import si.um.feri.sloventure.sloventureandroid.util.MQTTClient
 import timber.log.Timber
 
 class SimulationService : Service() {
-
     private lateinit var mqttClient: MQTTClient
-
     private var intervalMs: Long = 60000
     private var minTemp = 0.0
     private var maxTemp = 0.0
     private lateinit var weather: String
     private var latitude: Double = 0.0
     private var longitude: Double = 0.0
-
     private var isRunning = false
-
     private val handler = Handler(Looper.getMainLooper())
     private val runnable = object : Runnable {
         override fun run() {
@@ -55,7 +51,6 @@ class SimulationService : Service() {
             Timber.tag("simulation").i(
                 "Publishing simulated reading: lat=$latitude lon=$longitude temp=${reading.temperature} weather=$weather"
             )
-
 
             handler.postDelayed(this, intervalMs)
         }

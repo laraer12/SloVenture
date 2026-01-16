@@ -3,26 +3,19 @@ package si.um.feri.sloventure.sloventureandroid
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.content.Intent
 import android.content.SharedPreferences
-import androidx.core.content.ContextCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-
 import kotlinx.serialization.json.Json
-
-import okhttp3.Request
 import okhttp3.OkHttpClient
-
-import java.io.File
-import java.io.IOException
-
-import timber.log.Timber
-
-import si.um.feri.sloventure.sloventureandroid.util.MQTTClient
+import okhttp3.Request
 import si.um.feri.sloventure.sloventureandroid.model.Attraction
 import si.um.feri.sloventure.sloventureandroid.model.CrowdSimulationPayload
 import si.um.feri.sloventure.sloventureandroid.model.SensorReading
+import si.um.feri.sloventure.sloventureandroid.util.MQTTClient
+import timber.log.Timber
+import java.io.File
+import java.io.IOException
 
 class SloVentureApplication : Application() {
     lateinit var data: MutableList<Attraction>
@@ -32,7 +25,6 @@ class SloVentureApplication : Application() {
     private val userSettings = "user_settings"
     private val notifsEnabled = "notifs_enabled"
     private val lastPhotoTime = "last_photo_time"
-    private var notificationsEnabledRuntime = false
     private var lastPhotoTimeRuntime = 0L
 
     @Volatile
@@ -62,8 +54,6 @@ class SloVentureApplication : Application() {
 
         Timber.plant(Timber.DebugTree())
 
-        notificationsEnabledRuntime = true //FIXXX TODO
-
         mqttClient = MQTTClient(this)
         mqttClient.connect()
 
@@ -77,7 +67,7 @@ class SloVentureApplication : Application() {
         createNotificationChannels()
 
         sharedPref = getSharedPreferences(userSettings, MODE_PRIVATE)
-        applyUserSettings()
+        lastPhotoTimeRuntime = sharedPref.getLong(lastPhotoTime, 0L)
     }
 
     fun loadFromFile(): MutableList<Attraction> {
@@ -164,15 +154,7 @@ class SloVentureApplication : Application() {
 
         Timber.i("Photo marked at $lastPhotoTimeRuntime")
     }
-
     fun wasPhotoTakenRecently(cooldownMs: Long): Boolean {
         return System.currentTimeMillis() - lastPhotoTimeRuntime < cooldownMs
-    }
-
-    private fun applyUserSettings() {
-        notificationsEnabledRuntime = sharedPref.getBoolean(notifsEnabled, false)
-        lastPhotoTimeRuntime = sharedPref.getLong(lastPhotoTime, 0L)
-
-        Timber.i("User settings loaded - notifications = $notificationsEnabledRuntime, lastPhoto = $lastPhotoTimeRuntime")
     }
 }

@@ -83,16 +83,6 @@ class CameraController(
         )
     }
 
-    fun switchCamera(previewView: PreviewView) {
-        cameraSelector =
-            if (cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA)
-                CameraSelector.DEFAULT_FRONT_CAMERA
-            else
-                CameraSelector.DEFAULT_BACK_CAMERA
-
-        startCamera(previewView)
-    }
-
     fun stopCamera() {
         ProcessCameraProvider.Companion.getInstance(context).get().unbindAll()
     }

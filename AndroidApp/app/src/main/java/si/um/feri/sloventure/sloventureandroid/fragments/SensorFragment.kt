@@ -16,6 +16,7 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.navigation.fragment.findNavController
 import si.um.feri.sloventure.sloventureandroid.R
 import si.um.feri.sloventure.sloventureandroid.SloVentureApplication
 import si.um.feri.sloventure.sloventureandroid.databinding.FragmentSensorBinding
@@ -86,7 +87,9 @@ class SensorFragment : Fragment() {
         binding.btnStopAutoCapture.setOnClickListener {
             stopAutoCaptureService()
         }
-
+        binding.ivAppIcon.setOnClickListener {
+            findNavController().navigate(R.id.dashboardFragment)
+        }
     }
 
     private fun startAutoCaptureService(intervalMs: Long) {

@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.Toast
+import androidx.navigation.fragment.findNavController
 import si.um.feri.sloventure.sloventureandroid.R
 import si.um.feri.sloventure.sloventureandroid.SloVentureApplication
 import si.um.feri.sloventure.sloventureandroid.databinding.FragmentUserEventBinding
@@ -19,14 +20,11 @@ class UserEventFragment : Fragment() {
 
     private var _binding: FragmentUserEventBinding? = null
     private val binding get() = _binding!!
-
     private lateinit var app: SloVentureApplication
     private lateinit var cameraController: CameraController
     private lateinit var locationProvider: LocationProvider
-
     private var capturedImageBase64: String? = null
     private var capturedTimestamp: Long = 0L
-
     private val eventTypes = listOf("info", "warning")
 
     override fun onCreateView(
@@ -51,9 +49,11 @@ class UserEventFragment : Fragment() {
         binding.btnCapturePhoto.setOnClickListener {
             capturePhoto()
         }
-
         binding.btnSubmitEvent.setOnClickListener {
             submitEvent()
+        }
+        binding.ivAppIcon.setOnClickListener {
+            findNavController().navigate(R.id.dashboardFragment)
         }
     }
 
@@ -107,7 +107,6 @@ class UserEventFragment : Fragment() {
             )
 
             app.mqttClient.publishUserEvent(payload)
-
             showConfirmation()
         }
     }

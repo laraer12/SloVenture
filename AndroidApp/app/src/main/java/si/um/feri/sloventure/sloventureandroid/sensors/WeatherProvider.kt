@@ -46,7 +46,7 @@ class WeatherProvider() {
                         withContext(Dispatchers.Main) { onResult(null, null) }
                         return@launch
                     }
-                    Timber.Forest.e("Weather API response: $body")
+                    Timber.d("Weather API response: $body")
 
                     val json = JSONObject(body)
                     val current = json.getJSONObject("current_weather")

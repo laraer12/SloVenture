@@ -4,7 +4,6 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
-import android.app.Service.START_NOT_STICKY
 import android.content.Intent
 import android.os.Build
 import android.os.Handler
@@ -14,24 +13,18 @@ import si.um.feri.sloventure.sloventureandroid.R
 import si.um.feri.sloventure.sloventureandroid.SloVentureApplication
 import si.um.feri.sloventure.sloventureandroid.model.Attraction
 import si.um.feri.sloventure.sloventureandroid.model.CrowdSimulationPayload
-import si.um.feri.sloventure.sloventureandroid.model.SensorReading
 import si.um.feri.sloventure.sloventureandroid.util.MQTTClient
 import timber.log.Timber
 
 class CrowdSimulationService : Service() {
-
     private lateinit var mqttClient: MQTTClient
     private lateinit var app: SloVentureApplication
-
     private var intervalMs: Long = 60_000L
     private var minCrowdNum: Int = 1
     private var maxCrowdNum: Int = 10
     private var fixedAttractionId: String? = null // null = random
-
     private var isRunning = false
-
     private val handler = Handler(Looper.getMainLooper())
-
     private val runnable = object : Runnable {
         override fun run() {
 
@@ -92,6 +85,7 @@ class CrowdSimulationService : Service() {
         handler.post(runnable)
 
         Timber.tag("crowd-simulation").i("Crowd simulation started")
+        app.crowdSimulationRunning = true
 
         return START_NOT_STICKY
     }
@@ -102,6 +96,7 @@ class CrowdSimulationService : Service() {
         handler.removeCallbacks(runnable)
         isRunning = false
         stopForeground(true)
+        app.crowdSimulationRunning = true
 
         Timber.tag("crowd-simulation").i("Crowd simulation stopped")
     }

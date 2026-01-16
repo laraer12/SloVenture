@@ -10,28 +10,28 @@
 
     <TextView
         android:id="@+id/tvDashboardTitle"
-        android:layout_width="0dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="@font/adlam_font"
         android:gravity="center"
         android:text="@string/sloventure_sensor_app"
         android:textAppearance="?attr/textAppearanceBodyLarge"
         android:textColor="@color/md_theme_primary"
-        android:textSize="65sp"
+        android:textSize="70sp"
         android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@+id/guideline8"
         app:layout_constraintEnd_toStartOf="@+id/guideline3"
-        app:layout_constraintStart_toStartOf="@+id/guideline2"
-        app:layout_constraintTop_toTopOf="@+id/guideline4" />
+        app:layout_constraintStart_toStartOf="@+id/guideline2" />
 
-    <TextView
-        android:id="@+id/tvAttractionCount"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="Attractions loaded: 0"
-        android:textAppearance="?attr/textAppearanceBodyLarge"
-        android:textStyle="bold"
-        app:layout_constraintStart_toStartOf="@+id/guideline2"
-        app:layout_constraintTop_toTopOf="@+id/guideline5" />
+    <ImageView
+        android:id="@+id/ivAppIcon"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:contentDescription="@string/app_name"
+        android:src="@drawable/sv_icon"
+        app:layout_constraintBottom_toTopOf="@+id/tvDashboardTitle"
+        app:layout_constraintEnd_toEndOf="@+id/tvDashboardTitle"
+        app:layout_constraintStart_toStartOf="@+id/tvDashboardTitle" />
 
     <Button
         android:id="@+id/btnGoToSensorSettings"
@@ -82,9 +82,9 @@
         style="@style/SVButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Update Attraction Count"
-        app:layout_constraintStart_toStartOf="@+id/guideline2"
-        app:layout_constraintTop_toBottomOf="@+id/tvAttractionCount" />
+        android:text="Fetch Attractions"
+        app:layout_constraintBottom_toTopOf="@+id/guideline4"
+        app:layout_constraintEnd_toStartOf="@+id/guideline3" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline2"
@@ -108,13 +108,6 @@
         app:layout_constraintGuide_percent="0.1" />
 
     <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/guideline5"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.25" />
-
-    <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline6"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -126,6 +119,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.4" />
+        app:layout_constraintGuide_percent="0.38" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

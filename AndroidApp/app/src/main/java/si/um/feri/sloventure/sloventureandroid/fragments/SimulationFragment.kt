@@ -13,6 +13,7 @@ import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.navigation.fragment.findNavController
 import org.osmdroid.config.Configuration
 import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -27,12 +28,9 @@ import si.um.feri.sloventure.sloventureandroid.service.AutoCaptureService
 import si.um.feri.sloventure.sloventureandroid.service.SimulationService
 
 class SimulationFragment : Fragment() {
-
     private var _binding: FragmentSimulationBinding? = null
     private val binding get() = _binding!!
-
     private lateinit var app: SloVentureApplication
-
     private var selectedLat = 46.55472
     private var selectedLon = 15.64667
     private val weatherOptions = listOf(
@@ -97,9 +95,11 @@ class SimulationFragment : Fragment() {
             if (!validateInputs()) return@setOnClickListener
             startSimulation()
         }
-
         binding.btnStopSimulation.setOnClickListener {
             stopSimulation()
+        }
+        binding.ivAppIcon.setOnClickListener {
+            findNavController().navigate(R.id.dashboardFragment)
         }
     }
 

@@ -1,105 +1,91 @@
 package si.um.feri.sloventure.sloventureandroid.service
 
-import android.app.Notification
 import android.app.Service
 import android.content.Intent
 import android.location.Location
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
-import androidx.core.app.NotificationCompat
-import si.um.feri.sloventure.sloventureandroid.R
 import si.um.feri.sloventure.sloventureandroid.SloVentureApplication
-import si.um.feri.sloventure.sloventureandroid.util.MQTTClient
+import si.um.feri.sloventure.sloventureandroid.sensors.LocationProvider
 import si.um.feri.sloventure.sloventureandroid.util.AttractionProximityChecker
 import si.um.feri.sloventure.sloventureandroid.util.NotificationHelper
-import si.um.feri.sloventure.sloventureandroid.sensors.LocationProvider
 import timber.log.Timber
 
 class ProximityService : Service() {
+
     private lateinit var locationProvider: LocationProvider
     private lateinit var checker: AttractionProximityChecker
     private lateinit var notifier: NotificationHelper
-    private lateinit var mqttClient: MQTTClient
+
     private val triggered = mutableMapOf<String, Long>()
-    private val locationCheckInterval = 1 * 30 * 1000L // 1 minuta // 10 * 500L // 5 sekund za test
-    private val photoCooldownIfTaken = 1 * 60 * 1000L // 1 ura // 10 * 2000L // 20 sekund za test
-    private val photoCooldownIfNotTaken = 1 * 60 * 1000L // pol ure // 10 * 1000L // 10 sekund za test
+
+    private val locationCheckInterval = 1 * 60 * 1000L // 1 min
+    private val photoCooldownIfTaken = 10 * 60 * 1000L // 10 min
+    private val photoCooldownIfNotTaken = 5 * 60 * 1000L // 5 min
+
+    private val handler = Handler(Looper.getMainLooper())
+
+    private val runnable = object : Runnable {
+        override fun run() {
+            locationProvider.getCurrentLocation { location ->
+                location?.let { handleLocation(it) }
+            }
+            handler.postDelayed(this, locationCheckInterval)
+        }
+    }
 
     override fun onCreate() {
         super.onCreate()
 
         val app = application as SloVentureApplication
 
-        startForeground(1, createServiceNotification())
-
         locationProvider = LocationProvider(this)
-        mqttClient = app.mqttClient
         notifier = NotificationHelper(this)
         checker = AttractionProximityChecker(app.data)
 
+        Timber.i("ProximityService started")
         startLocationLoop()
     }
 
     private fun startLocationLoop() {
         triggered.clear()
-
-        Handler(Looper.getMainLooper()).postDelayed(object : Runnable {
-            override fun run() {
-                /* // testne koordinate
-                val testLocation = Location("test").apply {
-                    latitude = 46.49132
-                    longitude = 14.05411
-                    accuracy = 5f
-                }
-                handleLocation(testLocation)
-                */
-
-                // uporaba dejanskih koordinat
-                locationProvider.getCurrentLocation { location ->
-
-                   // Log.i("ProximityService", "is running")
-
-                    location?.let { handleLocation(it) }
-                }
-
-                Handler(Looper.getMainLooper()).postDelayed(this, locationCheckInterval)
-            }
-        }, 0)
+        handler.post(runnable)
     }
 
     private fun handleLocation(location: Location) {
         val app = application as SloVentureApplication
 
-        //mqttClient.publishLocation(location)
-
         checker.findNearbyAttraction(location)?.let { attraction ->
             val now = System.currentTimeMillis()
             val lastTriggered = triggered[attraction.id] ?: 0L
 
-            // določim cooldown glede na to, ali je uporabnik že slikal
-            val cooldown = if (app.wasPhotoTakenRecently(photoCooldownIfTaken))
-                photoCooldownIfTaken
-
-            else
-                photoCooldownIfNotTaken
+            val cooldown =
+                if (app.wasPhotoTakenRecently(photoCooldownIfTaken))
+                    photoCooldownIfTaken
+                else
+                    photoCooldownIfNotTaken
 
             if (now - lastTriggered >= cooldown) {
                 notifier.showAttractionNotification(attraction)
                 triggered[attraction.id] = now
-                Timber.Forest.i("Notification sent for ${attraction.name}")
+                Timber.i("Notification sent for ${attraction.name}")
+            } else {
+                Timber.i("Cooldown active for ${attraction.name}")
             }
-            else
-                Timber.Forest.i("Notification skipped for ${attraction.name}, cooldown not finished")
         }
     }
 
-    private fun createServiceNotification(): Notification {
-        return NotificationCompat.Builder(this, "SERVICE")
-            .setContentTitle(getString(R.string.active_service))
-            .setContentText(getString(R.string.location_tracking))
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .build()
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        Timber.i("App removed from recents → stopping ProximityService")
+        stopSelf()
+        super.onTaskRemoved(rootIntent)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        handler.removeCallbacks(runnable)
+        Timber.i("ProximityService destroyed")
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

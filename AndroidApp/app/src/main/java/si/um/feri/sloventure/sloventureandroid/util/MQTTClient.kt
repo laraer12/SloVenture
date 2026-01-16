@@ -1,7 +1,6 @@
 package si.um.feri.sloventure.sloventureandroid.util
 
 import android.content.Context
-import android.location.Location
 import info.mqtt.android.service.MqttAndroidClient
 import kotlinx.serialization.json.Json
 import org.eclipse.paho.client.mqttv3.IMqttActionListener
@@ -27,11 +26,9 @@ class MQTTClient(context: Context) {
     private companion object {
         const val TOPIC_SENSOR_ENVIRONMENT = "sensors/environment"
         const val TOPIC_SENSOR_ENVIRONMENT_SIMULATION = "sensors/environment/simulation"
-        const val TOPIC_USER_LOCATION = "sensors/user/location"
         const val TOPIC_EXTREME_EVENT_CROWD = "sensors/events/extreme/crowd"
         const val TOPIC_CROWD_SIMULATION = "analytics/numOfPeople"
         private val TOPIC_USER_EVENT_BASE = "sensors/events/user" //  /warning, /info
-
     }
 
     @Volatile
@@ -42,7 +39,7 @@ class MQTTClient(context: Context) {
     private val mqttClient = MqttAndroidClient(context, brokerUrl, clientId)
     private var pendingExtremeEvent: ExtremeEventPayload? = null
     private var pendingUserEvent: UserEventPayload? = null
-    private var pendingCrowdSimulation: CrowdSimulationPayload? = null
+    private val pendingCrowdSimulations = ArrayDeque<CrowdSimulationPayload>()
     private val pendingSensorReadings = ArrayDeque<SensorReading>()
     private val pendingSimulatedReadings = ArrayDeque<SensorReading>()
     private val MAX_PENDING_SENSOR_READINGS = 20
@@ -200,28 +197,25 @@ class MQTTClient(context: Context) {
     }
 
     //..........CROWD SIMULATION........
-
     fun publishCrowdSimulation(payload: CrowdSimulationPayload) {
         val payloadString = Json.Default.encodeToString(payload)
-
         if (!mqttClient.isConnected) {
-            Timber.tag("MQTT")
-                .w("Client not connected, buffering crowd simulation")
-            pendingCrowdSimulation = payload
+            if (pendingCrowdSimulations.size >= MAX_PENDING_SENSOR_READINGS) {
+                pendingCrowdSimulations.removeFirst()
+            }
+            pendingCrowdSimulations.addLast(payload)
             connect()
             return
         }
-
         publish(TOPIC_CROWD_SIMULATION, payloadString)
     }
 
     private fun flushPendingCrowdSimulation() {
-        val payload = pendingCrowdSimulation ?: return
-        Timber.tag("MQTT").d("Flushing pending crowd simulation")
-        publishCrowdSimulation(payload)
-        pendingCrowdSimulation = null
+        if (!mqttClient.isConnected) return
+        while (pendingCrowdSimulations.isNotEmpty()) {
+            publishCrowdSimulation(pendingCrowdSimulations.removeFirst())
+        }
     }
-
 
     //..........EXTREME EVENT..........
     fun publishExtremeEvent(payload: ExtremeEventPayload) {

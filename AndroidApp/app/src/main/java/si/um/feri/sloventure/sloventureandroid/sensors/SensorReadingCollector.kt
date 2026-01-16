@@ -1,8 +1,6 @@
 package si.um.feri.sloventure.sloventureandroid.sensors
 
-import si.um.feri.sloventure.sloventureandroid.sensors.LocationProvider
 import si.um.feri.sloventure.sloventureandroid.model.SensorReading
-import si.um.feri.sloventure.sloventureandroid.sensors.WeatherProvider
 
 class SensorReadingCollector(
     private val locationProvider: LocationProvider,

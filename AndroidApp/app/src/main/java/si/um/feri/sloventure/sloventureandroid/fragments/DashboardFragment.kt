@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
@@ -33,7 +34,13 @@ class DashboardFragment : Fragment() {
         app = requireActivity().application as SloVentureApplication
 
         binding.btnUpdateAttractionCount.setOnClickListener {
-            updateAttractionCount()
+            lifecycleScope.launch {
+                app.getAllAttractions()
+                Toast.makeText(
+                    requireContext(), getString(R.string.attractions_loaded, app.data.size),
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         }
 
         binding.btnGoToCrowdSimulation.setOnClickListener {
@@ -53,13 +60,6 @@ class DashboardFragment : Fragment() {
         }
     }
 
-    private fun updateAttractionCount() {
-        lifecycleScope.launch {
-            app.getAllAttractions()
-            binding.tvAttractionCount.text =
-                getString(R.string.attractions_loaded, app.data.size)
-        }
-    }
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null

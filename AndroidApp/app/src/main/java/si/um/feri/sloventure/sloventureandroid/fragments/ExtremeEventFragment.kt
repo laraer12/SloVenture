@@ -6,13 +6,14 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
+import si.um.feri.sloventure.sloventureandroid.R
 import si.um.feri.sloventure.sloventureandroid.SloVentureApplication
-import si.um.feri.sloventure.sloventureandroid.sensors.CameraController
 import si.um.feri.sloventure.sloventureandroid.databinding.FragmentExtremeEventBinding
-import si.um.feri.sloventure.sloventureandroid.sensors.LocationProvider
 import si.um.feri.sloventure.sloventureandroid.model.ExtremeEventPayload
+import si.um.feri.sloventure.sloventureandroid.sensors.CameraController
+import si.um.feri.sloventure.sloventureandroid.sensors.LocationProvider
 import si.um.feri.sloventure.sloventureandroid.util.uriToBase64
-import si.um.feri.sloventure.sloventureandroid.sensors.WeatherProvider
 import timber.log.Timber
 
 class ExtremeEventFragment : Fragment() {
@@ -28,7 +29,7 @@ class ExtremeEventFragment : Fragment() {
     private lateinit var attractionName: String
     private var attractionLat: Double = 0.0
     private var attractionLon: Double = 0.0
-    private val PHOTO_COOLDOWN_MS = 1 * 30 * 1000L // 5 minutes
+    private val PHOTO_COOLDOWN_MS = 1 * 30 * 1000L // 1 min
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,6 +69,9 @@ class ExtremeEventFragment : Fragment() {
             captureExtremeEvent()
         }
         binding.tvAttractionName.text = attractionName
+        binding.ivAppIcon.setOnClickListener {
+            findNavController().navigate(R.id.dashboardFragment)
+        }
     }
 
     private fun captureExtremeEvent() {

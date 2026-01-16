@@ -5,14 +5,15 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.Fragment
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.navigation.fragment.findNavController
 import si.um.feri.sloventure.sloventureandroid.R
 import si.um.feri.sloventure.sloventureandroid.SloVentureApplication
 import si.um.feri.sloventure.sloventureandroid.databinding.FragmentCrowdSimulationBinding
@@ -20,7 +21,6 @@ import si.um.feri.sloventure.sloventureandroid.model.CrowdSimulationPayload
 import si.um.feri.sloventure.sloventureandroid.service.AutoCaptureService
 import si.um.feri.sloventure.sloventureandroid.service.CrowdSimulationService
 import si.um.feri.sloventure.sloventureandroid.service.SimulationService
-
 
 class CrowdSimulationFragment : Fragment() {
 
@@ -70,9 +70,11 @@ class CrowdSimulationFragment : Fragment() {
             if (!validate()) return@setOnClickListener
             startSimulation()
         }
-
         binding.btnStopSimulation.setOnClickListener {
             stopSimulation()
+        }
+        binding.ivAppIcon.setOnClickListener {
+            findNavController().navigate(R.id.dashboardFragment)
         }
     }
 
@@ -107,15 +109,12 @@ class CrowdSimulationFragment : Fragment() {
         app.crowdMaxPeople = max
         app.crowdSimulationRunning = true
 
-
-        // stop other simulations
         requireContext().stopService(
             Intent(requireContext(), SimulationService::class.java)
         )
         requireContext().stopService(
             Intent(requireContext(), AutoCaptureService::class.java)
         )
-
 
         val intent = Intent(requireContext(), CrowdSimulationService::class.java).apply {
             putExtra("intervalMs", intervalMs)
@@ -125,7 +124,6 @@ class CrowdSimulationFragment : Fragment() {
         }
 
         ContextCompat.startForegroundService(requireContext(), intent)
-        app.crowdSimulationRunning = true
         setCrowdControlsEnabled(false)
         binding.btnStartSimulation.isEnabled = false
         binding.btnStopSimulation.isEnabled = true
@@ -165,10 +163,6 @@ class CrowdSimulationFragment : Fragment() {
                 toast("Invalid interval")
                 return false
             }
-            binding.spinnerAttraction.selectedItemPosition < 0 -> {
-                toast("Select an attraction")
-                return false
-            }
         }
         return true
     }
@@ -182,7 +176,6 @@ class CrowdSimulationFragment : Fragment() {
         binding.btnStartSimulation.isEnabled = enabled
         binding.btnStopSimulation.isEnabled = !enabled
     }
-
 
     private fun toast(msg: String) {
         Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
