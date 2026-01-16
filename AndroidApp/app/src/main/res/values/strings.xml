@@ -37,9 +37,9 @@
     <string name="crowd_photo">Crowd photo</string>
     <string name="event_successfully_reported">Event successfully reported!</string>
     <string name="sensor_auto_capture">Sensor Auto Capture</string>
-    <string name="sensor_simulation">Sensor simulation</string>
+    <string name="sensor_simulation">Sensor Simulation</string>
     <string name="last_sent">Last sent: %1$s</string>
-    <string name="post_message">Post message</string>
+    <string name="post_message">Post Message</string>
     <string name="simulation">Simulation</string>
     <string name="min_temp_c">Min temp (°C)</string>
     <string name="max_temp_c">Max temp (°C)</string>
@@ -56,4 +56,5 @@
     <string name="no_photo_taken">No photo taken</string>
     <string name="event_sent_successfully">Event sent successfully!</string>
     <string name="sloventure_sensor_app">SloVenture</string>
+    <string name="crowd_simulation">Crowd Simulation</string>
 </resources>

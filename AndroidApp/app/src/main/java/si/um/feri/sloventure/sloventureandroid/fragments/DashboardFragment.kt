@@ -36,6 +36,9 @@ class DashboardFragment : Fragment() {
             updateAttractionCount()
         }
 
+        binding.btnGoToCrowdSimulation.setOnClickListener {
+            findNavController().navigate(R.id.crowdSimulationFragment)
+        }
 
         binding.btnGoToSensorSettings.setOnClickListener {
             findNavController().navigate(R.id.sensorSettingsFragment)

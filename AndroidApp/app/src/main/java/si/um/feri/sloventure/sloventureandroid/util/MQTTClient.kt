@@ -2,8 +2,6 @@ package si.um.feri.sloventure.sloventureandroid.util
 
 import android.content.Context
 import android.location.Location
-import android.os.Handler
-import android.os.Looper
 import info.mqtt.android.service.MqttAndroidClient
 import kotlinx.serialization.json.Json
 import org.eclipse.paho.client.mqttv3.IMqttActionListener
@@ -12,8 +10,8 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions
 import org.eclipse.paho.client.mqttv3.MqttMessage
 import si.um.feri.sloventure.sloventureandroid.BuildConfig
 import si.um.feri.sloventure.sloventureandroid.R
+import si.um.feri.sloventure.sloventureandroid.model.CrowdSimulationPayload
 import si.um.feri.sloventure.sloventureandroid.model.ExtremeEventPayload
-import si.um.feri.sloventure.sloventureandroid.model.PhotoPayload
 import si.um.feri.sloventure.sloventureandroid.model.SensorReading
 import si.um.feri.sloventure.sloventureandroid.model.UserEventPayload
 import timber.log.Timber
@@ -31,7 +29,9 @@ class MQTTClient(context: Context) {
         const val TOPIC_SENSOR_ENVIRONMENT_SIMULATION = "sensors/environment/simulation"
         const val TOPIC_USER_LOCATION = "sensors/user/location"
         const val TOPIC_EXTREME_EVENT_CROWD = "sensors/events/extreme/crowd"
+        const val TOPIC_CROWD_SIMULATION = "analytics/numOfPeople"
         private val TOPIC_USER_EVENT_BASE = "sensors/events/user" //  /warning, /info
+
     }
 
     @Volatile
@@ -42,6 +42,7 @@ class MQTTClient(context: Context) {
     private val mqttClient = MqttAndroidClient(context, brokerUrl, clientId)
     private var pendingExtremeEvent: ExtremeEventPayload? = null
     private var pendingUserEvent: UserEventPayload? = null
+    private var pendingCrowdSimulation: CrowdSimulationPayload? = null
     private val pendingSensorReadings = ArrayDeque<SensorReading>()
     private val pendingSimulatedReadings = ArrayDeque<SensorReading>()
     private val MAX_PENDING_SENSOR_READINGS = 20
@@ -75,7 +76,8 @@ class MQTTClient(context: Context) {
                 flushPendingExtremeEvent()
                 flushPendingSensorReadings()
                 flushPendingSimulatedReadings()
-
+                flushPendingCrowdSimulation()
+                flushPendingUserEvent()
             }
 
             override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
@@ -105,18 +107,6 @@ class MQTTClient(context: Context) {
 
         Timber.Forest.tag("MQTT").d("Published message to $topic")
         Timber.Forest.tag("MQTT").d(payload)
-    }
-
-    fun publishLocation(location: Location) {
-        val payload = """
-        {
-          "lat": ${location.latitude},
-          "lon": ${location.longitude},
-          "timestamp": ${System.currentTimeMillis()}
-        }
-    """.trimIndent()
-
-        publish(TOPIC_USER_LOCATION, payload)
     }
 
     private fun getSocketFactory(context: Context): SSLSocketFactory {
@@ -208,6 +198,30 @@ class MQTTClient(context: Context) {
         val payloadString = Json.Default.encodeToString(reading)
         publish(TOPIC_SENSOR_ENVIRONMENT_SIMULATION, payloadString)
     }
+
+    //..........CROWD SIMULATION........
+
+    fun publishCrowdSimulation(payload: CrowdSimulationPayload) {
+        val payloadString = Json.Default.encodeToString(payload)
+
+        if (!mqttClient.isConnected) {
+            Timber.tag("MQTT")
+                .w("Client not connected, buffering crowd simulation")
+            pendingCrowdSimulation = payload
+            connect()
+            return
+        }
+
+        publish(TOPIC_CROWD_SIMULATION, payloadString)
+    }
+
+    private fun flushPendingCrowdSimulation() {
+        val payload = pendingCrowdSimulation ?: return
+        Timber.tag("MQTT").d("Flushing pending crowd simulation")
+        publishCrowdSimulation(payload)
+        pendingCrowdSimulation = null
+    }
+
 
     //..........EXTREME EVENT..........
     fun publishExtremeEvent(payload: ExtremeEventPayload) {

@@ -22,6 +22,9 @@
         <action
             android:id="@+id/action_dashboardFragment_to_userEventFragment"
             app:destination="@id/userEventFragment" />
+        <action
+            android:id="@+id/action_dashboardFragment_to_crowdSimulationFragment"
+            app:destination="@id/crowdSimulationFragment" />
     </fragment>
     <fragment
         android:id="@+id/sensorSettingsFragment"
@@ -57,4 +60,8 @@
         android:name="si.um.feri.sloventure.sloventureandroid.fragments.UserEventFragment"
         android:label="fragment_user_event"
         tools:layout="@layout/fragment_user_event" />
+    <fragment
+        android:id="@+id/crowdSimulationFragment"
+        android:name="si.um.feri.sloventure.sloventureandroid.fragments.CrowdSimulationFragment"
+        android:label="CrowdSimulationFragment" />
 </navigation>

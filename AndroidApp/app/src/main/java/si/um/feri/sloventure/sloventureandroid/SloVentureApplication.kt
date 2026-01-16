@@ -20,14 +20,12 @@ import java.io.IOException
 import timber.log.Timber
 
 import si.um.feri.sloventure.sloventureandroid.util.MQTTClient
-import si.um.feri.sloventure.sloventureandroid.service.ProximityService
 import si.um.feri.sloventure.sloventureandroid.model.Attraction
-import si.um.feri.sloventure.sloventureandroid.model.PhotoPayload
+import si.um.feri.sloventure.sloventureandroid.model.CrowdSimulationPayload
 import si.um.feri.sloventure.sloventureandroid.model.SensorReading
 
 class SloVentureApplication : Application() {
     lateinit var data: MutableList<Attraction>
-    val photoData = mutableListOf<PhotoPayload>()
     private lateinit var file: File
     lateinit var mqttClient: MQTTClient
     private lateinit var sharedPref: SharedPreferences
@@ -42,15 +40,22 @@ class SloVentureApplication : Application() {
     @Volatile
     var lastSimulationReading: SensorReading? = null
     @Volatile
+    var lastCrowdSimulationReading: CrowdSimulationPayload? = null
+    @Volatile
     var captureIntervalMs: Long = 60_000L
-
     @Volatile
     var simulationIntervalMs: Long = 60_000L
+    @Volatile
+    var crowdSimulationIntervalMs: Long = 60_000L
     var simulationMinTemp: Double = 0.0
     var simulationMaxTemp: Double = 10.0
     var simulationWeatherIndex: Int = 0
     var simulationLat: Double = 46.55472
     var simulationLon: Double = 15.64667
+    @Volatile var crowdSimulationRunning = false
+    @Volatile var crowdMinPeople = 1
+    @Volatile var crowdMaxPeople = 10
+    @Volatile var crowdAttractionId: String? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -150,19 +155,6 @@ class SloVentureApplication : Application() {
         manager.createNotificationChannel(serviceChannel)
         manager.createNotificationChannel(eventChannel)
     }
-
-    fun setNotificationsEnabled(enabled: Boolean) {
-        notificationsEnabledRuntime = enabled
-
-        sharedPref.edit()
-            .putBoolean(notifsEnabled, enabled)
-            .apply()
-
-        Timber.i("Notifications enabled set to $enabled")
-    }
-
-    fun areNotificationsEnabled(): Boolean = notificationsEnabledRuntime
-
     fun markPhotoTaken() {
         lastPhotoTimeRuntime = System.currentTimeMillis()
 
