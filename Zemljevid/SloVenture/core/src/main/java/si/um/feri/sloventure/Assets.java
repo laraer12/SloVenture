@@ -8,29 +8,30 @@ import si.um.feri.sloventure.assets.AssetDescriptors;
 public class Assets {
     AssetManager assetManager = new AssetManager();
 
-    public void load(){
+    public void load() {
         assetManager.load(AssetDescriptors.CABIN);
-        assetManager.load(AssetDescriptors.CANYON);
-        assetManager.load(AssetDescriptors.CASTLE);
-        assetManager.load(AssetDescriptors.CHURCH);
-        assetManager.load(AssetDescriptors.LAKE);
-        assetManager.load(AssetDescriptors.MUSEUM);
+        //assetManager.load(AssetDescriptors.CANYON);
+        //assetManager.load(AssetDescriptors.CASTLE);
+        //assetManager.load(AssetDescriptors.CHURCH);
+        //assetManager.load(AssetDescriptors.LAKE);
+        //assetManager.load(AssetDescriptors.MUSEUM);
         assetManager.load(AssetDescriptors.OTHER);
-        assetManager.load(AssetDescriptors.PARK);
-        assetManager.load(AssetDescriptors.POOL);
+        //assetManager.load(AssetDescriptors.PARK);
+        //assetManager.load(AssetDescriptors.POOL);
         assetManager.load(AssetDescriptors.PERSON);
-        assetManager.load(AssetDescriptors.WATCH_TOWER);
+        //assetManager.load(AssetDescriptors.WATCH_TOWER);
+        assetManager.load(AssetDescriptors.UI_SKIN);
     }
 
-    public void finishLoading(){
+    public void finishLoading() {
         assetManager.finishLoading();
     }
 
-    public void dispose(){
+    public void dispose() {
         assetManager.dispose();
     }
 
-    public <T> T get(AssetDescriptor<T> descriptor){
+    public <T> T get(AssetDescriptor<T> descriptor) {
         return assetManager.get(descriptor);
     }
 }

@@ -1,7 +1,7 @@
 package si.um.feri.sloventure.data.crowd;
 
-import java.util.Date;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class CrowdData {
     public int numOfPeople;
@@ -14,6 +14,9 @@ public class CrowdData {
         this.timestamp = timestamp;
         this.latitude = latitude;
         this.longitude = longitude;
+    }
+
+    public CrowdData() {
     }
 
     public static String formatTimestamp(long timestamp) {

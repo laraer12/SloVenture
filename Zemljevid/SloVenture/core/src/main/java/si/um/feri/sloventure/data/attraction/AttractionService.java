@@ -7,6 +7,7 @@ import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.net.HttpRequestBuilder;
 import com.badlogic.gdx.Net.HttpResponseListener;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -149,13 +150,16 @@ public class AttractionService {
             @Override
             public void handleHttpResponse(Net.HttpResponse httpResponse) {
                 int status = httpResponse.getStatus().getStatusCode();
-                String json = httpResponse.getResultAsString();
+                //String json = httpResponse.getResultAsString();
+                byte[] bytes = httpResponse.getResult();
+                String json = new String(bytes, StandardCharsets.UTF_8);
 
                 System.out.println("HTTP STATUS: " + status);
 
                 // uspešno
                 if (status == 200 && json != null && !json.isEmpty()) {
                     try {
+                        System.out.println(json);
                         callback.onSuccess(parse(json));
                     } catch (Exception e) {
                         callback.onFailure(status, "JSON parse failed: " + e.getMessage());

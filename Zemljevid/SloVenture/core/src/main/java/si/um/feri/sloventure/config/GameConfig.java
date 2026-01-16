@@ -9,4 +9,6 @@ public class GameConfig {
     public static final float HEIGHT_SCALE = 40f;
     public static final float TERRAIN_SCALE = 1f;
     public static final float MODEL_SIZE = 0.1f;
+    public static final int CHUNK_SIZE = 64;
+    public static final int MODEL_HEIGHT_CORRECTION = 25;
 }

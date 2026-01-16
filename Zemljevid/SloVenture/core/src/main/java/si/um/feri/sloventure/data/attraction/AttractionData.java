@@ -60,4 +60,6 @@ public class AttractionData {
         this.images = images;
         this.crowd = crowd;
     }
+
+    public AttractionData() {}
 }

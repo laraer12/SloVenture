@@ -10,4 +10,7 @@ public class AttractionImage {
         this.attractionId = attractionId;
         this.url = url;
     }
+
+    public AttractionImage() {
+    }
 }

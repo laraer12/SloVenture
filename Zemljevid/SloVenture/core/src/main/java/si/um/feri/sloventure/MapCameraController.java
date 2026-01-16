@@ -8,7 +8,7 @@ import com.badlogic.gdx.math.Vector3;
 
 public class MapCameraController extends InputAdapter {
 
-    private final PerspectiveCamera camera;
+    public final PerspectiveCamera camera;
 
     private final Vector3 target = new Vector3(0, 0, 0);
 
@@ -102,6 +102,35 @@ public class MapCameraController extends InputAdapter {
         camera.lookAt(target);
         camera.up.set(Vector3.Y);
         camera.update();
+    }
+
+    public Vector3 getTarget() {
+        return target;
+    }
+
+    public float getYaw() {
+        return yaw;
+    }
+
+    public float getPitch() {
+        return pitch;
+    }
+
+    public float getDistance() {
+        return distance;
+    }
+
+    public void setState(Vector3 target, float distance) {
+        this.target.set(target);
+        this.pitch = MathUtils.clamp(pitch, minPitch, maxPitch);
+        this.distance = MathUtils.clamp(distance, minDistance, maxDistance);
+        updateCamera();
+    }
+
+    public void focusOn(Vector3 newTarget, float newDistance) {
+        target.set(newTarget);
+        distance = MathUtils.clamp(newDistance, minDistance, maxDistance);
+        updateCamera();
     }
 }
 

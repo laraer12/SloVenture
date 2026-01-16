@@ -12,4 +12,5 @@ public class AssetPaths {
     public static String MODEL_PERSON = "models/person/Person.g3dj";
     public static String MODEL_POOL = "models/pool/Pool.g3dj";
     public static String MODEL_WATCH_TOWER = "models/watch_tower/WatchTower.g3dj";
+    public static String UI_SKIN = "skin/skin-composer-ui.json";
 }
