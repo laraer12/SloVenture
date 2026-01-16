@@ -23,15 +23,21 @@ public class Assets {
         assetManager.load(AssetDescriptors.UI_SKIN);
     }
 
-    public void finishLoading() {
-        assetManager.finishLoading();
+    public boolean update() {
+        return assetManager.update();
+    }
+    public float getProgress() {
+        return assetManager.getProgress();
     }
 
-    public void dispose() {
-        assetManager.dispose();
+    public void finishLoading() {
+        assetManager.finishLoading();
     }
 
     public <T> T get(AssetDescriptor<T> descriptor) {
         return assetManager.get(descriptor);
     }
-}
+
+    public void dispose() {
+        assetManager.dispose();
+    }}
