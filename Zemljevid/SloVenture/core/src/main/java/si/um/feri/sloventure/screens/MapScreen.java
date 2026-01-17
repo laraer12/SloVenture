@@ -8,14 +8,19 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g3d.Environment;
+import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.SelectBox;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
@@ -56,6 +61,8 @@ public class MapScreen implements Screen {
     private Stage stage;
     private AttractionPicker attractionPicker;
     private CrowdMqttClient crowdMqttClient;
+    private Skin skin;
+    private Stage uiStage;
 
     public MapScreen(SloVentureGame game) {
         this.game = game;
@@ -69,13 +76,18 @@ public class MapScreen implements Screen {
         setupCamera();
         setupLight();
 
-        Skin skin = assets.get(AssetDescriptors.UI_SKIN);
+        skin = assets.get(AssetDescriptors.UI_SKIN);
         stage = new Stage(new ScreenViewport());
+
+        uiStage = new Stage(new ScreenViewport());
+
+        uiStage.addActor(createDropdown());
 
         MapCameraController mapController = new MapCameraController(camera);
         attractionPicker = new AttractionPicker(stage, skin, mapController, assets.get(AssetDescriptors.PERSON));
 
         InputMultiplexer multiplexer = new InputMultiplexer();
+        multiplexer.addProcessor(uiStage);
         multiplexer.addProcessor(stage);
         multiplexer.addProcessor(attractionPicker);
         multiplexer.addProcessor(mapController);
@@ -118,8 +130,8 @@ public class MapScreen implements Screen {
         handleAttractionCreation();
 
         Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        //Color bg = Color.valueOf("133F38");
-        Color bg = Color.valueOf("09231E");
+
+        Color bg = Color.valueOf("e6fff9");
         Gdx.gl.glClearColor(bg.r, bg.g, bg.b, bg.a);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
@@ -130,8 +142,9 @@ public class MapScreen implements Screen {
 
         for (int i = 0; i < Math.min(600, allAttractions.size); i++) {
             Attraction a = allAttractions.get(i);
-            a.visible = true;
-            modelBatch.render(allAttractions.get(i).modelInstance, environment);
+            if (a.visible) {
+                modelBatch.render(allAttractions.get(i).modelInstance, environment);
+            }
         }
         modelBatch.end();
 
@@ -145,11 +158,14 @@ public class MapScreen implements Screen {
         attractionPicker.updateCamera();
         stage.act(delta);
         stage.draw();
+        uiStage.act(delta);
+        uiStage.draw();
     }
 
     @Override
     public void resize(int width, int height) {
         stage.getViewport().update(width, height, true);
+        uiStage.getViewport().update(width, height, true);
         attractionPicker.onResize();
     }
 
@@ -201,8 +217,7 @@ public class MapScreen implements Screen {
             Model model = assets.get(AssetDescriptors.OTHER);
             ModelInstance instance = new ModelInstance(model);
 
-            instance.materials.get(0)
-                .set(ColorAttribute.createDiffuse(Color.BLUE));
+            getModelColor(a, instance);
 
             allAttractions.add(
                 new Attraction(a, instance, terrain.getHeightmap())
@@ -259,4 +274,95 @@ public class MapScreen implements Screen {
         }
     }
 
+    private void getModelColor(AttractionData data, ModelInstance instance) {
+        Material material;
+        switch (data.locationType.toLowerCase()) {
+            case "grad":
+                material = new Material(ColorAttribute.createDiffuse(Color.PINK));
+                instance.materials.get(0).set(material);
+                break;
+            case "soteska":
+                material = new Material(ColorAttribute.createDiffuse(Color.BROWN));
+                instance.materials.get(0).set(material);
+                break;
+            case "cerkev":
+                material = new Material(ColorAttribute.createDiffuse(Color.CORAL));
+                instance.materials.get(0).set(material);
+                break;
+            case "koča":
+                material = new Material(ColorAttribute.createDiffuse(Color.WHITE));
+                instance.materials.get(0).set(material);
+                break;
+            case "jezero":
+                material = new Material(ColorAttribute.createDiffuse(Color.BLUE));
+                instance.materials.get(0).set(material);
+                break;
+            case "park":
+                material = new Material(ColorAttribute.createDiffuse(Color.ORANGE));
+                instance.materials.get(0).set(material);
+                break;
+            case "muzej na prostem":
+                material = new Material(ColorAttribute.createDiffuse(Color.YELLOW));
+                instance.materials.get(0).set(material);
+                break;
+            case "kopališče":
+                material = new Material(ColorAttribute.createDiffuse(Color.NAVY));
+                instance.materials.get(0).set(material);
+                break;
+            case "razgledni stolp":
+                material = new Material(ColorAttribute.createDiffuse(Color.PURPLE));
+                instance.materials.get(0).set(material);
+                break;
+            case "hrib":
+                material = new Material(ColorAttribute.createDiffuse(Color.RED));
+                instance.materials.get(0).set(material);
+                break;
+            case "planina":
+                material = new Material(ColorAttribute.createDiffuse(Color.FIREBRICK));
+                instance.materials.get(0).set(material);
+                break;
+            default:
+                material = new Material(ColorAttribute.createDiffuse(Color.CYAN));
+                instance.materials.get(0).set(material);
+                break;
+        }
+    }
+
+    private void filterByType(String type) {
+        if (type.equalsIgnoreCase("vse znamenitosti")) {
+            for (Attraction a : allAttractions) {
+                a.visible = true;
+            }
+        } else {
+            for (Attraction a : allAttractions) {
+                a.visible = a.data.locationType.equalsIgnoreCase(type);
+            }
+        }
+    }
+
+    private Actor createDropdown() {
+        SelectBox<String> typeList = new SelectBox<>(skin);
+        typeList.setItems("vse znamenitosti", "grad", "soteska", "cerkev", "koča", "jezero", "park", "muzej na prostem", "kopališče", "razgledni stolp", "hrib", "planina");
+        typeList.setSelected("vse znamenitosti");
+
+        typeList.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                String selected = typeList.getSelected();
+                filterByType(selected);
+            }
+        });
+
+        Table table = new Table(skin);
+        table.setFillParent(true);
+
+        table.top().left();
+        table.pad(10);
+
+        table.debug();
+        table.add(typeList).left().top();
+
+        return table;
+    }
 }
+

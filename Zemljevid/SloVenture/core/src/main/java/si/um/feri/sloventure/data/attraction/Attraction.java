@@ -11,7 +11,7 @@ public class Attraction {
     public AttractionData data;
     public Vector3 worldPosition;
     public ModelInstance modelInstance;
-    public boolean visible = false;
+    public boolean visible = true;
     public BoundingBox boundingBox = new BoundingBox();
 
     public Attraction(AttractionData data, ModelInstance modelInstance, Pixmap pixmap) {

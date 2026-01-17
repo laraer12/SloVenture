@@ -10,16 +10,8 @@ public class Assets {
 
     public void load() {
         assetManager.load(AssetDescriptors.CABIN);
-        //assetManager.load(AssetDescriptors.CANYON);
-        //assetManager.load(AssetDescriptors.CASTLE);
-        //assetManager.load(AssetDescriptors.CHURCH);
-        //assetManager.load(AssetDescriptors.LAKE);
-        //assetManager.load(AssetDescriptors.MUSEUM);
         assetManager.load(AssetDescriptors.OTHER);
-        //assetManager.load(AssetDescriptors.PARK);
-        //assetManager.load(AssetDescriptors.POOL);
         assetManager.load(AssetDescriptors.PERSON);
-        //assetManager.load(AssetDescriptors.WATCH_TOWER);
         assetManager.load(AssetDescriptors.UI_SKIN);
     }
 
