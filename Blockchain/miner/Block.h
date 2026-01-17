@@ -22,5 +22,7 @@ public:
     std::string createHash(int nonce);
 };
 
+std::string serializeBlock(const Block &b);
+Block deserializeBlock(const std::string &s);
 
 #endif //BLOCKCHAIN_BLOCK_H
