@@ -1,8 +1,8 @@
 import time
-from block import Block
+from Blockchain.common.block import Block
 
 class Blockchain:
-    def __init__(self, difficulty=5):
+    def __init__(self, difficulty=1):
         self.chain = []
         self.difficulty = difficulty
 
@@ -12,10 +12,10 @@ class Blockchain:
     def create_block(self, data):
         timestamp = int(time.time())
         if not self.chain:
-            new_block = Block(0, "0", timestamp,  difficulty=5, data=data)
+            new_block = Block(0, "0", timestamp,  difficulty=1, data=data)
         else:
             previous = self.get_last_block()
-            new_block = Block(previous.index + 1, previous.hash, timestamp,  difficulty=5, data=data)
+            new_block = Block(previous.index + 1, previous.hash, timestamp,  difficulty=1, data=data)
         return new_block
 
     def add_block(self, block):
@@ -56,3 +56,11 @@ class Blockchain:
             if current.timestamp > int(time.time()) + 60 or current.timestamp < previous.timestamp - 60:
                 return False
         return True
+    
+    def cumulative_difficulty(self):
+        return sum(2 ** b.difficulty for b in self.chain)
+    
+    def choose_chain(local, remote):
+        if remote.cumulative_difficulty() > local.cumulative_difficulty():
+            return remote
+        return local

@@ -9,19 +9,30 @@ find_package(OpenSSL REQUIRED)
 
 find_package(MPI REQUIRED COMPONENTS CXX)
 
+include(FetchContent)
+FetchContent_Declare(
+        json
+        GIT_REPOSITORY https://github.com/nlohmann/json.git
+        GIT_TAG v3.11.2
+)
+FetchContent_MakeAvailable(json)
+
 add_executable(Blockchain
-        client/main.cpp
-        client/BlockData.h
-        client/Block.h
-        client/Blockchain.cpp
-        client/Blockchain.h
-        client/Block.cpp
-        client/BlockData.cpp
-        client/SyncQueue.h
+        miner/main.cpp
+        miner/BlockData.h
+        miner/Block.h
+        miner/Blockchain.cpp
+        miner/Blockchain.h
+        miner/Block.cpp
+        miner/BlockData.cpp
+        miner/SyncQueue.h
+        miner/BlockData.cpp
+        miner/BlockIO.h
 )
 
 target_link_libraries(Blockchain
         OpenSSL::SSL
         OpenSSL::Crypto
         MPI::MPI_CXX
+        nlohmann_json::nlohmann_json
 )

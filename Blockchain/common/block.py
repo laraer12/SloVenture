@@ -1,4 +1,5 @@
 import hashlib
+from .blockdata import BlockData
 
 class Block:
     def __init__(self, index, previous_hash, timestamp, difficulty, data, nonce=0, hash=""):
@@ -27,6 +28,5 @@ class Block:
 
     @staticmethod
     def from_dict(d):
-        from blockdata import BlockData
         data = BlockData.from_dict(d["data"])
         return Block(d["index"], d["previous_hash"], d["timestamp"], d["difficulty"], data, d["nonce"], d["hash"])

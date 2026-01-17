@@ -1,3 +1,4 @@
+/*
 #include <chrono>
 #include <iostream>
 #include <vector>
@@ -173,7 +174,7 @@ int main(int argc, char **argv) {
         if (!blockchain.validateChain())
             std::cout << "[TEST] Chain validation detected invalid timestamp!" << std::endl;
     }
-    */ // konec testa
+    // konec testa
 
     std::vector<std::thread> threads;
     std::cout << "Rank " << mpiRank << " running with " << numThreads << " threads.\n";
@@ -234,6 +235,166 @@ int main(int argc, char **argv) {
     if (mpiRank == 0) {
         blockchain.printChain();
     }
+    MPI_Finalize();
+    return 0;
+}
+*/
+
+#include <chrono>
+#include <iostream>
+#include <vector>
+#include <thread>
+#include <atomic>
+#include <mutex>
+#include <condition_variable>
+#include <cstdlib>
+#include <mpi.h>
+
+#include "Block.h"
+#include "Blockchain.h"
+#include "SyncQueue.h"
+#include "BlockIO.h"
+
+int mpiRank;
+int mpiSize;
+
+SyncQueue<Block> workQueue;
+SyncQueue<Block> resultQueue;
+
+std::atomic<bool> stop = false;
+std::mutex mtx;
+std::condition_variable cv;
+std::atomic<bool> found = false;
+std::atomic<int> index = -1;
+
+void workerTask(int threadId, int numThreads, int rank, int size) {
+    while (!stop.load()) {
+        Block block = workQueue.read();
+
+        if (block.stopBlock) break;
+
+        int nonce = rank * numThreads + threadId;
+        std::string startZeroes(block.difficulty, '0');
+
+        while (!found.load() && !stop.load()) {
+            std::string h = block.createHash(nonce);
+
+            if (h.starts_with(startZeroes)) {
+                block.foundNonce = nonce;
+                block.hash = h;
+
+                if (block.index > index.load() && !found.exchange(true)) {
+                    resultQueue.add(block);
+                    {
+                        std::lock_guard<std::mutex> lock(mtx);
+                        cv.notify_one();
+                    }
+                }
+                break;
+            }
+
+            nonce += size * numThreads;
+        }
+    }
+}
+
+int main(int argc, char **argv) {
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpiRank);
+    MPI_Comm_size(MPI_COMM_WORLD, &mpiSize);
+
+    if (argc < 7) {
+        std::cerr << "Usage: " << argv[0] << " -N <threads> -diff <difficulty> <input_json> <output_json>\n";
+        return 1;
+    }
+
+    int numThreads = std::stoi(argv[2]);
+    int difficulty = std::stoi(argv[4]);
+    std::string inputJson = argv[5];
+    std::string outputJson = argv[6];
+
+    Blockchain blockchain;
+    blockchain.difficulty = difficulty;
+
+    std::vector<std::thread> threads;
+    for (int i = 0; i < numThreads; ++i) {
+        threads.emplace_back(workerTask, i, numThreads, mpiRank, mpiSize);
+    }
+
+    // Preberi blok iz JSON
+    Block previousBlock = readBlockFromFile(inputJson);
+
+    // Če je genesis block in nima hash-a, ga rudarimo
+    if (previousBlock.index == 0 && previousBlock.hash.empty()) {
+        std::cout << "[INFO] Mining genesis block..." << std::endl;
+
+        previousBlock.difficulty = 1;
+
+        int nonce = 0;
+        std::string startZeroes(previousBlock.difficulty, '0');
+
+        while (true) {
+            std::string h = previousBlock.createHash(nonce);
+            if (h.starts_with(startZeroes)) {
+                previousBlock.foundNonce = nonce;
+                previousBlock.hash = h;
+                break;
+            }
+            nonce++;
+        }
+
+        // Shrani rudarjeni genesis block nazaj v JSON, da ga client vidi
+        writeBlockToFile(previousBlock, inputJson);
+        std::cout << "[INFO] Genesis block mined: " << previousBlock.hash << std::endl;
+    }
+
+    Block newBlock;
+    newBlock.data = previousBlock.data;
+    newBlock.timestamp = previousBlock.timestamp;
+    newBlock.index = previousBlock.index + 1;
+    newBlock.previousHash = previousBlock.hash;
+    newBlock.difficulty = previousBlock.difficulty;
+
+    // Dodaj blok v vrsto za rudarjenje
+    found = false;
+    for (int i = 0; i < numThreads; ++i) {
+        workQueue.add(newBlock);
+    }
+
+    // Čakaj da ena nit najde hash
+    {
+        std::unique_lock<std::mutex> lock(mtx);
+        cv.wait(lock, [] { return found.load(); });
+    }
+
+    // Preberi najdeni blok
+    Block minedBlock = resultQueue.read();
+
+    if (blockchain.validateBlock(minedBlock) && blockchain.validateChain()) {
+        blockchain.addBlock(minedBlock);
+        index.fetch_add(1);
+
+        // Zapiši blok v izhodno JSON datoteko
+        writeBlockToFile(minedBlock, outputJson);
+        if (mpiRank == 0) {
+            std::cout << "[INFO] Block mined and saved to JSON: " << outputJson << std::endl;
+        }
+    } else {
+        std::cerr << "[ERROR] Mined block is invalid!" << std::endl;
+    }
+
+    // Ustavi niti
+    stop = true;
+    Block stopBlock;
+    stopBlock.stopBlock = true;
+    for (int i = 0; i < numThreads; ++i) {
+        workQueue.add(stopBlock);
+    }
+
+    for (auto &t : threads) {
+        t.join();
+    }
+
     MPI_Finalize();
     return 0;
 }
