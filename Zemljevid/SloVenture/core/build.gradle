@@ -5,6 +5,10 @@ dependencies {
   api "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
   api "com.badlogicgames.gdx:gdx:$gdxVersion"
 
+  implementation "org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5"
+  implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0"
+  implementation "com.google.code.gson:gson:2.10.1"
+
     if(enableGraalNative == 'true') {
     implementation "io.github.berstanio:gdx-svmhelper-annotations:$graalHelperVersion"
   }

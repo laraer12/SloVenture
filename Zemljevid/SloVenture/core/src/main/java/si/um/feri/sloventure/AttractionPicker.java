@@ -5,6 +5,8 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g3d.Model;
+import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
@@ -27,8 +29,11 @@ import com.badlogic.gdx.utils.Scaling;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Random;
 
+import si.um.feri.sloventure.config.GameConfig;
 import si.um.feri.sloventure.data.attraction.Attraction;
+import si.um.feri.sloventure.data.crowd.CrowdMember;
 
 public class AttractionPicker extends InputAdapter {
     private MapCameraController mapCameraController;
@@ -45,10 +50,16 @@ public class AttractionPicker extends InputAdapter {
     private final Vector3 tmpTarget = new Vector3();
     private Attraction currentAttraction;
 
-    public AttractionPicker(Stage stage, Skin skin, MapCameraController mapCameraController) {
+    private Model model;
+    public Array<CrowdMember> crowdMembers = new Array<>();
+
+    private float crowdTime = 0f;
+
+    public AttractionPicker(Stage stage, Skin skin, MapCameraController mapCameraController, Model model) {
         this.mapCameraController = mapCameraController;
         this.skin = skin;
         this.stage = stage;
+        this.model = model;
 
         this.skin.getFont("font").getData().setScale(0.6f);
     }
@@ -61,6 +72,7 @@ public class AttractionPicker extends InputAdapter {
         if (attraction != null && attraction.visible) {
             currentAttraction = attraction;
             showAttractionWindow(attraction);
+            showCrowd(attraction);
             return true;
         }
         return false;
@@ -148,6 +160,7 @@ public class AttractionPicker extends InputAdapter {
                 window.remove();
                 currentAttraction = null;
                 mapCameraController.setState(savedTarget, savedDistance);
+                crowdMembers.clear();
             }
         });
 
@@ -169,7 +182,7 @@ public class AttractionPicker extends InputAdapter {
 
 
     private Image getImage(Attraction attraction) {
-        Texture texture = new Texture(Gdx.files.internal("images/ex.jpeg"));
+        Texture texture = new Texture(Gdx.files.internal("images/triglav.jpg"));
         if (attraction.data.images != null && !attraction.data.images.isEmpty()) {
             String url = attraction.data.images.get(0).url;
 
@@ -224,4 +237,83 @@ public class AttractionPicker extends InputAdapter {
             showAttractionWindow(currentAttraction);
         }
     }
+/*
+    private void showCrowd(Attraction attraction) {
+        crowdInstances.clear();
+        if (attraction.data.crowd != null) {
+            for (int i = 0; i <attraction.data.crowd.get(0).numOfPeople; i++) {
+                ModelInstance instance = new ModelInstance(model);
+
+                float offsetX = (float)Math.random() * 50f - 25f;
+                float offsetZ = (float)Math.random() * 50f - 25f;
+
+                instance.transform.idt();
+                instance.transform.translate(attraction.worldPosition.x + offsetX, attraction.worldPosition.y, attraction.worldPosition.z + offsetZ);
+                instance.transform.scale(GameConfig.CROWD_MODEL_SIZE, GameConfig.CROWD_MODEL_SIZE, GameConfig.CROWD_MODEL_SIZE);
+
+                crowdInstances.add(instance);
+            }
+        }
+    }
+
+ */
+
+    private void showCrowd(Attraction attraction) {
+        crowdMembers.clear();
+
+        if (attraction.data.crowd == null) return;
+
+        int count = attraction.data.crowd.get(0).numOfPeople / 5;
+        Random random = new Random();
+
+        for (int i = 0; i < count; i++) {
+            ModelInstance instance = new ModelInstance(model);
+
+            float offsetX = random.nextFloat() * 60f - 30f;
+            float offsetZ = random.nextFloat() * 60f - 30f;
+
+            Vector3 basePos = new Vector3(attraction.worldPosition.x + offsetX, attraction.worldPosition.y, attraction.worldPosition.z + offsetZ);
+
+            instance.transform.idt();
+            instance.transform.translate(basePos);
+            instance.transform.scale(GameConfig.CROWD_MODEL_SIZE, GameConfig.CROWD_MODEL_SIZE, GameConfig.CROWD_MODEL_SIZE);
+
+            CrowdMember member = new CrowdMember();
+            member.modelInstance = instance;
+            member.position = basePos;
+            member.phase = random.nextFloat() * MathUtils.PI2;
+            member.speed = 1.5f * random.nextFloat();
+            member.jumpHeight = 0.3f + random.nextFloat();
+            member.moveRadius = 0.5f + random.nextFloat();
+
+            crowdMembers.add(member);
+        }
+    }
+
+    public void updateCrowd() {
+        if (crowdMembers.isEmpty()) return;
+
+        crowdTime += Gdx.graphics.getDeltaTime();
+
+        for (CrowdMember member : crowdMembers) {
+            float t = crowdTime * member.speed + member.phase;
+
+            float yOffset = MathUtils.sin(t) * member.jumpHeight;
+            float xOffset = MathUtils.cos(t * 0.7f) * member.moveRadius;
+            float zOffset = MathUtils.sin(t * 0.5f) * member.moveRadius;
+
+            member.modelInstance.transform.idt();
+            member.modelInstance.transform.translate(
+                member.position.x + xOffset,
+                member.position.y + yOffset,
+                member.position.z + zOffset
+            );
+            member.modelInstance.transform.scale(
+                GameConfig.MODEL_SIZE,
+                GameConfig.MODEL_SIZE,
+                GameConfig.MODEL_SIZE
+            );
+        }
+    }
+
 }

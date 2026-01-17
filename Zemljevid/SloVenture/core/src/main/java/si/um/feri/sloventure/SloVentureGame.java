@@ -1,6 +1,7 @@
 package si.um.feri.sloventure;
 
 import com.badlogic.gdx.Game;
+import com.badlogic.gdx.Gdx;
 
 import si.um.feri.sloventure.screens.LoadingScreen;
 
@@ -16,6 +17,9 @@ public class SloVentureGame extends Game {
 
     @Override
     public void dispose() {
+        if (getScreen() != null){
+            getScreen().dispose();
+        }
         assets.dispose();
     }
 }

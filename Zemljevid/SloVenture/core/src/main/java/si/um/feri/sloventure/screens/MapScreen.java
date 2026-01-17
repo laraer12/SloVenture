@@ -1,6 +1,5 @@
 package si.um.feri.sloventure.screens;
 
-import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
@@ -9,20 +8,20 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g3d.Environment;
-import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Properties;
 
 import si.um.feri.sloventure.Assets;
 import si.um.feri.sloventure.AttractionPicker;
@@ -35,7 +34,10 @@ import si.um.feri.sloventure.data.attraction.AttractionData;
 import si.um.feri.sloventure.data.attraction.AttractionService;
 import si.um.feri.sloventure.data.attraction.Terrain;
 import si.um.feri.sloventure.data.crowd.CrowdData;
+import si.um.feri.sloventure.data.crowd.CrowdMember;
+import si.um.feri.sloventure.data.crowd.CrowdMqttClient;
 import si.um.feri.sloventure.data.crowd.CrowdService;
+import si.um.feri.sloventure.data.crowd.DesktopSslFactory;
 
 public class MapScreen implements Screen {
     private final SloVentureGame game;
@@ -49,11 +51,12 @@ public class MapScreen implements Screen {
     private Terrain terrain;
 
     private Array<ModelInstance> chunkInstances;
-    private Array<Attraction> allAttractions = new Array<>();
+    private final Array<Attraction> allAttractions = new Array<>();
     private List<AttractionData> attractionData;
 
     private Stage stage;
     private AttractionPicker attractionPicker;
+    private CrowdMqttClient crowdMqttClient;
 
     public MapScreen(SloVentureGame game) {
         this.game = game;
@@ -71,7 +74,7 @@ public class MapScreen implements Screen {
         stage = new Stage(new ScreenViewport());
 
         MapCameraController mapController = new MapCameraController(camera);
-        attractionPicker = new AttractionPicker(stage, skin, mapController);
+        attractionPicker = new AttractionPicker(stage, skin, mapController, assets.get(AssetDescriptors.PERSON));
 
         InputMultiplexer multiplexer = new InputMultiplexer();
         multiplexer.addProcessor(stage);
@@ -87,7 +90,30 @@ public class MapScreen implements Screen {
         chunkInstances = terrain.createTerrainChunks("images/slovenia_clipped_4000.png");
 
         fetchAttractions();
+
+        Properties props = new Properties();
+        try {
+            props.load(Gdx.files.internal("mqtt/local.properties").read());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        String password = props.getProperty("P12_PASSWORD");
+
+        try {
+            crowdMqttClient = new CrowdMqttClient(
+                DesktopSslFactory.fromP12(
+                    "mqtt/android_client.p12",
+                    password
+                ),
+                this::onCrowdMessage
+            );
+        } catch (Exception e) {
+            Gdx.app.error("MQTT", "Failed to connect to MQTT", e);
+        }
+
+
     }
+
     @Override
     public void render(float delta) {
         handleAttractionCreation();
@@ -103,11 +129,18 @@ public class MapScreen implements Screen {
             modelBatch.render(instance, environment);
         }
 
-        for (int i = 0; i < Math.min(50, allAttractions.size); i++) {
+        for (int i = 0; i < Math.min(600, allAttractions.size); i++) {
             Attraction a = allAttractions.get(i);
             a.visible = true;
             modelBatch.render(allAttractions.get(i).modelInstance, environment);
         }
+        modelBatch.end();
+
+        modelBatch.begin(camera);
+        for (CrowdMember member: attractionPicker.crowdMembers){
+            modelBatch.render(member.modelInstance);
+        }
+        attractionPicker.updateCrowd();
         modelBatch.end();
 
         attractionPicker.updateCamera();
@@ -126,11 +159,25 @@ public class MapScreen implements Screen {
         modelBatch.dispose();
         terrainTexture.dispose();
         stage.dispose();
+        if (crowdMqttClient != null) {
+            try {
+                crowdMqttClient.disconnect();
+            } catch (Exception ignored) {
+            }
+        }
     }
 
-    @Override public void pause() {}
-    @Override public void resume() {}
-    @Override public void hide() {}
+    @Override
+    public void pause() {
+    }
+
+    @Override
+    public void resume() {
+    }
+
+    @Override
+    public void hide() {
+    }
 
 
     private void fetchAttractions() {
@@ -205,4 +252,28 @@ public class MapScreen implements Screen {
             1.1f, 1.1f, 1.1f,
             -0.3f, -1f, -0.2f));
     }
+
+    private void onCrowdMessage(CrowdData crowdData) {
+        if (allAttractions == null || allAttractions.size == 0) return;
+
+        for (Attraction attraction : allAttractions) {
+            if (attraction.data == null) continue;
+
+            if (attraction.data.id.equals(crowdData.attractionId)) {
+
+                if (attraction.data.crowd == null) {
+                    attraction.data.crowd = new java.util.ArrayList<>();
+                }
+                attraction.data.crowd.add(0, crowdData);
+
+                System.out.println(
+                    "MQTT crowd update for " + attraction.data.name +
+                        ": " + crowdData.numOfPeople
+                );
+
+                break;
+            }
+        }
+    }
+
 }

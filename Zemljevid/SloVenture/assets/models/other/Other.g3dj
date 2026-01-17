@@ -354,7 +354,7 @@
 			"textures": [
 							{
             					"id": "base_color_texture",
-            					"filename": "SVGMat_Base_Color.png",
+            					"filename": "base_color.png",
             					"type": "DIFFUSE"
             				},
 				{

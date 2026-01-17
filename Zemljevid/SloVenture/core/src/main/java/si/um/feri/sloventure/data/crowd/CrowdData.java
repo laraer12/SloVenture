@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class CrowdData {
+    public String attractionId;
     public int numOfPeople;
     public long timestamp;
     public double latitude;
