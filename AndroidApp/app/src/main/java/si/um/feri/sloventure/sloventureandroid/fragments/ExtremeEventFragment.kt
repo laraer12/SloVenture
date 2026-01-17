@@ -1,0 +1,146 @@
+package si.um.feri.sloventure.sloventureandroid.fragments
+
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Toast
+import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
+import si.um.feri.sloventure.sloventureandroid.R
+import si.um.feri.sloventure.sloventureandroid.SloVentureApplication
+import si.um.feri.sloventure.sloventureandroid.databinding.FragmentExtremeEventBinding
+import si.um.feri.sloventure.sloventureandroid.model.ExtremeEventPayload
+import si.um.feri.sloventure.sloventureandroid.sensors.CameraController
+import si.um.feri.sloventure.sloventureandroid.sensors.LocationProvider
+import si.um.feri.sloventure.sloventureandroid.util.uriToBase64
+import timber.log.Timber
+
+class ExtremeEventFragment : Fragment() {
+
+    private var _binding: FragmentExtremeEventBinding? = null
+    private val binding get() = _binding!!
+
+    private lateinit var app: SloVentureApplication
+    private lateinit var cameraController: CameraController
+    private lateinit var locationProvider: LocationProvider
+
+    private lateinit var attractionId: String
+    private lateinit var attractionName: String
+    private var attractionLat: Double = 0.0
+    private var attractionLon: Double = 0.0
+    private val PHOTO_COOLDOWN_MS = 1 * 30 * 1000L // 1 min
+
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        attractionId = requireArguments().getString("attraction_id")!!
+        attractionName = requireArguments().getString("attraction_name")!!
+        attractionLat = requireArguments().getFloat("attraction_lat").toDouble()
+        attractionLon = requireArguments().getFloat("attraction_lon").toDouble()
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = FragmentExtremeEventBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        app = requireActivity().application as SloVentureApplication
+        cameraController = CameraController(requireActivity())
+        locationProvider = LocationProvider(requireContext())
+
+        binding.btnCapturePhoto.setOnClickListener {
+            if (app.wasPhotoTakenRecently(PHOTO_COOLDOWN_MS)) {
+                Toast.makeText(
+                    requireContext(),
+                    "You can report another event in a few minutes.",
+                    Toast.LENGTH_LONG
+                ).show()
+                return@setOnClickListener
+            }
+            captureExtremeEvent()
+        }
+        binding.tvAttractionName.text = attractionName
+        binding.ivAppIcon.setOnClickListener {
+            findNavController().navigate(R.id.dashboardFragment)
+        }
+    }
+
+    private fun captureExtremeEvent() {
+        cameraController.capturePhoto { uri, timestamp ->
+            if (uri == null) {
+                Timber.e("Failed to capture image")
+                return@capturePhoto
+            }
+
+            locationProvider.getCurrentLocation { location ->
+                if (location == null) {
+                    Toast.makeText(requireContext(), "Location unavailable", Toast.LENGTH_SHORT)
+                        .show()
+                    return@getCurrentLocation
+                }
+
+                val base64 = uriToBase64(requireContext(), uri)
+
+                val payload = ExtremeEventPayload(
+                    attractionId = attractionId,
+                    attractionName,
+                    userLatitude = location.latitude,
+                    userLongitude = location.longitude,
+                    timestamp = timestamp,
+                    imageBase64 = base64
+                )
+
+                app.mqttClient.publishExtremeEvent(payload)
+                app.markPhotoTaken()
+
+                showConfirmationUI()
+
+                Toast.makeText(
+                    requireContext(),
+                    "Extreme event reported!",
+                    Toast.LENGTH_LONG
+                ).show()
+
+            }
+        }
+    }
+
+    private fun showConfirmationUI() {
+        cameraController.stopCamera()
+
+        binding.previewView.visibility = View.GONE
+        binding.btnCapturePhoto.isEnabled = false
+        binding.btnCapturePhoto.visibility = View.GONE
+        binding.tvConfirmation.visibility = View.VISIBLE
+
+        binding.root.postDelayed({ //zapre se po treh sekundah
+            if (isAdded) {
+                requireActivity().onBackPressedDispatcher.onBackPressed()
+            }
+        }, 3000)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        cameraController.startCamera(binding.previewView)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        cameraController.stopCamera()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+}
