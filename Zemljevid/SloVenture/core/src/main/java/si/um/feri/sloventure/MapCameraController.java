@@ -13,20 +13,20 @@ public class MapCameraController extends InputAdapter {
     private final Vector3 target = new Vector3(0, 0, 0);
 
     private float distance = 450f;
-    private float minDistance = 120f;
-    private float maxDistance = 800f;
+    private final float minDistance = 120f;
+    private final float maxDistance = 800f;
 
     private float yaw = 45f;
     private float pitch = 60f;
-    private float minPitch = 30f;
-    private float maxPitch = 85f;
+    private final float minPitch = 30f;
+    private final float maxPitch = 85f;
 
     private int lastX, lastY;
     private boolean rotating = false;
     private boolean panning = false;
 
-    private float panSpeed = 0.5f;
-    private float zoomSpeed = 40f;
+    private final float panSpeed = 0.5f;
+    private final float zoomSpeed = 40f;
 
     public MapCameraController(PerspectiveCamera camera) {
         this.camera = camera;
@@ -106,14 +106,6 @@ public class MapCameraController extends InputAdapter {
 
     public Vector3 getTarget() {
         return target;
-    }
-
-    public float getYaw() {
-        return yaw;
-    }
-
-    public float getPitch() {
-        return pitch;
     }
 
     public float getDistance() {

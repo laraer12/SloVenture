@@ -159,7 +159,7 @@ public class AttractionService {
                 // uspešno
                 if (status == 200 && json != null && !json.isEmpty()) {
                     try {
-                        System.out.println(json);
+                        //System.out.println(json);
                         callback.onSuccess(parse(json));
                     } catch (Exception e) {
                         callback.onFailure(status, "JSON parse failed: " + e.getMessage());

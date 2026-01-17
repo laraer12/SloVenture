@@ -36,7 +36,6 @@ import si.um.feri.sloventure.data.attraction.Terrain;
 import si.um.feri.sloventure.data.crowd.CrowdData;
 import si.um.feri.sloventure.data.crowd.CrowdMember;
 import si.um.feri.sloventure.data.crowd.CrowdMqttClient;
-import si.um.feri.sloventure.data.crowd.CrowdService;
 import si.um.feri.sloventure.data.crowd.DesktopSslFactory;
 
 public class MapScreen implements Screen {
@@ -137,7 +136,7 @@ public class MapScreen implements Screen {
         modelBatch.end();
 
         modelBatch.begin(camera);
-        for (CrowdMember member: attractionPicker.crowdMembers){
+        for (CrowdMember member : attractionPicker.crowdMembers) {
             modelBatch.render(member.modelInstance);
         }
         attractionPicker.updateCrowd();
@@ -185,23 +184,7 @@ public class MapScreen implements Screen {
             @Override
             public void onSuccess(List<AttractionData> attractions) {
                 attractionData = attractions;
-
-                for (AttractionData a : attractions) {
-                    CrowdService.fetchCrowdDataForAttraction(
-                        a.lat, a.lon,
-                        new CrowdService.Callback() {
-                            @Override
-                            public void onSuccess(List<CrowdData> crowd) {
-                                a.crowd = crowd;
-                            }
-
-                            @Override
-                            public void onFailure(String message) {
-                                System.err.println("Crowd error: " + message);
-                            }
-                        }
-                    );
-                }
+                GameManager.INSTANCE.saveAttractions(attractions);
             }
 
             @Override
@@ -254,7 +237,7 @@ public class MapScreen implements Screen {
     }
 
     private void onCrowdMessage(CrowdData crowdData) {
-        if (allAttractions == null || allAttractions.size == 0) return;
+        if (allAttractions.size == 0) return;
 
         for (Attraction attraction : allAttractions) {
             if (attraction.data == null) continue;

@@ -77,6 +77,5 @@ public class CrowdMqttClient {
             client.disconnect();
             client.close();
         }
-        ;
     }
 }

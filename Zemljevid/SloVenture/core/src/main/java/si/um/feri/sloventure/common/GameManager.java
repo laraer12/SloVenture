@@ -43,11 +43,7 @@
 
         public void saveAttractions(List<AttractionData> attractions) {
             json.setUsePrototypes(false);
-            String jsonString = json.toJson(attractions);
 
-            // IZPIS V KONZOLO
-            System.out.println("Saving attractions JSON:");
-            System.out.println(jsonString);
             FileHandle file = Gdx.files.local(ATTRACTIONS_FILE);
             file.writeString(json.toJson(attractions), false);
         }

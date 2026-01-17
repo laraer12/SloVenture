@@ -5,7 +5,7 @@ import java.util.Date;
 
 public class CrowdData {
     public String attractionId;
-    public int numOfPeople;
+    public int numOfPeople = 0;
     public long timestamp;
     public double latitude;
     public double longitude;

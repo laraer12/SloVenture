@@ -1,5 +1,6 @@
 package si.um.feri.sloventure.data.attraction;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import si.um.feri.sloventure.data.crowd.CrowdData;
@@ -21,7 +22,7 @@ public class AttractionData {
     public int elevation;
     public float rating;
     public List<AttractionImage> images;
-    public List<CrowdData> crowd;
+    public List<CrowdData> crowd = new ArrayList<>();
 
     public AttractionData(
         String id,

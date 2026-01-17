@@ -36,21 +36,21 @@ import si.um.feri.sloventure.data.attraction.Attraction;
 import si.um.feri.sloventure.data.crowd.CrowdMember;
 
 public class AttractionPicker extends InputAdapter {
-    private MapCameraController mapCameraController;
+    private final MapCameraController mapCameraController;
     public final Stage stage;
     public Array<Attraction> allAttractions;
     private final Skin skin;
 
-    private Vector3 camStart = new Vector3();
-    private Vector3 camTarget = new Vector3();
+    private final Vector3 camStart = new Vector3();
+    private final Vector3 camTarget = new Vector3();
     private float camAlpha = 1f;
-    private Vector3 savedTarget = new Vector3();
+    private final Vector3 savedTarget = new Vector3();
     private float savedDistance;
     private float startDistance;
     private final Vector3 tmpTarget = new Vector3();
     private Attraction currentAttraction;
 
-    private Model model;
+    private final Model model;
     public Array<CrowdMember> crowdMembers = new Array<>();
 
     private float crowdTime = 0f;
@@ -237,40 +237,20 @@ public class AttractionPicker extends InputAdapter {
             showAttractionWindow(currentAttraction);
         }
     }
-/*
-    private void showCrowd(Attraction attraction) {
-        crowdInstances.clear();
-        if (attraction.data.crowd != null) {
-            for (int i = 0; i <attraction.data.crowd.get(0).numOfPeople; i++) {
-                ModelInstance instance = new ModelInstance(model);
-
-                float offsetX = (float)Math.random() * 50f - 25f;
-                float offsetZ = (float)Math.random() * 50f - 25f;
-
-                instance.transform.idt();
-                instance.transform.translate(attraction.worldPosition.x + offsetX, attraction.worldPosition.y, attraction.worldPosition.z + offsetZ);
-                instance.transform.scale(GameConfig.CROWD_MODEL_SIZE, GameConfig.CROWD_MODEL_SIZE, GameConfig.CROWD_MODEL_SIZE);
-
-                crowdInstances.add(instance);
-            }
-        }
-    }
-
- */
 
     private void showCrowd(Attraction attraction) {
         crowdMembers.clear();
 
-        if (attraction.data.crowd == null) return;
+        if (attraction.data.crowd == null || attraction.data.crowd.isEmpty()) return;
 
-        int count = attraction.data.crowd.get(0).numOfPeople / 5;
+        int count = attraction.data.crowd.get(0).numOfPeople / 2 + 1;
         Random random = new Random();
 
         for (int i = 0; i < count; i++) {
             ModelInstance instance = new ModelInstance(model);
 
-            float offsetX = random.nextFloat() * 60f - 30f;
-            float offsetZ = random.nextFloat() * 60f - 30f;
+            float offsetX = random.nextFloat() * 30f - 25f;
+            float offsetZ = random.nextFloat() * 30f - 25f;
 
             Vector3 basePos = new Vector3(attraction.worldPosition.x + offsetX, attraction.worldPosition.y, attraction.worldPosition.z + offsetZ);
 
@@ -278,13 +258,17 @@ public class AttractionPicker extends InputAdapter {
             instance.transform.translate(basePos);
             instance.transform.scale(GameConfig.CROWD_MODEL_SIZE, GameConfig.CROWD_MODEL_SIZE, GameConfig.CROWD_MODEL_SIZE);
 
+            float rotation = MathUtils.random(0f, 360f);
+            instance.transform.rotate(Vector3.Y, rotation);
+
             CrowdMember member = new CrowdMember();
             member.modelInstance = instance;
             member.position = basePos;
             member.phase = random.nextFloat() * MathUtils.PI2;
-            member.speed = 1.5f * random.nextFloat();
+            member.speed = 0.2f + 1.2f * random.nextFloat();
             member.jumpHeight = 0.3f + random.nextFloat();
-            member.moveRadius = 0.5f + random.nextFloat();
+            member.moveRadius = 5 + 10 * MathUtils.random();
+            member.rotation = rotation;
 
             crowdMembers.add(member);
         }
@@ -308,10 +292,12 @@ public class AttractionPicker extends InputAdapter {
                 member.position.y + yOffset,
                 member.position.z + zOffset
             );
+
+            member.modelInstance.transform.rotate(Vector3.Y, member.rotation);
             member.modelInstance.transform.scale(
-                GameConfig.MODEL_SIZE,
-                GameConfig.MODEL_SIZE,
-                GameConfig.MODEL_SIZE
+                GameConfig.CROWD_MODEL_SIZE,
+                GameConfig.CROWD_MODEL_SIZE,
+                GameConfig.CROWD_MODEL_SIZE
             );
         }
     }
