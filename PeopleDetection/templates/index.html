@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>People Detection Dashboard</title>
+    <style>
+        body {
+            font-family: Tahoma, sans-serif;
+            margin: 20px;
+        }
+
+        h2 {
+            margin: 10px;
+        }
+
+        img {
+            max-width: 600px;
+            border: 1px solid black;
+            border-radius: 5%;
+            margin: 10px 0;
+        }
+
+        .data {
+            font-size: 1.2em;
+            margin: 10px;
+        }
+
+        .dashboard {
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
+        .info-container {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .image-wrapper {
+            width: 600px;
+            height: 400px;
+            border: 2px dashed #aaa;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f5f5f5;
+        }
+
+        #placeholder {
+            color: #777;
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <h1>People Detection Dashboard</h1>
+    <br/>
+    <div class="dashboard">
+        <div class="image-wrapper">
+            <div id="placeholder">Waiting for image…</div>
+            <img id="latestImage" style="display:none;" />
+        </div>
+
+        <div class="info-container">
+            <h2>Image information</h2>
+            <div class="data" id="info">
+                Waiting for new data...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // SSE
+        const evtSource = new EventSource("/stream");
+
+        evtSource.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+
+            if (data.imageBase64) {
+                const img = document.getElementById("latestImage");
+                const placeholder = document.getElementById("placeholder");
+
+                img.src = "data:image/png;base64," + data.imageBase64;
+                img.style.display = "block";
+                placeholder.style.display = "none";
+
+                document.getElementById("info").innerHTML = `
+                    <strong>Attraction ID:</strong> ${data.attractionId}<br>
+                    <strong>Attraction name:</strong> ${data.attractionName}<br>
+                    <strong>Date and time:</strong> ${new Date(data.timestamp).toLocaleString()}<br>
+                    <strong>Location:</strong> lat = ${data.userLatitude}, lon = ${data.userLongitude}<br>
+                    <strong>Number of people:</strong> ${data.numOfPeople}
+                `;
+            }
+        };
+    </script>
+</body>
+</html>
