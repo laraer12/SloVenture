@@ -24,14 +24,14 @@ inline Block readBlockFromFile(const std::string &filename) {
 
         block.index = j.value("index", 0);
         block.previousHash = j.value("previous_hash", "");
-        block.timestamp = j.value("timestamp", 0L);
+        block.timestamp = j.at("timestamp").get<int64_t>();
         block.difficulty = j.value("difficulty", 0);
         block.foundNonce = j.value("nonce", 0);
         block.hash = j.value("hash", "");
 
         if (j.contains("data")) {
             block.data.numOfPeople = j["data"].value("numOfPeople", 0);
-            block.data.timestamp = j["data"].value("timestamp", 0L);
+            block.data.timestamp = j["data"].at("timestamp").get<int64_t>();
             block.data.longitude = j["data"].value("longitude", 0.0);
             block.data.latitude = j["data"].value("latitude", 0.0);
         }

@@ -1,0 +1,14 @@
+{
+    "data": {
+        "latitude": 46.682911675738,
+        "longitude": 15.982621865082,
+        "numOfPeople": 7,
+        "timestamp": 1768769394208
+    },
+    "difficulty": 1,
+    "hash": "0503c4173558be6dee42b2f842f33265fec64ac2bbde840a4dfa955366c72d78",
+    "index": 6,
+    "nonce": 190,
+    "previous_hash": "08e99d9f4606962cc828e6e686b4a2fec5350f6d4f54ee24469e9db791d037a0",
+    "timestamp": 1768769394
+}

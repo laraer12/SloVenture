@@ -9,7 +9,7 @@
 class BlockData {
 public:
     int numOfPeople;
-    time_t timestamp;
+    int64_t timestamp;
     double longitude;
     double latitude;
 
