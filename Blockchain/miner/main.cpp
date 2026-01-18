@@ -352,8 +352,10 @@ int main(int argc, char **argv) {
     newBlock.data = previousBlock.data;
     newBlock.timestamp = previousBlock.timestamp;
     newBlock.index = previousBlock.index + 1;
-    newBlock.previousHash = previousBlock.hash;
+    newBlock.previousHash = previousBlock.previousHash;
     newBlock.difficulty = previousBlock.difficulty;
+
+    auto start = std::chrono::high_resolution_clock::now();
 
     // Dodaj blok v vrsto za rudarjenje
     found = false;
@@ -394,6 +396,10 @@ int main(int argc, char **argv) {
     for (auto &t : threads) {
         t.join();
     }
+
+    auto end = std::chrono::high_resolution_clock::now();
+    unsigned int runtime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    // std::cout << "Runtime: " << runtime << std::endl;
 
     MPI_Finalize();
     return 0;

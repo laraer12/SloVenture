@@ -84,8 +84,9 @@ def on_message(client, userdata, msg):
                 save_chain_to_file()
                 broadcast_chain(client)
                 print(f"[INFO] Block {new_block.index} added")
+            """
             else:
-                print("[WARN] Invalid block rejected")
+                # print("[WARN] Invalid block rejected") """
 
         elif msg.topic == blockchainServerGet:
             if "data" in payload:
@@ -100,9 +101,9 @@ def on_message(client, userdata, msg):
 
             client.publish(blockchainServerSend, block_to_json(new_block))
             print(f"[INFO] Created new block from analytics with index {new_block.index}")
-
+    
     except Exception as e:
-        print(f"[ERROR] Failed to process message: {e}")
+        print(f"[ERROR] Failed to process message: {e}") #
 
 client = mqtt.Client(client_id=CLIENT_ID, protocol=mqtt.MQTTv311)
 client.on_connect = on_connect

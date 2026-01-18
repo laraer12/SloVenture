@@ -2,6 +2,9 @@ import time
 from Blockchain.common.block import Block
 
 class Blockchain:
+    BLOCK_INTERVAL = 10
+    DIFF_INTERVAL = 10
+
     def __init__(self, difficulty=1):
         self.chain = []
         self.difficulty = difficulty
@@ -15,7 +18,7 @@ class Blockchain:
             new_block = Block(0, "0", timestamp,  difficulty=1, data=data)
         else:
             previous = self.get_last_block()
-            new_block = Block(previous.index + 1, previous.hash, timestamp,  difficulty=1, data=data)
+            new_block = Block(previous.index, previous.hash, timestamp,  difficulty=1, data=data)
         return new_block
 
     def add_block(self, block):
@@ -35,10 +38,10 @@ class Blockchain:
                 print(f"Invalid index at block {block.index}")
                 return False
             if block.previous_hash != last.hash:
-                print(f"Invalid previous hash at block {block.index}")
+                print(f"Invalid previous hash at block {block.index} \nprevious hash: {block.previous_hash} \n last hash: {last.hash}")
                 return False
         if block.create_hash(block.nonce) != block.hash:
-            print(f"Invalid hash at block {block.index}")
+            print(f"Invalid hash at block {block.index}") #
             return False
         if not block.hash.startswith("0" * block.difficulty):
             print(f"Block {block.index} does not satisfy difficulty")
@@ -64,3 +67,20 @@ class Blockchain:
         if remote.cumulative_difficulty() > local.cumulative_difficulty():
             return remote
         return local
+    
+    def get_adjusted_difficulty(self):
+        if len(self.chain) < self.DIFF_INTERVAL:
+            return self.difficulty
+
+        last = self.chain[-1]
+        adjust_block = self.chain[-self.DIFF_INTERVAL]
+
+        expected_time = self.BLOCK_INTERVAL * self.DIFF_INTERVAL
+        actual_time = last.timestamp - adjust_block.timestamp
+
+        if actual_time < expected_time / 2:
+            return adjust_block.difficulty + 1
+        elif actual_time > expected_time * 2:
+            return max(1, adjust_block.difficulty - 1)
+        else:
+            return adjust_block.difficulty

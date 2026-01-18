@@ -1,0 +1,14 @@
+{
+    "index": 5,
+    "previous_hash": "08e99d9f4606962cc828e6e686b4a2fec5350f6d4f54ee24469e9db791d037a0",
+    "timestamp": 1768769394,
+    "difficulty": 1,
+    "data": {
+        "numOfPeople": 7,
+        "timestamp": 1768769394208,
+        "longitude": 15.982621865082,
+        "latitude": 46.682911675738
+    },
+    "nonce": 0,
+    "hash": ""
+}

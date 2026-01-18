@@ -1,0 +1,72 @@
+[
+    {
+        "index": 1,
+        "previous_hash": "0",
+        "timestamp": 1768769319,
+        "difficulty": 1,
+        "data": {
+            "numOfPeople": 3,
+            "timestamp": 1768769318861,
+            "longitude": 14.8251,
+            "latitude": 45.9894
+        },
+        "nonce": 2,
+        "hash": "059e090691246fe2e626522d244feb8d794c9020baf474936d45ecd96e68d7f3"
+    },
+    {
+        "index": 2,
+        "previous_hash": "059e090691246fe2e626522d244feb8d794c9020baf474936d45ecd96e68d7f3",
+        "timestamp": 1768769324,
+        "difficulty": 1,
+        "data": {
+            "numOfPeople": 8,
+            "timestamp": 1768769323880,
+            "longitude": 15.4593,
+            "latitude": 46.6149
+        },
+        "nonce": 196,
+        "hash": "04aac50564f2f07ade5efa19bcf61b235c253ecec1b7e3d56fc1165798aec31a"
+    },
+    {
+        "index": 3,
+        "previous_hash": "04aac50564f2f07ade5efa19bcf61b235c253ecec1b7e3d56fc1165798aec31a",
+        "timestamp": 1768769364,
+        "difficulty": 1,
+        "data": {
+            "numOfPeople": 8,
+            "timestamp": 1768769364060,
+            "longitude": 14.6169,
+            "latitude": 46.2239
+        },
+        "nonce": 18,
+        "hash": "02c58fddbc1cd1455e676e1de8cf53ad9449c6ea4899dc9cc36f226825d1ca96"
+    },
+    {
+        "index": 4,
+        "previous_hash": "02c58fddbc1cd1455e676e1de8cf53ad9449c6ea4899dc9cc36f226825d1ca96",
+        "timestamp": 1768769369,
+        "difficulty": 1,
+        "data": {
+            "numOfPeople": 3,
+            "timestamp": 1768769369088,
+            "longitude": 14.4853,
+            "latitude": 45.8645
+        },
+        "nonce": 61,
+        "hash": "06506b2fcdc7667a80bb446d0412b5feda5296aa61a2bc9398638356f892cf6e"
+    },
+    {
+        "index": 5,
+        "previous_hash": "06506b2fcdc7667a80bb446d0412b5feda5296aa61a2bc9398638356f892cf6e",
+        "timestamp": 1768769374,
+        "difficulty": 1,
+        "data": {
+            "numOfPeople": 8,
+            "timestamp": 1768769374114,
+            "longitude": 13.7848,
+            "latitude": 46.5106
+        },
+        "nonce": 26,
+        "hash": "08e99d9f4606962cc828e6e686b4a2fec5350f6d4f54ee24469e9db791d037a0"
+    }
+]

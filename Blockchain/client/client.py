@@ -56,12 +56,23 @@ def on_message(client, userdata, msg):
             candidate_block = block_from_json(payload_str)
 
         else:
+            last_block = local_blockchain.get_last_block()
+
+            if last_block:
+                difficulty = local_blockchain.get_adjusted_difficulty()
+                index = last_block.index + 1
+                previous_hash = last_block.hash
+            else:
+                difficulty = 1
+                index = 0
+                previous_hash = "0"
+
             data_payload = payload.get("data", payload)
             candidate_block = Block(
-                index=0,
-                previous_hash="0",
+                index=index,
+                previous_hash=previous_hash,
                 timestamp=int(time.time()),
-                difficulty=int(os.getenv("BLOCK_DIFF", 1)),
+                difficulty=difficulty,
                 data=BlockData.from_dict(data_payload),
                 nonce=0,
                 hash=""
@@ -75,7 +86,7 @@ def on_message(client, userdata, msg):
             "-n", os.getenv("MPI_NODES", "2"),
             os.getenv("MPI_PROG"),
             "-N", os.getenv("MPI_THREADS", "4"),
-            "-diff", os.getenv("BLOCK_DIFF", "2"),
+            "-diff", str(candidate_block.difficulty),
             block_in_path,
             block_out_path
         ]
@@ -97,7 +108,7 @@ def on_message(client, userdata, msg):
         print("[INFO] Mined block sent to server")
 
     except Exception as e:
-        print(f"[ERROR] Failed to process message: {e}")
+        print(f"[ERROR] Failed to process message: {e}") #
 
 
 client = mqtt.Client(client_id=CLIENT_ID, protocol=mqtt.MQTTv311)
