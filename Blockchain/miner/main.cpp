@@ -267,33 +267,33 @@ std::condition_variable cv;
 std::atomic<bool> found = false;
 std::atomic<int> index = -1;
 
-void workerTask(int threadId, int numThreads, int rank, int size) {
-    while (!stop.load()) {
+std::atomic<bool> mpiFound(false);
+int globalNonce = -1;
+
+void workerTask(int threadId, int numThreads, int mpiRank, int mpiSize) {
+    while (true) {
         Block block = workQueue.read();
+        if (block.stopBlock) return;
 
-        if (block.stopBlock) break;
+        int nonce = mpiRank + threadId * mpiSize;
+        int step  = mpiSize * numThreads;
 
-        int nonce = rank * numThreads + threadId;
-        std::string startZeroes(block.difficulty, '0');
+        std::string target(block.difficulty, '0');
 
-        while (!found.load() && !stop.load()) {
-            std::string h = block.createHash(nonce);
+        while (!found.load() && !mpiFound.load()) {
+            std::string hash = block.createHash(nonce);
 
-            if (h.starts_with(startZeroes)) {
-                block.foundNonce = nonce;
-                block.hash = h;
-
-                if (block.index > index.load() && !found.exchange(true)) {
+            if (hash.starts_with(target)) {
+                bool expected = false;
+                if (found.compare_exchange_strong(expected, true)) {
+                    block.foundNonce = nonce;
+                    block.hash = hash;
                     resultQueue.add(block);
-                    {
-                        std::lock_guard<std::mutex> lock(mtx);
-                        cv.notify_one();
-                    }
+                    cv.notify_one();
                 }
                 break;
             }
-
-            nonce += size * numThreads;
+            nonce += step;
         }
     }
 }
@@ -348,12 +348,14 @@ int main(int argc, char **argv) {
         std::cout << "[INFO] Genesis block mined: " << previousBlock.hash << std::endl;
     }
 
+    // int adjustedDifficulty = blockchain.getAdjustedDifficulty();
+
     Block newBlock;
     newBlock.data = previousBlock.data;
     newBlock.timestamp = previousBlock.timestamp;
     newBlock.index = previousBlock.index + 1;
     newBlock.previousHash = previousBlock.previousHash;
-    newBlock.difficulty = previousBlock.difficulty;
+    newBlock.difficulty = difficulty; // difficulty
 
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -371,6 +373,16 @@ int main(int argc, char **argv) {
 
     // Preberi najdeni blok
     Block minedBlock = resultQueue.read();
+
+    int localFound = found ? 1 : 0;
+    int globalFound = 0;
+
+    MPI_Allreduce(&localFound, &globalFound, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+
+    if (globalFound) {
+        mpiFound.store(true);
+        stop.store(true);
+    }
 
     if (blockchain.validateBlock(minedBlock) && blockchain.validateChain()) {
         blockchain.addBlock(minedBlock);
@@ -399,7 +411,7 @@ int main(int argc, char **argv) {
 
     auto end = std::chrono::high_resolution_clock::now();
     unsigned int runtime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    // std::cout << "Runtime: " << runtime << std::endl;
+    std::cout << "Runtime: " << runtime << std::endl;
 
     MPI_Finalize();
     return 0;

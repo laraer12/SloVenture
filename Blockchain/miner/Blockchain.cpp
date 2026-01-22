@@ -75,7 +75,13 @@ bool Blockchain::validateBlock(Block block) {
         std::cout << "Invalid hash at: " << block.index << std::endl;
         return false;
     }
-
+    /*
+    std::string target(block.difficulty, '0');
+    if (!block.hash.starts_with(target)) {
+        std::cout << "Block does not meet difficulty at: " << block.index << std::endl;
+        return false;
+    }
+    */
     return true;
 }
 

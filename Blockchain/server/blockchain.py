@@ -18,7 +18,7 @@ class Blockchain:
             new_block = Block(0, "0", timestamp,  difficulty=1, data=data)
         else:
             previous = self.get_last_block()
-            new_block = Block(previous.index, previous.hash, timestamp,  difficulty=1, data=data)
+            new_block = Block(previous.index, previous.hash, timestamp,  difficulty=self.get_adjusted_difficulty(), data=data)
         return new_block
 
     def add_block(self, block):
